@@ -31,3 +31,13 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 SUMMARIZER_MODEL = "google/gemma-3-4b-it:free"
 
 SLICE_LIMIT = 50
+
+# Agent execution limits
+MAX_TOOL_CALLS_ORCHESTRATOR = int(os.getenv("MAX_TOOL_CALLS_ORCHESTRATOR", "15"))
+MAX_TOOL_CALLS_DATA_ANALYSIS = int(os.getenv("MAX_TOOL_CALLS_DATA_ANALYSIS", "20"))
+MAX_TOOL_CALLS_PLANNER = int(os.getenv("MAX_TOOL_CALLS_PLANNER", "12"))
+
+# Timeout and retry configuration
+AGENT_TIMEOUT_SECONDS = int(os.getenv("AGENT_TIMEOUT_SECONDS", "600"))  # 10 minutes
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))
+RETRY_BACKOFF_SECONDS = float(os.getenv("RETRY_BACKOFF_SECONDS", "2.0"))  # Initial backoff
