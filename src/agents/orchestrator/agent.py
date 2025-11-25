@@ -39,6 +39,8 @@ from src.tools.orchestrator import (
     validate_dataset_tool,
     prepare_data_analysis_tool,
     prepare_planner_tool,
+    read_state_tool,
+    write_user_goals_tool,
 )
 from src.agents.data_analysis.agent import create_data_analysis_agent
 from src.agents.planner.agent import create_planner_agent
@@ -92,6 +94,8 @@ def create_orchestrator_agent() -> LlmAgent:
             validate_dataset_tool,
             prepare_data_analysis_tool,
             prepare_planner_tool,
+            read_state_tool,
+            write_user_goals_tool,
         ],
         sub_agents=[
             data_analysis_agent,

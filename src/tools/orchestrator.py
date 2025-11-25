@@ -1,17 +1,19 @@
 """
-Orchestrator tools for sub-agent coordination.
+Orchestrator tools for sub-agent coordination and state management.
 
 These tools allow the orchestrator agent to:
 - Validate dataset availability
 - Prepare for Data Analysis Agent delegation  
 - Prepare for Planner Agent delegation
+- Read session state (user_goals, dataset_path, data_analysis_output, planner_output)
+- Write user_goals to session state
 
 Note: Actual sub-agent invocation happens via ADK's transfer_to_agent mechanism.
 Sub-agents share the same session state and invocation context.
 """
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from google.adk.tools import FunctionTool, ToolContext
 
 
@@ -201,3 +203,101 @@ validate_dataset_tool = FunctionTool(func=validate_dataset)
 prepare_data_analysis_tool = FunctionTool(func=prepare_data_analysis)
 
 prepare_planner_tool = FunctionTool(func=prepare_planner)
+
+
+# State management tools
+
+def read_state(
+    key: str,
+    tool_context: ToolContext
+) -> Dict[str, Any]:
+    """
+    Read a value from session state.
+    
+    Available keys (read-only for orchestrator):
+    - user_goals: Dictionary with goal, audience, use_case, constraints
+    - dataset_path: Path to uploaded dataset
+    - data_analysis_output: Structured output from Data Analysis Agent
+    - planner_output: Structured output from Planner Agent
+    
+    Args:
+        key: The state key to read
+        
+    Returns:
+        Dictionary with:
+        - found: bool indicating if key exists
+        - value: The value (if found)
+        - message: Status message
+    """
+    allowed_keys = {"user_goals", "dataset_path", "data_analysis_output", "planner_output"}
+    
+    if key not in allowed_keys:
+        return {
+            "found": False,
+            "value": None,
+            "message": f"Key '{key}' not allowed. Allowed keys: {allowed_keys}"
+        }
+    
+    state = tool_context.state
+    
+    if key not in state:
+        return {
+            "found": False,
+            "value": None,
+            "message": f"Key '{key}' not found in state. It may not have been set yet."
+        }
+    
+    return {
+        "found": True,
+        "value": state[key],
+        "message": f"Successfully retrieved '{key}' from state"
+    }
+
+
+def write_user_goals(
+    goal: str,
+    audience: str,
+    use_case: str,
+    constraints: str,
+    tool_context: ToolContext
+) -> Dict[str, Any]:
+    """
+    Write user goals to session state.
+    
+    This is the ONLY state key the orchestrator can write to.
+    All other state updates are handled automatically by sub-agents and callbacks.
+    
+    Args:
+        goal: High-level purpose of the dashboard
+        audience: Target audience (e.g., "managers", "analysts")
+        use_case: Primary use case (e.g., "monitoring", "exploration", "reporting")
+        constraints: Comma-separated list of constraints or "none"
+        
+    Returns:
+        Dictionary with:
+        - success: bool indicating if write succeeded
+        - message: Status message
+    """
+    # Parse constraints
+    constraints_list = []
+    if constraints and constraints.lower() != "none":
+        constraints_list = [c.strip() for c in constraints.split(",") if c.strip()]
+    
+    user_goals = {
+        "goal": goal,
+        "audience": audience,
+        "use_case": use_case,
+        "constraints": constraints_list
+    }
+    
+    tool_context.state["user_goals"] = user_goals
+    
+    return {
+        "success": True,
+        "message": f"User goals saved to state: {user_goals}"
+    }
+
+
+read_state_tool = FunctionTool(func=read_state)
+
+write_user_goals_tool = FunctionTool(func=write_user_goals)
