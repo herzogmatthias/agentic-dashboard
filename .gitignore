@@ -1,0 +1,6 @@
+.env
+__pycache__
+runs
+data
+artifacts
+.vscode
