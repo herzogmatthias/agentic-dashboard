@@ -1,23 +1,18 @@
 """
-Orchestrator tools for sub-agent invocation and coordination.
+Orchestrator tools for sub-agent coordination.
 
 These tools allow the orchestrator agent to:
 - Validate dataset availability
-- Invoke the Data Analysis Agent
-- Invoke the Planner Agent
-- Manage the dashboard building workflow
+- Prepare for Data Analysis Agent delegation  
+- Prepare for Planner Agent delegation
+
+Note: Actual sub-agent invocation happens via ADK's transfer_to_agent mechanism.
+Sub-agents share the same session state and invocation context.
 """
 
-import asyncio
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from google.adk.tools import FunctionTool, ToolContext
-from google.adk.runners import InMemoryRunner
-from google.genai import types as genai_types
-
-from src.agents.data_analysis.agent import create_data_analysis_agent
-from src.agents.planner.agent import create_planner_agent
-from src.core.config import APP_NAME, USER_ID
 
 
 def validate_dataset(
@@ -83,8 +78,7 @@ def validate_dataset(
             }
         
         # Update state with validated dataset path
-        state = tool_context.invocation_context.session.state
-        state["dataset_path"] = str(path)
+        tool_context.state["dataset_path"] = str(path)
         
         return {
             "valid": True,
@@ -100,17 +94,18 @@ def validate_dataset(
         }
 
 
-def invoke_data_analysis_agent(
+def prepare_data_analysis(
     instructions: str,
     tool_context: ToolContext
 ) -> Dict[str, Any]:
     """
-    Invoke the Data Analysis Agent with specific instructions.
+    Prepare to delegate to the Data Analysis Agent.
     
-    This tool creates a new sub-session for the Data Analysis Agent,
-    sends it the provided instructions, and waits for completion.
+    This tool validates prerequisites and stores instructions for the sub-agent.
+    After calling this tool, use transfer_to_agent(agent_name='data_analysis_agent')
+    to actually invoke the agent.
     
-    The agent will:
+    The Data Analysis Agent will:
     - Profile the dataset
     - Clean the data
     - Generate data_profile.md and cleaning_summary.md
@@ -123,96 +118,49 @@ def invoke_data_analysis_agent(
         
     Returns:
         Dictionary with:
-        - success: bool indicating if agent completed successfully
-        - output: Dict containing the structured DataAnalysisOutput
-        - message: str with summary of what happened
+        - ready: bool indicating if ready to transfer
+        - message: str explaining status or next steps
     """
-    try:
-        # Get current state
-        state = tool_context.invocation_context.session.state
-        run_dir = state.get("run_dir")
-        dataset_path = state.get("dataset_path")
-        
-        if not run_dir:
-            return {
-                "success": False,
-                "output": None,
-                "message": "No run_dir in state - orchestrator initialization may have failed"
-            }
-        
-        if not dataset_path:
-            return {
-                "success": False,
-                "output": None,
-                "message": "No dataset_path in state - please validate dataset first"
-            }
-        
-        # Create Data Analysis Agent
-        agent = create_data_analysis_agent()
-        runner = InMemoryRunner(agent=agent, app_name=APP_NAME)
-        
-        # Create a sub-session for the data analysis agent
-        # Note: The sub-agent will inherit run_dir and run_id from state
-        async def run_agent():
-            session = await runner.session_service.create_session(
-                app_name=APP_NAME,
-                user_id=USER_ID,
-                state=state  # Pass current state to sub-agent
-            )
-            
-            # Send instructions to agent
-            user_content = genai_types.Content(
-                role="user",
-                parts=[genai_types.Part(text=instructions)]
-            )
-            
-            final_response = None
-            async for event in runner.run_async(
-                user_id=USER_ID,
-                session_id=session.id,
-                new_message=user_content,
-            ):
-                if event.is_final_response() and event.content:
-                    final_response = event.content
-            
-            # Get the output from session state
-            output = session.state.get("data_analysis_output")
-            
-            return output, final_response
-        
-        # Run the agent
-        output, final_response = asyncio.run(run_agent())
-        
-        if not output:
-            return {
-                "success": False,
-                "output": None,
-                "message": "Data Analysis Agent did not produce structured output"
-            }
-        
-        # Update orchestrator state with the output
-        state["data_analysis_output"] = output
-        
+    # Verify prerequisites
+    state = tool_context.state
+    run_dir = state.get("run_dir")
+    dataset_path = state.get("dataset_path")
+    
+    if not run_dir:
         return {
-            "success": output.get("success", False),
-            "output": output,
-            "message": f"Data Analysis Agent completed. Success: {output.get('success', False)}"
+            "ready": False,
+            "message": "No run_dir in state - orchestrator initialization may have failed"
         }
-        
-    except Exception as e:
+    
+    if not dataset_path:
         return {
-            "success": False,
-            "output": None,
-            "message": f"Error invoking Data Analysis Agent: {str(e)}"
+            "ready": False,
+            "message": "No dataset_path in state - please validate dataset first using validate_dataset tool"
         }
+    
+    # Store the instructions in temp state for the data analysis agent to read
+    state["temp:data_analysis_instructions"] = instructions
+    
+    return {
+        "ready": True,
+        "message": (
+            f"Ready to invoke Data Analysis Agent. "
+            f"Use transfer_to_agent(agent_name='data_analysis_agent') to delegate. "
+            f"The agent will automatically access the dataset at {dataset_path}"
+        )
+    }
 
 
-def invoke_planner_agent(
+def prepare_planner(
     handoff_message: str,
     tool_context: ToolContext
 ) -> Dict[str, Any]:
     """
-    Invoke the Planner Agent with a handoff message containing data context.
+    Prepare to delegate to the Planner Agent.
+    
+    This tool validates prerequisites and stores the handoff message for the sub-agent.
+    After calling this tool, use transfer_to_agent(agent_name='planner_agent')
+    to actually invoke the agent.
     
     The handoff message should include:
     - User goals (goal, audience, use_case, constraints)
@@ -225,85 +173,34 @@ def invoke_planner_agent(
         
     Returns:
         Dictionary with:
-        - success: bool indicating if planner completed successfully
-        - output: Dict containing the structured PlannerOutput
-        - message: str with summary of what happened
+        - ready: bool indicating if ready to transfer
+        - message: str explaining status or next steps
     """
-    try:
-        # Get current state
-        state = tool_context.invocation_context.session.state
-        
-        # Verify data analysis has been completed
-        if "data_analysis_output" not in state:
-            return {
-                "success": False,
-                "output": None,
-                "message": "Data analysis must be completed before planning"
-            }
-        
-        # Create Planner Agent
-        agent = create_planner_agent()
-        runner = InMemoryRunner(agent=agent, app_name=APP_NAME)
-        
-        # Create a sub-session for the planner agent
-        async def run_agent():
-            session = await runner.session_service.create_session(
-                app_name=APP_NAME,
-                user_id=USER_ID,
-                state=state  # Pass current state to sub-agent
-            )
-            
-            # Send handoff message to planner
-            user_content = genai_types.Content(
-                role="user",
-                parts=[genai_types.Part(text=handoff_message)]
-            )
-            
-            final_response = None
-            async for event in runner.run_async(
-                user_id=USER_ID,
-                session_id=session.id,
-                new_message=user_content,
-            ):
-                if event.is_final_response() and event.content:
-                    final_response = event.content
-            
-            # Get the output from session state
-            output = session.state.get("planner_output")
-            
-            return output, final_response
-        
-        # Run the agent
-        output, final_response = asyncio.run(run_agent())
-        
-        if not output:
-            return {
-                "success": False,
-                "output": None,
-                "message": "Planner Agent did not produce structured output"
-            }
-        
-        # Update orchestrator state with the output
-        state["planner_output"] = output
-        
+    # Verify data analysis has been completed
+    state = tool_context.state
+    
+    if "data_analysis_output" not in state:
         return {
-            "success": True,
-            "output": output,
-            "message": "Planner Agent completed successfully"
+            "ready": False,
+            "message": "Data analysis must be completed before planning. Invoke data_analysis_agent first."
         }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "output": None,
-            "message": f"Error invoking Planner Agent: {str(e)}"
-        }
+    
+    # Store the handoff message in temp state for the planner to read
+    state["temp:planner_handoff"] = handoff_message
+    
+    return {
+        "ready": True,
+        "message": (
+            f"Ready to invoke Planner Agent. "
+            f"Use transfer_to_agent(agent_name='planner_agent') to delegate. "
+            f"The handoff message has been stored for the planner to access."
+        )
+    }
 
 
 # Create ADK FunctionTool instances
 validate_dataset_tool = FunctionTool(func=validate_dataset)
 
-invoke_data_analysis_agent_tool = FunctionTool(func=invoke_data_analysis_agent)
+prepare_data_analysis_tool = FunctionTool(func=prepare_data_analysis)
 
-invoke_planner_agent_tool = FunctionTool(func=invoke_planner_agent)
-
+prepare_planner_tool = FunctionTool(func=prepare_planner)

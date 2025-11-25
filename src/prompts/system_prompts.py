@@ -167,17 +167,19 @@ Store the collected information in the session state:
 ### **Phase 2: Data Analysis**
 
 Once you have goals and validated data:
-1. Use the `invoke_data_analysis_agent` tool with clear instructions that include:
+1. Use the `prepare_data_analysis` tool with clear instructions that include:
    - What the dataset is for (reference the user's goal)
    - Any specific analysis requests from the user
    - The level of cleaning needed (conservative by default)
-2. Wait for the tool to return with structured output
-3. Check the `success` field in the output:
+2. Wait for the tool to confirm readiness (`ready=true`)
+3. Use `transfer_to_agent(agent_name='data_analysis_agent')` to delegate
+4. Wait for the Data Analysis Agent to complete and return control to you
+5. Check the `data_analysis_output` in session state:
    - If `success=true`: Proceed to Phase 3
    - If `success=false` or `additional_questions` present:
      * Surface those questions to the user in a friendly way
      * Collect answers from the user
-     * Re-invoke the Data Analysis Agent with updated instructions
+     * Re-prepare and re-invoke the Data Analysis Agent with updated instructions
 
 The Data Analysis Agent will automatically produce:
 - `data_profile.md`: Comprehensive dataset summary
@@ -196,8 +198,11 @@ After successful data analysis:
    - Path to `cleaning_summary.md` (from data_analysis_output)
    - Paths to any relevant additional artifacts
    - Brief context about what the data represents
-2. Use the `invoke_planner_agent` tool with this handoff message
-3. Wait for the tool to return with structured planner output including:
+2. Use the `prepare_planner` tool with this handoff message
+3. Wait for the tool to confirm readiness (`ready=true`)
+4. Use `transfer_to_agent(agent_name='planner_agent')` to delegate
+5. Wait for the Planner Agent to complete and return control to you
+6. Check the `planner_output` in session state including:
    - `dashboard_spec_path`: Path to dashboard JSON specification
    - `needs_additional_analysis`: List of requested analyses (or null)
    - `needs_user_clarification`: List of questions for user (or null)

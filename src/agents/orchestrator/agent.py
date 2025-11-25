@@ -37,9 +37,11 @@ from src.prompts.system_prompts import build_orchestrator_agent_prompt
 from src.core.state import _bootstrap_run_directory
 from src.tools.orchestrator import (
     validate_dataset_tool,
-    invoke_data_analysis_agent_tool,
-    invoke_planner_agent_tool,
+    prepare_data_analysis_tool,
+    prepare_planner_tool,
 )
+from src.agents.data_analysis.agent import create_data_analysis_agent
+from src.agents.planner.agent import create_planner_agent
 
 
 # State keys used by the orchestrator
@@ -78,14 +80,22 @@ def create_orchestrator_agent() -> LlmAgent:
     """
     model = LiteLlm(model="gpt-4o-mini")
 
+    # Create sub-agents that will be delegated to
+    data_analysis_agent = create_data_analysis_agent()
+    planner_agent = create_planner_agent()
+    
     agent = LlmAgent(
         name="orchestrator_agent",
         model=model,
         instruction=build_orchestrator_agent_prompt(),
         tools=[
             validate_dataset_tool,
-            invoke_data_analysis_agent_tool,
-            invoke_planner_agent_tool,
+            prepare_data_analysis_tool,
+            prepare_planner_tool,
+        ],
+        sub_agents=[
+            data_analysis_agent,
+            planner_agent,
         ],
         before_agent_callback=initialize_orchestrator_state,
         after_agent_callback=finalize_orchestrator_response,
