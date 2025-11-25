@@ -2,6 +2,7 @@ from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from phoenix.otel import register as register_phoenix
 
+from src.models.planner_output import PlannerOutput
 from src.prompts.system_prompts import build_planner_agent_prompt
 from src.tools.planner import create_dashboard_tool
 from src.tools.filesystem import (
@@ -9,6 +10,8 @@ from src.tools.filesystem import (
     inspect_json_value_tool,
     read_snippet_tool,
 )
+
+OUTPUT_KEY = "planner_output"
 
 
 tracer_provider = register_phoenix(
@@ -30,6 +33,8 @@ def create_planner_agent() -> LlmAgent:
             inspect_json_value_tool,
             read_snippet_tool,
         ],
+        output_key=OUTPUT_KEY,
+        output_schema=PlannerOutput,
         description="Designs dashboard concepts based on data analysis artifacts.",
     )
 

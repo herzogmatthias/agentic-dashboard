@@ -68,20 +68,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.6 Adjust `copy_data_analysis_artifacts_after_agent` (or equivalent post-callback) so that it copies required and important artifacts into the local run directory and updates `additional_artifacts_path` with local-relative paths.
   - [x] 3.7 Ensure planner-related tools that currently assume remote/sandbox paths can accept local paths, reusing Data Analysis tools where appropriate with small adjustments.
 
-- [ ] 4.0 Implement planner integration, structured outputs, and dashboard spec persistence
+- [x] 4.0 Implement planner integration, structured outputs, and dashboard spec persistence
 
-  - [ ] 4.1 Design and create a `PlannerOutput` Pydantic model in `src/models/planner_output.py` that matches the PRD schema (`dashboard_spec_path`, `needs_additional_analysis`, `needs_user_clarification`, `meta`).
-  - [ ] 4.2 Update the Planner Agent (e.g., `src/agents/planner/agent.py`) to produce structured output conforming to `PlannerOutput`, ensuring it always returns a valid JSON payload.
-  - [ ] 4.3 Implement the orchestrator’s logic to construct the Planner handoff message:
+  - [x] 4.1 Design and create a `PlannerOutput` Pydantic model in `src/models/planner_output.py` that matches the PRD schema (`dashboard_spec_path`, `needs_additional_analysis`, `needs_user_clarification`, `meta`).
+  - [x] 4.2 Update the Planner Agent (e.g., `src/agents/planner/agent.py`) to produce structured output conforming to `PlannerOutput`, ensuring it always returns a valid JSON payload.
+  - [x] 4.3 Implement the orchestrator's logic to construct the Planner handoff message:
     - Include goal, audience, primary use case, and constraints.
     - Include paths to `data_profile.md` and `cleaning_summary.md`.
     - Include paths or a JSON summary for relevant additional artifacts/metrics.
-  - [ ] 4.4 Integrate `create_dashboard_tool` (in `src/tools/planner.py`) or similar to persist the dashboard spec JSON under the current run directory and capture the resulting `dashboard_spec_path`.
-  - [ ] 4.5 Implement orchestrator handling of `needs_additional_analysis`:
+  - [x] 4.4 Integrate `create_dashboard_tool` (in `src/tools/planner.py`) or similar to persist the dashboard spec JSON under the current run directory and capture the resulting `dashboard_spec_path`.
+  - [x] 4.5 Implement orchestrator handling of `needs_additional_analysis`:
     - For v1, decide whether to re-invoke the Data Analysis Agent or expose these as “next steps” to the user, and implement that behavior.
-  - [ ] 4.6 Implement orchestrator handling of `needs_user_clarification`:
+  - [x] 4.6 Implement orchestrator handling of `needs_user_clarification`:
     - Surface questions to the user, collect answers, and either re-invoke the Planner or present unresolved questions in the final summary (per the chosen v1 strategy).
-  - [ ] 4.7 Implement the final user-facing summary that combines planner `meta`, key insights from data profiling/cleaning, and any next steps or open questions.
+  - [x] 4.7 Implement the final user-facing summary that combines planner `meta`, key insights from data profiling/cleaning, and any next steps or open questions.
 
 - [ ] 5.0 Implement execution limits, timeouts, retries, and error surfacing
 
