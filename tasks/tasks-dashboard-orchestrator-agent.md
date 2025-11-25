@@ -83,13 +83,13 @@ Update the file after completing each sub-task, not just after completing an ent
     - Surface questions to the user, collect answers, and either re-invoke the Planner or present unresolved questions in the final summary (per the chosen v1 strategy).
   - [x] 4.7 Implement the final user-facing summary that combines planner `meta`, key insights from data profiling/cleaning, and any next steps or open questions.
 
-- [ ] 5.0 Implement execution limits, timeouts, retries, and error surfacing
+- [x] 5.0 Implement execution limits, timeouts, retries, and error surfacing
 
-  - [ ] 5.1 Configure a maximum number of tool/function calls per agent (target ~15) using the mechanisms provided by Google ADK or wrapper logic in the orchestrator.
-  - [ ] 5.2 Implement timeouts (5–10 minutes) for critical agent invocations (data analysis, planner) and ensure long-running operations are cancelled or marked as timed out.
-  - [ ] 5.3 Implement retry logic with at most 2 retries for recoverable failures (e.g., transient I/O issues) and make the retry conditions explicit in the code.
-  - [ ] 5.4 Ensure that, after exhausting retries or on non-recoverable errors, the orchestrator surfaces clear, user-friendly error messages that describe what failed and suggest next steps.
-  - [ ] 5.5 Add logging and/or tracing around timeouts and retries so that failures can be debugged from logs or Phoenix traces.
+  - [x] 5.1 Configure a maximum number of tool/function calls per agent (target ~15) using the mechanisms provided by Google ADK or wrapper logic in the orchestrator.
+  - [x] 5.2 Implement timeouts (5–10 minutes) for critical agent invocations (data analysis, planner) and ensure long-running operations are cancelled or marked as timed out.
+  - [x] 5.3 Implement retry logic with at most 2 retries for recoverable failures (e.g., transient I/O issues) and make the retry conditions explicit in the code.
+  - [x] 5.4 Ensure that, after exhausting retries or on non-recoverable errors, the orchestrator surfaces clear, user-friendly error messages that describe what failed and suggest next steps.
+  - [x] 5.5 Add logging and/or tracing around timeouts and retries so that failures can be debugged from logs or Phoenix traces.
 
 - [ ] 6.0 Add tests, tracing, and wire orchestrator as the root agent in the ADK chat UI
   - [ ] 6.1 Add unit tests for the orchestrator’s control flow, mocking the Data Analysis Agent and Planner Agent to verify correct routing and state updates.
@@ -97,4 +97,3 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 6.3 Add tests for the Planner integration, verifying that `PlannerOutput` is correctly produced and parsed, and that `dashboard_spec_path` points to an existing file.
   - [ ] 6.4 Verify that Phoenix tracing (or equivalent) is correctly capturing orchestrator, data analysis, and planner events for end-to-end runs.
   - [ ] 6.5 Ensure `src/agent.py` exposes the orchestrator `root_agent` and that the Google ADK simple chat UI can be launched and used to run the full flow.
-  - [ ] 6.6 Document how to run the orchestrator via the chat UI and, if applicable, via a future Flask API/Next.js UI (even if the latter is out of scope for implementation, note expected integration points).
