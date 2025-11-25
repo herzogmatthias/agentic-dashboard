@@ -4,6 +4,11 @@ from phoenix.otel import register as register_phoenix
 
 from src.prompts.system_prompts import build_planner_agent_prompt
 from src.tools.planner import create_dashboard_tool
+from src.tools.filesystem import (
+    inspect_json_keys_tool,
+    inspect_json_value_tool,
+    read_snippet_tool,
+)
 
 
 tracer_provider = register_phoenix(
@@ -20,9 +25,12 @@ def create_planner_agent() -> LlmAgent:
         model=model,
         instruction=build_planner_agent_prompt(),
         tools=[
-            create_dashboard_tool
+            create_dashboard_tool,
+            inspect_json_keys_tool,
+            inspect_json_value_tool,
+            read_snippet_tool,
         ],
-        description="Profiles, cleans, and exports dataset artifacts using a Daytona sandbox.",
+        description="Designs dashboard concepts based on data analysis artifacts.",
     )
 
     return agent

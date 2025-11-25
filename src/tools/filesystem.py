@@ -48,14 +48,28 @@ def run_python(code: str, timeout_seconds: int = 180) -> Dict[str, Any]:
 
 def read_snippet(file_path: str, from_line: int, to_line: int) -> str:
     """
-    Read a specific line range from a file inside the Daytona sandbox.
+    Read a specific line range from a file.
+    
+    Automatically detects if path is local (contains Windows/Unix absolute paths)
+    or sandbox-relative (starts with 'workspace/').
+    
     Useful for retrieving details from large saved logs without loading the entire file.
     """
-    sandbox = DaytonaSandboxSingleton().get_sandbox()
-    try:
-         data = sandbox.fs.download_file(file_path)
-    except Exception as exc:  # type: ignore[assignment]
-        raise RuntimeError(f"Failed to read {file_path}: {exc}") from exc
+    # Check if path is local absolute path
+    local_path = Path(file_path)
+    if local_path.is_absolute() and local_path.exists():
+        # Read from local filesystem
+        try:
+            data = local_path.read_bytes()
+        except Exception as exc:
+            raise RuntimeError(f"Failed to read local file {file_path}: {exc}") from exc
+    else:
+        # Read from sandbox
+        sandbox = DaytonaSandboxSingleton().get_sandbox()
+        try:
+            data = sandbox.fs.download_file(file_path)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to read sandbox file {file_path}: {exc}") from exc
 
     lines = data.decode(errors="replace").splitlines()
     snippet = lines[from_line - 1 : to_line]
@@ -125,13 +139,46 @@ def write_cleaning_summary(
     path.write_text(markdown, encoding="utf-8")
     return str(path.resolve())
 
+
+def write_metrics_summary(
+    markdown: str,
+    tool_context: ToolContext,
+    filename: str = "metrics_summary.md",
+) -> str:
+    """
+    Save a metrics summary markdown file to the host run directory's cleaned/ folder.
+    This is for additional analysis artifacts (regressions, correlations, key metrics)
+    that aren't directly in cleaned.csv.
+    
+    Requires `run_dir` to be present in session state.
+    
+    Args:
+        markdown: Markdown content describing key metrics and analysis results
+        tool_context: Tool context with session state
+        filename: Name of the file (default: metrics_summary.md)
+    
+    Returns:
+        Absolute path to the written file
+    """
+    if tool_context is None or "run_dir" not in tool_context.state:
+        raise RuntimeError("Session state missing 'run_dir'; cannot write metrics summary.")
+
+    base_dir = Path(tool_context.state["run_dir"]) / "cleaned"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    path = base_dir / filename
+    path.write_text(markdown, encoding="utf-8")
+    return str(path.resolve())
+
 def inspect_json_keys(
     file_path: str,
     max_depth: int = 2,
     max_keys: int = 50
 ) -> Dict[str, Any]:
     """
-    Return flattened JSON key paths from a file in the Daytona sandbox.
+    Return flattened JSON key paths from a file.
+    
+    Automatically detects if path is local (contains Windows/Unix absolute paths)
+    or sandbox-relative (starts with 'workspace/').
 
     - Extracts only key names, never values.
     - Traverses objects and arrays up to `max_depth`.
@@ -139,13 +186,21 @@ def inspect_json_keys(
     - Output format: {"structure": ["a", "a.b", "a.b.c", ...]}
 
     """
-
-    sandbox = DaytonaSandboxSingleton().get_sandbox()
-
-    try:
-        data_bytes = sandbox.fs.download_file(file_path)
-    except Exception as exc:
-        raise RuntimeError(f"Failed to read {file_path}: {exc}") from exc
+    # Check if path is local absolute path
+    local_path = Path(file_path)
+    if local_path.is_absolute() and local_path.exists():
+        # Read from local filesystem
+        try:
+            data_bytes = local_path.read_bytes()
+        except Exception as exc:
+            raise RuntimeError(f"Failed to read local file {file_path}: {exc}") from exc
+    else:
+        # Read from sandbox
+        sandbox = DaytonaSandboxSingleton().get_sandbox()
+        try:
+            data_bytes = sandbox.fs.download_file(file_path)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to read sandbox file {file_path}: {exc}") from exc
 
     try:
         json_data = json.loads(data_bytes.decode("utf-8", errors="replace"))
@@ -189,6 +244,9 @@ def inspect_json_value(
 ) -> Dict[str, Any]:
     """
     Retrieve a JSON value at the given flattened key path.
+    
+    Automatically detects if path is local (contains Windows/Unix absolute paths)
+    or sandbox-relative (starts with 'workspace/').
 
     - Path format should match inspect_json_keys() output.
     - Dot notation for nested fields (e.g. "a.b.c").
@@ -200,15 +258,23 @@ def inspect_json_value(
         * "[:20]"          -> slice on top-level array
     - Returns a minified JSON/string preview, truncated by max_preview chars.
     """
-
-    sandbox = DaytonaSandboxSingleton().get_sandbox()
-
-    # Load JSON file
-    try:
-        data_bytes = sandbox.fs.download_file(file_path)
-        json_data = json.loads(data_bytes.decode("utf-8", errors="replace"))
-    except Exception as exc:
-        raise RuntimeError(f"Failed to load JSON: {exc}") from exc
+    # Check if path is local absolute path
+    local_path = Path(file_path)
+    if local_path.is_absolute() and local_path.exists():
+        # Read from local filesystem
+        try:
+            data_bytes = local_path.read_bytes()
+            json_data = json.loads(data_bytes.decode("utf-8", errors="replace"))
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load local JSON {file_path}: {exc}") from exc
+    else:
+        # Read from sandbox
+        sandbox = DaytonaSandboxSingleton().get_sandbox()
+        try:
+            data_bytes = sandbox.fs.download_file(file_path)
+            json_data = json.loads(data_bytes.decode("utf-8", errors="replace"))
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load sandbox JSON: {exc}") from exc
 
     parts = key_path.split(".")
     current: Any = json_data
@@ -323,5 +389,6 @@ inspect_directory_tool = FunctionTool(func=inspect_directory)
 read_snippet_tool = FunctionTool(func=read_snippet)
 write_data_profile_tool = FunctionTool(func=write_data_profile)
 write_cleaning_summary_tool = FunctionTool(func=write_cleaning_summary)
+write_metrics_summary_tool = FunctionTool(func=write_metrics_summary)
 inspect_json_keys_tool = FunctionTool(func=inspect_json_keys)
 inspect_json_value_tool = FunctionTool(func=inspect_json_value)

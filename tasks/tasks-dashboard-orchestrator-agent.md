@@ -56,17 +56,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.5 Ensure each agent (orchestrator, Data Analysis Agent, Planner) retains its own conversation history, using ADK's session/branching mechanisms to avoid mixing transcripts.
   - [x] 2.6 When delegating to sub-agents, implement the orchestrator as the effective "user" of those agents, sending concise, context-rich prompts instead of the full orchestrator history.
 
-- [ ] 3.0 Implement artifact management, metrics summary tooling, and sandbox-to-local path mapping
+- [x] 3.0 Implement artifact management, metrics summary tooling, and sandbox-to-local path mapping
 
-  - [ ] 3.1 Review current artifact copying logic in `src/agents/data_analysis/agent.py` and `src/core/daytona_client.py` to understand how files move from sandbox to local.
-  - [ ] 3.2 Implement a path-mapping utility (in `src/tools/filesystem.py` or similar) that maps sandbox-relative paths in `additional_artifacts_path` to local run-directory paths.
-  - [ ] 3.3 Define and document conventions for “important” artifacts:
+  - [x] 3.1 Review current artifact copying logic in `src/agents/data_analysis/agent.py` and `src/core/daytona_client.py` to understand how files move from sandbox to local.
+  - [x] 3.2 Implement a path-mapping utility (in `src/tools/filesystem.py` or similar) that maps sandbox-relative paths in `additional_artifacts_path` to local run-directory paths.
+  - [x] 3.3 Define and document conventions for "important" artifacts:
     - Required: `data_profile.md`, `cleaning_summary.md`.
     - Optional: additional metrics/summary artifacts under a well-defined folder (e.g., `artifacts/data_analysis/important/` or inside the `cleaned` folder).
-  - [ ] 3.4 Implement a new filesystem/tool function that the Data Analysis Agent can use to write a summarized metrics artifact (e.g., `write_metrics_summary_tool`) in the agreed location.
-  - [ ] 3.5 Update the Data Analysis Agent to use the new metrics summary tool when it computes additional metrics, ensuring metrics not present in `cleaned.csv` are also written under the `cleaned` (or equivalent) folder.
-  - [ ] 3.6 Adjust `copy_data_analysis_artifacts_after_agent` (or equivalent post-callback) so that it copies required and important artifacts into the local run directory and updates `additional_artifacts_path` with local-relative paths.
-  - [ ] 3.7 Ensure planner-related tools that currently assume remote/sandbox paths can accept local paths, reusing Data Analysis tools where appropriate with small adjustments.
+  - [x] 3.4 Implement a new filesystem/tool function that the Data Analysis Agent can use to write a summarized metrics artifact (e.g., `write_metrics_summary_tool`) in the agreed location.
+  - [x] 3.5 Update the Data Analysis Agent to use the new metrics summary tool when it computes additional metrics, ensuring metrics not present in `cleaned.csv` are also written under the `cleaned` (or equivalent) folder.
+  - [x] 3.6 Adjust `copy_data_analysis_artifacts_after_agent` (or equivalent post-callback) so that it copies required and important artifacts into the local run directory and updates `additional_artifacts_path` with local-relative paths.
+  - [x] 3.7 Ensure planner-related tools that currently assume remote/sandbox paths can accept local paths, reusing Data Analysis tools where appropriate with small adjustments.
 
 - [ ] 4.0 Implement planner integration, structured outputs, and dashboard spec persistence
 

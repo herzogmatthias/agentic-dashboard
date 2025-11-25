@@ -30,7 +30,6 @@ def validate_dataset(
     
     Args:
         dataset_path: Path to the dataset file to validate
-        tool_context: ADK tool context with session state
         
     Returns:
         Dictionary with validation results:
@@ -114,7 +113,6 @@ def prepare_data_analysis(
     Args:
         instructions: Detailed instructions for the Data Analysis Agent.
                      Should include context about what analysis is needed.
-        tool_context: ADK tool context with session state
         
     Returns:
         Dictionary with:
@@ -169,7 +167,6 @@ def prepare_planner(
     
     Args:
         handoff_message: Complete handoff message for the Planner Agent
-        tool_context: ADK tool context with session state
         
     Returns:
         Dictionary with:

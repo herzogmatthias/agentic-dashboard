@@ -17,6 +17,7 @@ from src.tools.filesystem import (
     run_python_tool,
     write_cleaning_summary_tool,
     write_data_profile_tool,
+    write_metrics_summary_tool,
 )
 
 OUTPUT_KEY = "data_analysis_output"
@@ -40,6 +41,7 @@ def create_data_analysis_agent() -> LlmAgent:
             read_snippet_tool,
             write_data_profile_tool,
             write_cleaning_summary_tool,
+            write_metrics_summary_tool,
             inspect_json_keys_tool,
             inspect_json_value_tool
         ],
