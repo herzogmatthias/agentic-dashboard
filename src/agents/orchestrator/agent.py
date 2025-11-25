@@ -34,6 +34,12 @@ from google.genai import types
 from phoenix.otel import register as register_phoenix
 
 from src.prompts.system_prompts import build_orchestrator_agent_prompt
+from src.core.state import _bootstrap_run_directory
+from src.tools.orchestrator import (
+    validate_dataset_tool,
+    invoke_data_analysis_agent_tool,
+    invoke_planner_agent_tool,
+)
 
 
 # State keys used by the orchestrator
@@ -77,10 +83,9 @@ def create_orchestrator_agent() -> LlmAgent:
         model=model,
         instruction=build_orchestrator_agent_prompt(),
         tools=[
-            # Tools will be added in subsequent tasks:
-            # - invoke_data_analysis_tool
-            # - invoke_planner_tool
-            # - validate_dataset_tool
+            validate_dataset_tool,
+            invoke_data_analysis_agent_tool,
+            invoke_planner_agent_tool,
         ],
         before_agent_callback=initialize_orchestrator_state,
         after_agent_callback=finalize_orchestrator_response,
@@ -100,7 +105,8 @@ def initialize_orchestrator_state(
     """
     Initialize orchestrator state before the agent runs.
     
-    Ensures required state keys are present and sets defaults if needed.
+    This is the single point of state initialization for the entire system.
+    Creates run_id and run_dir if they don't exist, and sets up all required state keys.
     This callback runs before each agent invocation.
     
     Args:
@@ -110,6 +116,16 @@ def initialize_orchestrator_state(
         Optional content to inject (None means no injection)
     """
     state = callback_context.state
+    
+    # Initialize run_id and run_dir if not already present
+    # This is the SINGLE SOURCE OF TRUTH for run initialization
+    if STATE_KEY_RUN_ID not in state or STATE_KEY_RUN_DIR not in state:
+        run_id, run_dir = _bootstrap_run_directory()
+        state[STATE_KEY_RUN_ID] = run_id
+        state[STATE_KEY_RUN_DIR] = str(run_dir)
+        print(f"[Orchestrator] Created new run: {run_id} at {run_dir}")
+    else:
+        print(f"[Orchestrator] Using existing run: {state.get(STATE_KEY_RUN_ID)}")
     
     # Initialize user_goals if not present
     if STATE_KEY_USER_GOALS not in state:
@@ -123,9 +139,6 @@ def initialize_orchestrator_state(
     # Ensure dataset_path is initialized
     if STATE_KEY_DATASET_PATH not in state:
         state[STATE_KEY_DATASET_PATH] = None
-    
-    # Log current state for debugging
-    print(f"[Orchestrator] Initialized state - Run ID: {state.get(STATE_KEY_RUN_ID)}")
     
     return None
 

@@ -151,44 +151,60 @@ Start by collecting the following from the user:
 - **Primary Use Case**: Main purpose (e.g., "monitoring", "exploration", "reporting")
 - **Constraints**: Any limitations or requirements (e.g., "single page", "max 5 visuals", "focus on time trends")
 
-Then confirm:
-- The user has uploaded a dataset (CSV, Parquet, etc.)
-- You have the path to this dataset
+Then confirm the dataset:
+- Ask the user for the path to their uploaded dataset
+- Use the `validate_dataset` tool to verify the file exists and is accessible
+- The tool will check file format, size, and readability
 
 **Do not proceed** to Phase 2 until you have:
-- Complete goal information
-- Valid dataset path
+- Complete goal information (all fields populated)
+- Valid dataset path (validated successfully)
+
+Store the collected information in the session state:
+- Update `user_goals` with goal, audience, use_case, and constraints
+- The `validate_dataset` tool will automatically store the dataset_path
 
 ### **Phase 2: Data Analysis**
 
-Once you have goals and data:
-1. Invoke the **Data Analysis Agent** (use appropriate tool when available)
-2. Wait for the agent to return structured output with `success=true`
-3. If `success=false` or `additional_questions` are present:
-   - Surface those questions to the user
-   - Collect answers
-   - Re-invoke Data Analysis Agent if needed
+Once you have goals and validated data:
+1. Use the `invoke_data_analysis_agent` tool with clear instructions that include:
+   - What the dataset is for (reference the user's goal)
+   - Any specific analysis requests from the user
+   - The level of cleaning needed (conservative by default)
+2. Wait for the tool to return with structured output
+3. Check the `success` field in the output:
+   - If `success=true`: Proceed to Phase 3
+   - If `success=false` or `additional_questions` present:
+     * Surface those questions to the user in a friendly way
+     * Collect answers from the user
+     * Re-invoke the Data Analysis Agent with updated instructions
 
-The Data Analysis Agent will provide:
+The Data Analysis Agent will automatically produce:
 - `data_profile.md`: Comprehensive dataset summary
 - `cleaning_summary.md`: Documentation of cleaning steps
 - `cleaned.csv`: Cleaned dataset
 - Optional: Additional analysis artifacts (metrics, segments, correlations)
 
+These artifacts are stored in the run directory and tracked in session state.
+
 ### **Phase 3: Dashboard Planning**
 
 After successful data analysis:
-1. Construct a handoff message for the Planner Agent including:
-   - User goals (goal, audience, use_case, constraints)
-   - Path to `data_profile.md`
-   - Path to `cleaning_summary.md`
-   - Paths to relevant additional artifacts
-2. Invoke the **Planner Agent** (use appropriate tool when available)
-3. Wait for structured planner output including:
+1. Construct a comprehensive handoff message for the Planner that includes:
+   - User goals: goal, audience, use_case, constraints
+   - Path to `data_profile.md` (from data_analysis_output)
+   - Path to `cleaning_summary.md` (from data_analysis_output)
+   - Paths to any relevant additional artifacts
+   - Brief context about what the data represents
+2. Use the `invoke_planner_agent` tool with this handoff message
+3. Wait for the tool to return with structured planner output including:
    - `dashboard_spec_path`: Path to dashboard JSON specification
    - `needs_additional_analysis`: List of requested analyses (or null)
    - `needs_user_clarification`: List of questions for user (or null)
    - `meta`: Dashboard metadata (goal, segments, visual count, etc.)
+
+Important: The handoff message should be complete and self-contained.
+The Planner Agent will not have access to your conversation history.
 
 ### **Phase 4: Follow-ups & Finalization**
 

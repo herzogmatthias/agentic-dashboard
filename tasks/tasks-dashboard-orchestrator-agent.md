@@ -33,9 +33,11 @@ Update the file after completing each sub-task, not just after completing an ent
 ## Tasks
 
 - [x] 0.0 Create feature branch
+
   - [x] 0.1 Create and checkout a new branch for this feature (e.g., `git checkout -b feature/dashboard-orchestrator-agent`)
 
 - [x] 1.0 Define orchestrator architecture and ADK multi-agent setup
+
   - [x] 1.1 Review `tasks/prd-dashboard-orchestrator-agent.md` and highlight key flows (user → data_analysis → planner → summary).
   - [x] 1.2 Review Google ADK multi-agent documentation, focusing on `LlmAgent`, `SequentialAgent`, and sub-agent hierarchies.
   - [x] 1.3 Decide on the orchestrator implementation pattern (single `LlmAgent` with tools vs. `SequentialAgent` pipeline) and document the choice in the code (docstring or comment).
@@ -43,17 +45,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.5 Create `agentic-dashboard/src/agents/orchestrator/agent.py` with a stub orchestrator agent that can be instantiated but does not yet call sub-agents.
   - [x] 1.6 Update `agentic-dashboard/src/agent.py` so `root_agent` points to the new orchestrator agent (while keeping the old data analysis entry available if useful for debugging).
 
-- [ ] 2.0 Implement orchestrator prompts, message routing, and per-agent conversation histories
-  - [ ] 2.1 Define or update system prompts for the orchestrator in `src/prompts/system_prompts.py` to clearly describe its role as coordinator and mediator.
-  - [ ] 2.2 Implement the orchestrator’s initial interaction logic to collect goal description, audience, primary use case, and constraints from the user.
-  - [ ] 2.3 Implement logic to confirm that the user has uploaded valid data (e.g., dataset path), and block progression until this requirement is met.
-  - [ ] 2.4 Implement message routing so that:
+- [x] 2.0 Implement orchestrator prompts, message routing, and per-agent conversation histories
+
+  - [x] 2.1 Define or update system prompts for the orchestrator in `src/prompts/system_prompts.py` to clearly describe its role as coordinator and mediator.
+  - [x] 2.2 Implement the orchestrator's initial interaction logic to collect goal description, audience, primary use case, and constraints from the user.
+  - [x] 2.3 Implement logic to confirm that the user has uploaded valid data (e.g., dataset path), and block progression until this requirement is met.
+  - [x] 2.4 Implement message routing so that:
     - User-facing questions and summaries are surfaced only to the user.
     - Agent-facing instructions (for Data Analysis Agent and Planner) are constructed by the orchestrator and sent only to the relevant sub-agent.
-  - [ ] 2.5 Ensure each agent (orchestrator, Data Analysis Agent, Planner) retains its own conversation history, using ADK’s session/branching mechanisms to avoid mixing transcripts.
-  - [ ] 2.6 When delegating to sub-agents, implement the orchestrator as the effective “user” of those agents, sending concise, context-rich prompts instead of the full orchestrator history.
+  - [x] 2.5 Ensure each agent (orchestrator, Data Analysis Agent, Planner) retains its own conversation history, using ADK's session/branching mechanisms to avoid mixing transcripts.
+  - [x] 2.6 When delegating to sub-agents, implement the orchestrator as the effective "user" of those agents, sending concise, context-rich prompts instead of the full orchestrator history.
 
 - [ ] 3.0 Implement artifact management, metrics summary tooling, and sandbox-to-local path mapping
+
   - [ ] 3.1 Review current artifact copying logic in `src/agents/data_analysis/agent.py` and `src/core/daytona_client.py` to understand how files move from sandbox to local.
   - [ ] 3.2 Implement a path-mapping utility (in `src/tools/filesystem.py` or similar) that maps sandbox-relative paths in `additional_artifacts_path` to local run-directory paths.
   - [ ] 3.3 Define and document conventions for “important” artifacts:
@@ -65,6 +69,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 3.7 Ensure planner-related tools that currently assume remote/sandbox paths can accept local paths, reusing Data Analysis tools where appropriate with small adjustments.
 
 - [ ] 4.0 Implement planner integration, structured outputs, and dashboard spec persistence
+
   - [ ] 4.1 Design and create a `PlannerOutput` Pydantic model in `src/models/planner_output.py` that matches the PRD schema (`dashboard_spec_path`, `needs_additional_analysis`, `needs_user_clarification`, `meta`).
   - [ ] 4.2 Update the Planner Agent (e.g., `src/agents/planner/agent.py`) to produce structured output conforming to `PlannerOutput`, ensuring it always returns a valid JSON payload.
   - [ ] 4.3 Implement the orchestrator’s logic to construct the Planner handoff message:
@@ -79,6 +84,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 4.7 Implement the final user-facing summary that combines planner `meta`, key insights from data profiling/cleaning, and any next steps or open questions.
 
 - [ ] 5.0 Implement execution limits, timeouts, retries, and error surfacing
+
   - [ ] 5.1 Configure a maximum number of tool/function calls per agent (target ~15) using the mechanisms provided by Google ADK or wrapper logic in the orchestrator.
   - [ ] 5.2 Implement timeouts (5–10 minutes) for critical agent invocations (data analysis, planner) and ensure long-running operations are cancelled or marked as timed out.
   - [ ] 5.3 Implement retry logic with at most 2 retries for recoverable failures (e.g., transient I/O issues) and make the retry conditions explicit in the code.
@@ -92,4 +98,3 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 6.4 Verify that Phoenix tracing (or equivalent) is correctly capturing orchestrator, data analysis, and planner events for end-to-end runs.
   - [ ] 6.5 Ensure `src/agent.py` exposes the orchestrator `root_agent` and that the Google ADK simple chat UI can be launched and used to run the full flow.
   - [ ] 6.6 Document how to run the orchestrator via the chat UI and, if applicable, via a future Flask API/Next.js UI (even if the latter is out of scope for implementation, note expected integration points).
-

@@ -6,7 +6,6 @@ from phoenix.otel import register as register_phoenix
 from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 import json
-from src.agents.utils.initial_state_callback import initial_state
 from src.core.daytona_client import DaytonaSandboxSingleton
 from src.models.data_analysis_agent_output import DataAnalysisOutput
 from src.prompts.system_prompts import build_analysis_agent_prompt
@@ -44,7 +43,6 @@ def create_data_analysis_agent() -> LlmAgent:
             inspect_json_keys_tool,
             inspect_json_value_tool
         ],
-        before_agent_callback=initial_state,
         after_agent_callback=copy_data_analysis_artifacts_after_agent,
         output_key=OUTPUT_KEY,
         output_schema=DataAnalysisOutput,
