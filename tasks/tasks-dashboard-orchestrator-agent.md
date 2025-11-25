@@ -32,16 +32,16 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout a new branch for this feature (e.g., `git checkout -b feature/dashboard-orchestrator-agent`)
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout a new branch for this feature (e.g., `git checkout -b feature/dashboard-orchestrator-agent`)
 
-- [ ] 1.0 Define orchestrator architecture and ADK multi-agent setup
-  - [ ] 1.1 Review `tasks/prd-dashboard-orchestrator-agent.md` and highlight key flows (user → data_analysis → planner → summary).
-  - [ ] 1.2 Review Google ADK multi-agent documentation, focusing on `LlmAgent`, `SequentialAgent`, and sub-agent hierarchies.
-  - [ ] 1.3 Decide on the orchestrator implementation pattern (single `LlmAgent` with tools vs. `SequentialAgent` pipeline) and document the choice in the code (docstring or comment).
-  - [ ] 1.4 Design the agent tree and shared state keys (e.g., `run_dir`, `data_analysis_output`, `planner_output`) to be used across orchestrator, Data Analysis Agent, and Planner.
-  - [ ] 1.5 Create `agentic-dashboard/src/agents/orchestrator/agent.py` with a stub orchestrator agent that can be instantiated but does not yet call sub-agents.
-  - [ ] 1.6 Update `agentic-dashboard/src/agent.py` so `root_agent` points to the new orchestrator agent (while keeping the old data analysis entry available if useful for debugging).
+- [x] 1.0 Define orchestrator architecture and ADK multi-agent setup
+  - [x] 1.1 Review `tasks/prd-dashboard-orchestrator-agent.md` and highlight key flows (user → data_analysis → planner → summary).
+  - [x] 1.2 Review Google ADK multi-agent documentation, focusing on `LlmAgent`, `SequentialAgent`, and sub-agent hierarchies.
+  - [x] 1.3 Decide on the orchestrator implementation pattern (single `LlmAgent` with tools vs. `SequentialAgent` pipeline) and document the choice in the code (docstring or comment).
+  - [x] 1.4 Design the agent tree and shared state keys (e.g., `run_dir`, `data_analysis_output`, `planner_output`) to be used across orchestrator, Data Analysis Agent, and Planner.
+  - [x] 1.5 Create `agentic-dashboard/src/agents/orchestrator/agent.py` with a stub orchestrator agent that can be instantiated but does not yet call sub-agents.
+  - [x] 1.6 Update `agentic-dashboard/src/agent.py` so `root_agent` points to the new orchestrator agent (while keeping the old data analysis entry available if useful for debugging).
 
 - [ ] 2.0 Implement orchestrator prompts, message routing, and per-agent conversation histories
   - [ ] 2.1 Define or update system prompts for the orchestrator in `src/prompts/system_prompts.py` to clearly describe its role as coordinator and mediator.
