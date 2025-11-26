@@ -7,6 +7,7 @@ from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 import json
 from src.core.daytona_client import DaytonaSandboxSingleton
+from src.core.logging import get_logger
 from src.models.data_analysis_agent_output import DataAnalysisOutput
 from src.prompts.system_prompts import build_analysis_agent_prompt
 from src.tools.filesystem import (
@@ -26,6 +27,8 @@ tracer_provider = register_phoenix(
     project_name="default",
     auto_instrument=True,
 )
+
+logger = get_logger(__name__)
 
 
 def create_data_analysis_agent() -> LlmAgent:
@@ -70,7 +73,7 @@ def copy_data_analysis_artifacts_after_agent(
             local_artifacts_dir=Path(callback_context.state["run_dir"]) / "artifacts",
             remote_root="workspace/artifacts/data_analysis"
         )
-        print(f"Copied data analysis artifacts: {copied}")
+        logger.info("Copied data analysis artifacts", extra={"agent": "data_analysis", "phase": "copy_artifacts", "count": len(copied)})
         copied.extend(
             DaytonaSandboxSingleton().copy_workspace_to_artifacts(
             local_artifacts_dir=Path(callback_context.state["run_dir"]) / "cleaned",
@@ -80,7 +83,7 @@ def copy_data_analysis_artifacts_after_agent(
         callback_context.state[OUTPUT_KEY]["additional_artifacts_path"] = copied
 
     except Exception as e:
-        print(f"Error copying data analysis artifacts: {e}")
+        logger.exception("Error copying data analysis artifacts", extra={"agent": "data_analysis", "phase": "copy_artifacts"})
     finally:
         #DaytonaSandboxSingleton().stop_and_archive(copy_artifacts=True)
         pass

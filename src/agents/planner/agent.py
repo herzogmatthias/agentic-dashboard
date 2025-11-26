@@ -1,6 +1,7 @@
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from phoenix.otel import register as register_phoenix
+from src.core.logging import get_logger
 
 from src.models.planner_output import PlannerOutput
 from src.prompts.system_prompts import build_planner_agent_prompt
@@ -18,6 +19,8 @@ tracer_provider = register_phoenix(
     project_name="default",
     auto_instrument=True,
 )
+
+logger = get_logger(__name__)
 
 
 def create_planner_agent() -> LlmAgent:

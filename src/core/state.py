@@ -7,6 +7,9 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from src.core.config import RUNS_DIR
+from src.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DatasetState(BaseModel):
@@ -81,4 +84,5 @@ def _bootstrap_run_directory() -> tuple[str, Path]:
     run_id = f"run_{timestamp}"
     run_dir = RUNS_DIR / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Bootstrapped run directory", extra={"run_id": run_id, "run_dir": str(run_dir)})
     return run_id, run_dir

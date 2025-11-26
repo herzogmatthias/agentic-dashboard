@@ -1,10 +1,14 @@
 from pathlib import Path
 from threading import Lock
-from typing import Any, List, Optional, Union
+from typing import List, Optional
 
 from daytona import Daytona, DaytonaConfig, CreateSandboxFromSnapshotParams, Sandbox
+from daytona._sync.daytona import CodeLanguage
 
 from .config import ARTIFACTS_DIR, DAYTONA_SNAPSHOT_NAME, DAYTONA_TARGET, LOCAL_CSV_PATH, SANDBOX_CSV_PATH
+from .logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DaytonaSandboxSingleton:
@@ -69,9 +73,11 @@ class DaytonaSandboxSingleton:
                 auto_stop_interval=60,
                 auto_archive_interval=0,
                 auto_delete_interval=0,
-                language="python",
+                language=CodeLanguage.PYTHON,
             )
+            logger.info("Creating Daytona sandbox from snapshot", extra={"snapshot": DAYTONA_SNAPSHOT_NAME})
             self._sandbox = daytona.create(params)
+            logger.info("Sandbox created successfully", extra={"snapshot": DAYTONA_SNAPSHOT_NAME})
             
             # Optional: upload local CSV into the sandbox once for quick testing
             self._sandbox.fs.create_folder("workspace/artifacts/data_analysis", "755")
@@ -96,24 +102,28 @@ class DaytonaSandboxSingleton:
                 if copy_artifacts:
                     self.copy_workspace_to_artifacts()
             except Exception as e:
-                print(f"Warning: Failed to copy artifacts: {e}")
+                logger.warning("Failed to copy artifacts", extra={"error": str(e)})
 
             try:
+                logger.info("Stopping sandbox")
                 self._sandbox.stop(timeout=30)
+                logger.info("Sandbox stopped successfully")
             except Exception as e:
-                print(f"Warning: Failed to stop sandbox: {e}")
+                logger.warning("Failed to stop sandbox", extra={"error": str(e)})
 
             try:
+                logger.info("Archiving sandbox")
                 self._sandbox.archive()
+                logger.info("Sandbox archived successfully")
             except Exception as e:
-                print(f"Warning: Failed to archive sandbox: {e}")
+                logger.warning("Failed to archive sandbox", extra={"error": str(e)})
 
             self._is_stopped = True
             self._sandbox = None
     
     def copy_workspace_to_artifacts(
         self,
-        local_artifacts_dir: Path = ARTIFACTS_DIR,
+        local_artifacts_dir = ARTIFACTS_DIR,
         remote_root: str = "workspace",
     ) -> List[str]:
         """
@@ -149,6 +159,7 @@ class DaytonaSandboxSingleton:
 
         # Start recursion from remote_root
         walk(remote_root, local_artifacts_dir)
+        logger.info("Copied workspace artifacts", extra={"remote_root": remote_root, "local_dir": str(local_artifacts_dir), "count": len(copied)})
 
         return copied
     

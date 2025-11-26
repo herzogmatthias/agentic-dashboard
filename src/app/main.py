@@ -12,6 +12,9 @@ from src.prompts.user_prompts import build_planner_handoff_message
 from ..core.config import APP_NAME, USER_ID
 from ..core.daytona_client import DaytonaSandboxSingleton
 from ..core.state import SharedSessionState, _bootstrap_run_directory
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 
@@ -20,7 +23,9 @@ def _print_final_response(event) -> None:
         return
     text_parts = [p.text for p in event.content.parts if getattr(p, "text", None)]
     if text_parts:
-        print("Agent:", "\n".join(text_parts))
+        response_text = "\n".join(text_parts)
+        logger.info("Agent response", extra={"response_length": len(response_text)})
+        print("Agent:", response_text)
         print()
 
 
@@ -60,6 +65,7 @@ async def console_chat() -> None:
         except Exception:
             pass
 
+    logger.info("Console chat initialized", extra={"run_id": run_id, "run_dir": str(run_dir)})
     print(f"Data Analysis Agent ready. Run dir: {run_dir}  Type 'exit' to quit.\n")
 
     #
