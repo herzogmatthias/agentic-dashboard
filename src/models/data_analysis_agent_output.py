@@ -28,15 +28,6 @@ class DataAnalysisOutput(BaseModel):
         ),
     )
 
-    additional_artifacts_path: List[str] = Field(
-        default_factory=list,
-        description=(
-            "List of all relative file paths inside the Daytona sandbox that were created and are important for downstream use (additional calculations)"
-            ". Each path must be relative to sandbox root "
-            "(e.g. 'artifacts/data_analysis/cleaned.csv'). "
-        ),
-    )
-
     data_context: str = Field(
         "",
         description=(

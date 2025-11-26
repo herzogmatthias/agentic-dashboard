@@ -48,6 +48,8 @@ def create_data_analysis_agent() -> LlmAgent:
             inspect_json_keys_tool,
             inspect_json_value_tool
         ],
+        include_contents='none',
+        before_agent_callback=inject_data_analysis_instructions,
         after_agent_callback=copy_data_analysis_artifacts_after_agent,
         output_key=OUTPUT_KEY,
         output_schema=DataAnalysisOutput,
@@ -55,6 +57,34 @@ def create_data_analysis_agent() -> LlmAgent:
     )
 
     return agent
+
+
+def inject_data_analysis_instructions(
+    callback_context: CallbackContext,
+) -> Optional[types.Content]:
+    """
+    Inject temp:data_analysis_instructions from state into the agent's context.
+    
+    The orchestrator sets temp:data_analysis_instructions via prepare_data_analysis tool.
+    This callback reads that state and injects it as a user message so the agent knows what to do.
+    
+    Returns:
+        Content with instructions to inject, or None if no instructions found
+    """
+    try:
+        instructions = callback_context.state.get("temp:data_analysis_instructions")
+        if instructions:
+            logger.info("Injecting data analysis instructions from temp state", extra={"agent": "data_analysis", "phase": "before_agent"})
+            return types.Content(
+                role="user",
+                parts=[types.Part(text=instructions)]
+            )
+        else:
+            logger.warning("No temp:data_analysis_instructions found in state", extra={"agent": "data_analysis", "phase": "before_agent"})
+            return None
+    except Exception as e:
+        logger.exception("Error injecting data analysis instructions", extra={"agent": "data_analysis", "phase": "before_agent"})
+        return None
 
 
 def copy_data_analysis_artifacts_after_agent(
@@ -85,13 +115,10 @@ def copy_data_analysis_artifacts_after_agent(
     except Exception as e:
         logger.exception("Error copying data analysis artifacts", extra={"agent": "data_analysis", "phase": "copy_artifacts"})
     finally:
-        #DaytonaSandboxSingleton().stop_and_archive(copy_artifacts=True)
+        DaytonaSandboxSingleton().stop_and_archive(copy_artifacts=True)
         pass
     
     output = callback_context.state[OUTPUT_KEY]
 
     # Option 1: return as pretty JSON text
-    return types.Content(
-        role="model",
-        parts=[types.Part(text=json.dumps(output, indent=2))]
-    )
+    return None

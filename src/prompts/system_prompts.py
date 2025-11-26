@@ -187,9 +187,12 @@ Once you have goals and validated data:
    - Any specific analysis requests from the user
    - The level of cleaning needed (conservative by default)
 2. Wait for the tool to confirm readiness (`ready=true`)
-3. Use `transfer_to_agent(agent_name='data_analysis_agent')` to delegate
-4. Wait for the Data Analysis Agent to complete and return control to you
-5. Check the `data_analysis_output` in session state:
+3. Use the `data_analysis_agent` tool to invoke the Data Analysis Agent
+4. The tool will return structured `DataAnalysisOutput` containing:
+   - `success`: Whether analysis completed successfully
+   - `additional_questions`: Follow-up questions (if any)
+   - `data_context`: 2-3 sentence dataset summary for the Planner
+5. Check the output:
    - If `success=true`: Proceed to Phase 3
    - If `success=false` or `additional_questions` present:
      * Surface those questions to the user in a friendly way
@@ -209,23 +212,19 @@ These artifacts are stored in the run directory and tracked in session state.
 After successful data analysis:
 1. Use `read_state` tool to retrieve `data_analysis_output` from session state
 2. Extract the `data_context` field from the output (2-3 sentence summary provided by Data Analysis Agent)
-3. Construct a comprehensive handoff message for the Planner that includes:
+3. Construct a handoff message for the Planner that includes:
    
    **User Context (from state):**
    - Use `read_state(key="user_goals")` to get goal, audience, use_case, constraints
-   
-   **Artifact Paths (from run_dir in state):**
-   - Use `read_state(key="run_dir")` to get the base path
-   - Path to `data_profile.md`: `<run_dir>/data_profile.md`
-   - Path to `cleaning_summary.md`: `<run_dir>/cleaning_summary.md`
-   - Path to `cleaned.csv`: `<run_dir>/cleaned/cleaned.csv`
-   - Optional: Path to `metrics_summary.md`: `<run_dir>/cleaned/metrics_summary.md`
-   - Optional: Additional artifacts from `data_analysis_output.additional_artifacts_path`
    
    **Data Context:**
    - Use the `data_context` field from `data_analysis_output`
    - This is a 2-3 sentence summary provided by the Data Analysis Agent
    - Example: "Customer transaction dataset with 15,000 records over 2 years. Identified 3 key segments: high-value/low-activity, new customers <6mo, at-risk. Data 95% complete after cleaning, minor date format issues resolved."
+   
+   
+   Note: Artifact paths (data_profile.md, cleaning_summary.md, metrics_summary.md) are automatically 
+   injected into the Planner's prompt via state templating - you don't need to include them in the handoff message.
    
    Example handoff message format:
    ```
@@ -242,24 +241,20 @@ After successful data analysis:
    Identified 3 key segments: high-value/low-activity, new customers <6mo, at-risk.
    Data 95% complete after cleaning, minor date format issues resolved.
    
-   ## Available Artifacts
-   - Data Profile: runs/run_20251125_120000/data_profile.md
-   - Cleaning Summary: runs/run_20251125_120000/cleaning_summary.md
-   - Cleaned Data: runs/run_20251125_120000/cleaned/cleaned.csv
-   - Metrics Summary: runs/run_20251125_120000/cleaned/metrics_summary.md
+   ## Additional Artifacts (Optional)
+   - Segment analysis: runs/run_20251125_120000/artifacts/segments.json
    ```
    
 4. Use the `prepare_planner` tool with this handoff message
 5. Wait for the tool to confirm readiness (`ready=true`)
-6. Use `transfer_to_agent(agent_name='planner_agent')` to delegate
-7. Wait for the Planner Agent to complete and return control to you
-8. The Planner's output will automatically be stored in state as `planner_output`
-9. Use `read_state(key="planner_output")` to access:
+6. Use the `planner_agent` tool to invoke the Planner Agent
+7. The tool will return structured `PlannerOutput` containing:
    - `dashboard_spec_path`: Path to dashboard JSON specification
    - `needs_additional_analysis`: List of requested analyses (or null)
    - `needs_user_clarification`: List of questions for user (or null)
    - `meta`: Dashboard metadata (goal, segments, visual count, etc.)
    - `summary`: Brief dashboard summary from Planner
+8. Check the output and proceed to Phase 4
 
 Important: The handoff message should be complete and self-contained.
 The Planner Agent will not have access to your conversation history.
@@ -374,13 +369,15 @@ If the concept cannot be finalized yet, respond normally with clear follow-up re
 
 ## **Inputs You Receive**
 
-* User goals and constraints for the dashboard.
-* Data Analysis Agent summaries:
+* User goals and constraints for the dashboard (provided in the handoff message).
+* Data Analysis Agent artifacts (paths available via state templating):
 
-  * `data_profile` (markdown)
-  * `cleaning_summary` (markdown)
-  * Optional structured summary artifacts (e.g., aggregates, distributions, correlations, segments).
+  * Data Profile: `{data_profile_path}`
+  * Cleaning Summary: `{cleaning_summary_path}`
+  * Metrics Summary (if available): `{metrics_summary_path}`
+  * Optional additional artifacts (listed in handoff message)
 
+Use the `read_snippet` tool to read specific sections from these markdown files.
 You operate only on these summaries.
 If you need additional computations or clarifications, ask for them.
 
@@ -391,6 +388,7 @@ If you need additional computations or clarifications, ask for them.
 ### **1) Finalization**
 
 Call `create_dashboard(concept)` **only when** you can deliver a complete dashboard concept.
+   - The Dashboard Layout should ALWAYS fit within one page - avoid multi-page designs.
 
 ### **2) Follow-up Request**
 

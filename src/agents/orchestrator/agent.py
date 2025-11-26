@@ -42,6 +42,7 @@ from typing import Optional
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents.callback_context import CallbackContext
+from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from phoenix.otel import register as register_phoenix
 
@@ -83,22 +84,27 @@ def create_orchestrator_agent() -> LlmAgent:
     
     This is the root agent that:
     1. Collects user goals and validates data availability
-    2. Invokes the Data Analysis Agent 
-    3. Invokes the Planner Agent with appropriate context
+    2. Invokes the Data Analysis Agent (via AgentTool)
+    3. Invokes the Planner Agent with appropriate context (via AgentTool)
     4. Handles follow-up questions and iterations
     5. Returns a synthesized summary with structured outputs
     
-    The agent uses tools to delegate to sub-agents and manages
-    the overall dashboard building flow.
+    The agent uses AgentTool to explicitly invoke sub-agents as tools,
+    allowing it to see their outputs and maintain orchestration control.
     
     Returns:
         LlmAgent: Configured orchestrator agent
     """
     model = LiteLlm(model="gpt-4o-mini")
 
-    # Create sub-agents that will be delegated to
+    # Create sub-agents wrapped as tools for explicit invocation
     data_analysis_agent = create_data_analysis_agent()
     planner_agent = create_planner_agent()
+    
+    # Wrap agents as tools so orchestrator can call them explicitly
+    # AgentTool automatically generates function declaration from agent's name and description
+    data_analysis_tool = AgentTool(agent=data_analysis_agent)
+    planner_tool = AgentTool(agent=planner_agent)
     
     agent = LlmAgent(
         name="orchestrator_agent",
@@ -110,17 +116,15 @@ def create_orchestrator_agent() -> LlmAgent:
             prepare_planner_tool,
             read_state_tool,
             write_user_goals_tool,
-        ],
-        sub_agents=[
-            data_analysis_agent,
-            planner_agent,
+            data_analysis_tool,
+            planner_tool,
         ],
         before_agent_callback=initialize_orchestrator_state,
         after_agent_callback=finalize_orchestrator_response,
         output_key=OUTPUT_KEY,
         description=(
             "Root orchestrator agent that coordinates dashboard building "
-            "by managing Data Analysis and Planner agents."
+            "by managing Data Analysis and Planner agents as explicit tool calls."
         ),
     )
 
