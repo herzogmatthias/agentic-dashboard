@@ -47,6 +47,7 @@ from phoenix.otel import register as register_phoenix
 
 from src.prompts.system_prompts import build_orchestrator_agent_prompt
 from src.core.state import _bootstrap_run_directory
+from src.core.logging import get_logger
 from src.tools.orchestrator import (
     validate_dataset_tool,
     prepare_data_analysis_tool,
@@ -74,6 +75,7 @@ tracer_provider = register_phoenix(
     auto_instrument=True,
 )
 
+logger = get_logger(__name__)
 
 def create_orchestrator_agent() -> LlmAgent:
     """
@@ -150,9 +152,9 @@ def initialize_orchestrator_state(
             run_id, run_dir = _bootstrap_run_directory()
             state[STATE_KEY_RUN_ID] = run_id
             state[STATE_KEY_RUN_DIR] = str(run_dir)
-            print(f"[Orchestrator] Created new run: {run_id} at {run_dir}")
+            logger.info(f"Created new run: {run_id} at {run_dir}", extra={"agent": "orchestrator", "phase": "init", "run_id": run_id})
         else:
-            print(f"[Orchestrator] Using existing run: {state.get(STATE_KEY_RUN_ID)}")
+            logger.info(f"Using existing run: {state.get(STATE_KEY_RUN_ID)}", extra={"agent": "orchestrator", "phase": "init", "run_id": state.get(STATE_KEY_RUN_ID)})
         
         # Initialize user_goals if not present
         if STATE_KEY_USER_GOALS not in state:
@@ -170,7 +172,7 @@ def initialize_orchestrator_state(
         return None
     except Exception as e:
         error_msg = f"[Orchestrator Error] Failed to initialize state: {type(e).__name__}: {str(e)}"
-        print(error_msg)
+        logger.error(error_msg, extra={"agent": "orchestrator", "phase": "init"})
         # Return error content to user
         return types.Content(
             role="model",
@@ -201,7 +203,7 @@ def finalize_orchestrator_response(
         
         # Log completion
         run_id = state.get(STATE_KEY_RUN_ID, "unknown")
-        print(f"[Orchestrator] Completed run: {run_id}")
+        logger.info(f"Completed run: {run_id}", extra={"agent": "orchestrator", "phase": "finalize", "run_id": run_id})
         
         # Check if we have both outputs
         has_data_analysis = STATE_KEY_DATA_ANALYSIS_OUTPUT in state
@@ -234,13 +236,13 @@ def finalize_orchestrator_response(
         
         # Log flow progress
         if has_data_analysis and has_planner and not error_messages:
-            print("[Orchestrator] ✅ Successfully completed full flow (data analysis → planner)")
+            logger.info("Successfully completed full flow (data analysis → planner)", extra={"agent": "orchestrator", "phase": "finalize", "run_id": run_id})
         elif has_data_analysis and not has_planner:
-            print("[Orchestrator] Data analysis complete, planner not yet invoked")
+            logger.info("Data analysis complete, planner not yet invoked", extra={"agent": "orchestrator", "phase": "finalize", "run_id": run_id})
         elif error_messages:
-            print(f"[Orchestrator] ⚠️ Completed with errors: {'; '.join(error_messages)}")
+            logger.warning(f"Completed with errors: {'; '.join(error_messages)}", extra={"agent": "orchestrator", "phase": "finalize", "run_id": run_id})
         else:
-            print("[Orchestrator] Still in initial phase")
+            logger.info("Still in initial phase", extra={"agent": "orchestrator", "phase": "finalize", "run_id": run_id})
         
         # Return error content if validation failed
         if error_messages:
@@ -256,7 +258,7 @@ def finalize_orchestrator_response(
         
     except Exception as e:
         error_msg = f"[Orchestrator Error] Failed to finalize response: {type(e).__name__}: {str(e)}"
-        print(error_msg)
+        logger.error(error_msg, extra={"agent": "orchestrator", "phase": "finalize"})
         return types.Content(
             role="model",
             parts=[types.Part(text=error_msg)]

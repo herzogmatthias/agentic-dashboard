@@ -5,14 +5,30 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
-import tiktoken
+try:
+    import tiktoken  # optional; used for token-aware summaries
+except Exception:  # pragma: no cover - fallback if not installed
+    tiktoken = None  # type: ignore
 from google.adk.tools import FunctionTool, ToolContext
 
 from src.prompts.system_prompts import build_output_summary_prompt, build_snippet_summary_prompt
+from src.core.logging import get_logger
 from src.tools.llm_client import Summarizer
 
 from ..core.config import SANDBOX_CLEANED_CSV_PATH, SANDBOX_CSV_PATH, SLICE_LIMIT
 from ..core.daytona_client import DaytonaSandboxSingleton
+
+logger = get_logger(__name__)
+
+def _count_tokens(text: str) -> int:
+    if tiktoken is None:
+        # crude fallback: ~4 chars per token
+        return max(1, len(text) // 4)
+    try:
+        enc = tiktoken.encoding_for_model("gpt-5-mini")
+        return len(enc.encode(text))
+    except Exception:
+        return max(1, len(text) // 4)
 
 
 def run_python(code: str, timeout_seconds: int = 180) -> Dict[str, Any]:
@@ -37,16 +53,16 @@ def run_python(code: str, timeout_seconds: int = 180) -> Dict[str, Any]:
     resp = sandbox.process.code_run(final_code, timeout=timeout_seconds)
     result = resp.result
     msg= "Full Output is displayed"
-    encoding = tiktoken.encoding_for_model("gpt-5-mini")
-    token_count = len(encoding.encode(resp.result))
+    token_count = _count_tokens(resp.result)
     if token_count > 1000:
         result = Summarizer().summarize(resp.result, system_prompt=build_output_summary_prompt(), max_tokens=500)
         path = f"workspace/summarized_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         sandbox.fs.upload_file(resp.result.encode(), path)
         msg = f"Output is summarized to 500 tokens. Full output saved to sandbox at {path}"
+    logger.info("run_python executed", extra={"agent": "data_analysis", "phase": "run_python", "exit_code": resp.exit_code})
     return {"exit_code": resp.exit_code, "result": result, "message": msg}
 
-def read_snippet(file_path: str, from_line: int, to_line: int) -> str:
+def read_snippet(file_path: str, from_line: int, to_line: int):
     """
     Read a specific line range from a file.
     
@@ -74,13 +90,12 @@ def read_snippet(file_path: str, from_line: int, to_line: int) -> str:
     lines = data.decode(errors="replace").splitlines()
     snippet = lines[from_line - 1 : to_line]
     snippet_text = "\n".join(snippet)
-    encoding = tiktoken.encoding_for_model("gpt-5-mini")
-    token_count = len(encoding.encode(snippet_text))
+    token_count = _count_tokens(snippet_text)
     message = "Full Snippet Returned"
     if token_count > 1000:
         snippet = Summarizer().summarize(snippet_text, system_prompt=build_snippet_summary_prompt(), max_tokens=500).splitlines()
         message = "Snippet Summarized"
-    tiktoken.encoding_for_model
+    logger.info("read_snippet", extra={"agent": "filesystem", "phase": "read_snippet", "path": str(file_path)})
     return {
         "file_lines": len(lines),
         "snippet": "\n".join(snippet),
@@ -101,6 +116,7 @@ def inspect_directory(path: str = "workspace") -> Dict[str, Any]:
         info["entries"] = [{"name": entry.name, "is_dir": entry.is_dir, "size_bytes": entry.size} for entry in entries]
     except Exception:
         pass
+    logger.info("inspect_directory", extra={"agent": "filesystem", "phase": "inspect_directory", "path": path})
     return info
 
 
@@ -119,6 +135,7 @@ def write_data_profile(
     base_dir.mkdir(parents=True, exist_ok=True)
     path = base_dir / "data_profile.md"
     path.write_text(markdown, encoding="utf-8")
+    logger.info("write_data_profile", extra={"agent": "filesystem", "phase": "write_data_profile", "path": str(path)})
     return str(path.resolve())
 
 
@@ -137,6 +154,7 @@ def write_cleaning_summary(
     base_dir.mkdir(parents=True, exist_ok=True)
     path = base_dir / "cleaning_summary.md"
     path.write_text(markdown, encoding="utf-8")
+    logger.info("write_cleaning_summary", extra={"agent": "filesystem", "phase": "write_cleaning_summary", "path": str(path)})
     return str(path.resolve())
 
 
@@ -167,6 +185,7 @@ def write_metrics_summary(
     base_dir.mkdir(parents=True, exist_ok=True)
     path = base_dir / filename
     path.write_text(markdown, encoding="utf-8")
+    logger.info("write_metrics_summary", extra={"agent": "filesystem", "phase": "write_metrics_summary", "path": str(path)})
     return str(path.resolve())
 
 def inspect_json_keys(
@@ -230,12 +249,14 @@ def inspect_json_keys(
 
     walk(json_data, prefix="", depth=1)
 
-    return {
+    result = {
         "file_path": file_path,
         "max_depth": max_depth,
         "max_keys": max_keys,
         "structure": flattened_keys
     }
+    logger.info("inspect_json_keys", extra={"agent": "filesystem", "phase": "inspect_json_keys", "path": str(file_path)})
+    return result
 
 def inspect_json_value(
     file_path: str,
@@ -381,6 +402,7 @@ def inspect_json_value(
     if len(raw_str) > max_preview:
         raw_str = raw_str[:max_preview] + "... (truncated)"
 
+    logger.info("inspect_json_value", extra={"agent": "filesystem", "phase": "inspect_json_value", "path": str(file_path)})
     return {"value": raw_str}
 
 

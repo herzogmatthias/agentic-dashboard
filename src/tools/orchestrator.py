@@ -15,6 +15,9 @@ Sub-agents share the same session state and invocation context.
 from pathlib import Path
 from typing import Any, Dict, Optional
 from google.adk.tools import FunctionTool, ToolContext
+from src.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def validate_dataset(
@@ -80,6 +83,10 @@ def validate_dataset(
         
         # Update state with validated dataset path
         tool_context.state["dataset_path"] = str(path)
+        logger.info(
+            "Dataset validated",
+            extra={"agent": "orchestrator", "phase": "validate_dataset", "dataset": str(path), "file_size_mb": round(file_size_mb, 2)},
+        )
         
         return {
             "valid": True,
@@ -88,6 +95,7 @@ def validate_dataset(
         }
         
     except Exception as e:
+        logger.exception("Dataset validation error", extra={"agent": "orchestrator", "phase": "validate_dataset"})
         return {
             "valid": False,
             "message": f"Error validating dataset: {str(e)}",
@@ -127,12 +135,14 @@ def prepare_data_analysis(
     dataset_path = state.get("dataset_path")
     
     if not run_dir:
+        logger.warning("Missing run_dir in state before data analysis prep", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
         return {
             "ready": False,
             "message": "No run_dir in state - orchestrator initialization may have failed"
         }
     
     if not dataset_path:
+        logger.warning("Missing dataset_path in state before data analysis prep", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
         return {
             "ready": False,
             "message": "No dataset_path in state - please validate dataset first using validate_dataset tool"
@@ -140,6 +150,7 @@ def prepare_data_analysis(
     
     # Store the instructions in temp state for the data analysis agent to read
     state["temp:data_analysis_instructions"] = instructions
+    logger.info("Prepared to invoke Data Analysis Agent", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
     
     return {
         "ready": True,
@@ -179,6 +190,7 @@ def prepare_planner(
     state = tool_context.state
     
     if "data_analysis_output" not in state:
+        logger.warning("Planner prep blocked: data_analysis_output missing", extra={"agent": "orchestrator", "phase": "prepare_planner"})
         return {
             "ready": False,
             "message": "Data analysis must be completed before planning. Invoke data_analysis_agent first."
@@ -186,6 +198,7 @@ def prepare_planner(
     
     # Store the handoff message in temp state for the planner to read
     state["temp:planner_handoff"] = handoff_message
+    logger.info("Prepared to invoke Planner Agent", extra={"agent": "orchestrator", "phase": "prepare_planner"})
     
     return {
         "ready": True,

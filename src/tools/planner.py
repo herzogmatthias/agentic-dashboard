@@ -3,6 +3,9 @@ from pathlib import Path
 from google.adk.tools import FunctionTool, ToolContext
 
 from src.models.dashboard_concept_lite import DashboardConceptLite
+from src.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def create_dashboard(
@@ -26,6 +29,7 @@ def create_dashboard(
     out_path = planner_dir / filename
     json_str = concept.model_dump_json(indent=2)  # Pydantic v2
     out_path.write_text(json_str, encoding="utf-8")
+    logger.info("create_dashboard", extra={"agent": "planner", "phase": "persist", "path": str(out_path)})
 
     return f"Dashboard concept written to: {out_path}"
 
