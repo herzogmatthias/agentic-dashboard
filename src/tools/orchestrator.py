@@ -103,119 +103,9 @@ def validate_dataset(
         }
 
 
-def prepare_data_analysis(
-    instructions: str,
-    tool_context: ToolContext
-) -> Dict[str, Any]:
-    """
-    Prepare to delegate to the Data Analysis Agent.
-    
-    This tool validates prerequisites and stores instructions for the sub-agent.
-    After calling this tool, use transfer_to_agent(agent_name='data_analysis_agent')
-    to actually invoke the agent.
-    
-    The Data Analysis Agent will:
-    - Profile the dataset
-    - Clean the data
-    - Generate data_profile.md and cleaning_summary.md
-    - Optionally perform additional analyses
-    
-    Args:
-        instructions: Detailed instructions for the Data Analysis Agent.
-                     Should include context about what analysis is needed.
-        
-    Returns:
-        Dictionary with:
-        - ready: bool indicating if ready to transfer
-        - message: str explaining status or next steps
-    """
-    # Verify prerequisites
-    state = tool_context.state
-    run_dir = state.get("run_dir")
-    dataset_path = state.get("dataset_path")
-    
-    if not run_dir:
-        logger.warning("Missing run_dir in state before data analysis prep", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
-        return {
-            "ready": False,
-            "message": "No run_dir in state - orchestrator initialization may have failed"
-        }
-    
-    if not dataset_path:
-        logger.warning("Missing dataset_path in state before data analysis prep", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
-        return {
-            "ready": False,
-            "message": "No dataset_path in state - please validate dataset first using validate_dataset tool"
-        }
-    
-    # Store the instructions in temp state for the data analysis agent to read
-    state["temp:data_analysis_instructions"] = instructions
-    logger.info("Prepared to invoke Data Analysis Agent", extra={"agent": "orchestrator", "phase": "prepare_data_analysis"})
-    
-    return {
-        "ready": True,
-        "message": (
-            f"Ready to invoke Data Analysis Agent. "
-            f"Use transfer_to_agent(agent_name='data_analysis_agent') to delegate. "
-            f"The agent will automatically access the dataset at {dataset_path}"
-        )
-    }
-
-
-def prepare_planner(
-    handoff_message: str,
-    tool_context: ToolContext
-) -> Dict[str, Any]:
-    """
-    Prepare to delegate to the Planner Agent.
-    
-    This tool validates prerequisites and stores the handoff message for the sub-agent.
-    After calling this tool, use transfer_to_agent(agent_name='planner_agent')
-    to actually invoke the agent.
-    
-    The handoff message should include:
-    - User goals (goal, audience, use_case, constraints)
-    - Paths to data_profile.md and cleaning_summary.md
-    - Paths to any additional analysis artifacts
-    
-    Args:
-        handoff_message: Complete handoff message for the Planner Agent
-        
-    Returns:
-        Dictionary with:
-        - ready: bool indicating if ready to transfer
-        - message: str explaining status or next steps
-    """
-    # Verify data analysis has been completed
-    state = tool_context.state
-    
-    if "data_analysis_output" not in state:
-        logger.warning("Planner prep blocked: data_analysis_output missing", extra={"agent": "orchestrator", "phase": "prepare_planner"})
-        return {
-            "ready": False,
-            "message": "Data analysis must be completed before planning. Invoke data_analysis_agent first."
-        }
-    
-    # Store the handoff message in temp state for the planner to read
-    state["temp:planner_handoff"] = handoff_message
-    logger.info("Prepared to invoke Planner Agent", extra={"agent": "orchestrator", "phase": "prepare_planner"})
-    
-    return {
-        "ready": True,
-        "message": (
-            f"Ready to invoke Planner Agent. "
-            f"Use transfer_to_agent(agent_name='planner_agent') to delegate. "
-            f"The handoff message has been stored for the planner to access."
-        )
-    }
-
-
 # Create ADK FunctionTool instances
 validate_dataset_tool = FunctionTool(func=validate_dataset)
 
-prepare_data_analysis_tool = FunctionTool(func=prepare_data_analysis)
-
-prepare_planner_tool = FunctionTool(func=prepare_planner)
 
 
 # State management tools
@@ -232,6 +122,8 @@ def read_state(
     - dataset_path: Path to uploaded dataset
     - data_analysis_output: Structured output from Data Analysis Agent
     - planner_output: Structured output from Planner Agent
+    - additional_artifacts_path: List of additional analysis artifacts produced
+    - dashboard_spec_path: Path to dashboard JSON specification
     
     Args:
         key: The state key to read
@@ -242,7 +134,7 @@ def read_state(
         - value: The value (if found)
         - message: Status message
     """
-    allowed_keys = {"user_goals", "dataset_path", "data_analysis_output", "planner_output"}
+    allowed_keys = {"user_goals", "dataset_path", "data_analysis_output", "planner_output", "additional_artifacts_path", "dashboard_spec_path"}
     
     if key not in allowed_keys:
         return {

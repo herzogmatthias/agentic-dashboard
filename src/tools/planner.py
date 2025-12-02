@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 from pydantic import ValidationError
 
 from src.models.dashboard_concept_lite import DashboardConceptLite
@@ -55,6 +56,9 @@ def create_dashboard(
     out_path = planner_dir / "dashboard_concept.json"
     json_str = concept.model_dump_json(indent=2)  # Pydantic v2
     out_path.write_text(json_str, encoding="utf-8")
+    
+    # Save path to state for downstream agents and validation
+    tool_context.state["dashboard_spec_path"] = str(out_path.resolve())
 
     logger.info(
         "create_dashboard",

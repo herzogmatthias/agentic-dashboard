@@ -53,16 +53,20 @@ def run_python(code: str, timeout_seconds: int = 180) -> Dict[str, Any]:
     resp = sandbox.process.code_run(final_code, timeout=timeout_seconds)
     result = resp.result
     msg= "Full Output is displayed"
+    charts = []
     token_count = _count_tokens(resp.result)
+    if resp.artifacts:
+        if resp.artifacts.charts:
+            charts = {chart.png for chart in resp.artifacts.charts}
     if token_count > 1000:
         result = Summarizer().summarize(resp.result, system_prompt=build_output_summary_prompt(), max_tokens=500)
         path = f"workspace/summarized_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         sandbox.fs.upload_file(resp.result.encode(), path)
         msg = f"Output is summarized to 500 tokens. Full output saved to sandbox at {path}"
     logger.info("run_python executed", extra={"agent": "data_analysis", "phase": "run_python", "exit_code": resp.exit_code})
-    return {"exit_code": resp.exit_code, "result": result, "message": msg}
+    return {"exit_code": resp.exit_code, "result": result, "charts": charts, "message": msg}
 
-def read_snippet(file_path: str, from_line: int, to_line: int):
+def read_snippet(file_path: str, from_line: int = 1, to_line: int = 50):
     """
     Read a specific line range from a file.
     
@@ -70,7 +74,16 @@ def read_snippet(file_path: str, from_line: int, to_line: int):
     or sandbox-relative (starts with 'workspace/').
     
     Useful for retrieving details from large saved logs without loading the entire file.
+    
+    Args:
+        file_path: Path to the file (local absolute path or sandbox-relative)
+        from_line: Starting line number (1-based, minimum 1). Defaults to 1.
+        to_line: Ending line number (1-based, inclusive). Defaults to 50.
     """
+    # Ensure 1-based indexing - clamp from_line to minimum of 1
+    from_line = max(1, from_line)
+    to_line = max(from_line, to_line)
+    
     # Check if path is local absolute path
     local_path = Path(file_path)
     if local_path.is_absolute() and local_path.exists():

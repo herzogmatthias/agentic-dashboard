@@ -5,8 +5,7 @@ from pathlib import Path
 from google.adk.runners import InMemoryRunner
 from google.genai import types as genai_types
 
-from src.agents.data_analysis.agent import create_data_analysis_agent
-from src.agents.planner.agent import create_planner_agent
+from src.agents.manager.agent import create_manager_agent
 from src.prompts.user_prompts import build_planner_handoff_message
 
 from ..core.config import APP_NAME, USER_ID
@@ -41,32 +40,18 @@ def _resolve_artifact_path(run_dir: Path, filename: str) -> Path:
 
 
 async def console_chat() -> None:
-    run_id, run_dir = _bootstrap_run_directory()
-    session_state = SharedSessionState.bootstrap(run_id=run_id, run_dir=run_dir)
-
-    agent = create_data_analysis_agent()
+    # Note: The ManagerAgent will initialize run_id and run_dir in session state
+    # We don't need to bootstrap here - just create the agent and let it handle state
+    
+    agent = create_manager_agent()
     runner = InMemoryRunner(agent=agent, app_name=APP_NAME)
 
+    # Create session without pre-populating state - Manager will initialize
     create_session_kwargs = {"app_name": APP_NAME, "user_id": USER_ID}
-    try:
-        create_session_sig = inspect.signature(runner.session_service.create_session)
-        params = create_session_sig.parameters
-        if "session_state" in params:
-            create_session_kwargs["session_state"] = session_state.model_dump()
-        elif "state" in params:
-            create_session_kwargs["state"] = session_state.model_dump()
-    except Exception:
-        create_session_kwargs["session_state"] = session_state.model_dump()
-
     session = await runner.session_service.create_session(**create_session_kwargs)
-    if not getattr(session, "state", None):
-        try:
-            session.state = session_state.model_dump()
-        except Exception:
-            pass
 
-    logger.info("Console chat initialized", extra={"run_id": run_id, "run_dir": str(run_dir)})
-    print(f"Data Analysis Agent ready. Run dir: {run_dir}  Type 'exit' to quit.\n")
+    logger.info("Console chat initialized with ManagerAgent")
+    print(f"Dashboard Builder ready. Type 'exit' to quit.\n")
 
     #
     # -------------------------------------------------------------

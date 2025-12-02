@@ -53,16 +53,8 @@ class PlannerOutput(BaseModel):
     
     This object is ALWAYS returned as the final JSON payload from the Planner.
     The orchestrator uses this to determine next steps: finish, clarify, or request more analysis.
-    """
     
-    dashboard_spec_path: str = Field(
-        ...,
-        description=(
-            "Absolute path to the dashboard specification JSON file created by the Planner. "
-            "This file contains the full DashboardConceptLite structure and should be stored "
-            "under the run directory (e.g., 'runs/<timestamp>/planner/dashboard_spec.json')."
-        )
-    )
+    """
     
     needs_additional_analysis: Optional[List[str]] = Field(
         None,

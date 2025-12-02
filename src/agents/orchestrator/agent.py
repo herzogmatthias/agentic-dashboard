@@ -1,19 +1,15 @@
 """
 Dashboard Orchestrator Agent
 
-This agent serves as the root entry point for the multi-agent dashboard building system.
-It coordinates the Data Analysis Agent and Planner Agent following the flow:
-  
-  User → Orchestrator → Data Analysis Agent → Orchestrator → Planner Agent → Orchestrator → User
+This agent serves as the user-facing coordinator for the multi-agent dashboard building system.
+It is wrapped by the ManagerAgent which handles the actual delegation to sub-agents.
 
-Architecture Decision:
-- Implementation: Single LlmAgent with tools to invoke sub-agents
-- Rationale: Provides flexibility for:
-  * Dynamic goal collection and data validation
-  * Conditional sub-agent invocation based on context
-  * Custom handoff message construction
-  * Handling follow-up questions and multi-round iterations
-  * Clear separation between user-facing and agent-facing communication
+The Orchestrator:
+- Collects user goals and validates data availability
+- Calls delegation tools (delegate_data_analysis, delegate_planner)
+- The Manager intercepts these calls and routes to the appropriate sub-agent
+- Handles follow-up questions and multi-round iterations
+- Provides clear user-facing summaries
 
 State Management:
 - Uses shared session state with these keys:
@@ -23,53 +19,30 @@ State Management:
   * planner_output: Structured output from Planner Agent
   * user_goals: Dictionary containing goal, audience, use_case, constraints
   * dataset_path: Path to the uploaded dataset file
-
-Execution Limits and Error Handling:
-- Timeout Strategy (v1): Relies on LLM API timeouts (typically 60s per request)
-    and agent's natural completion behavior. Future: wrap runner.run_async() with
-    asyncio.wait_for(timeout=AGENT_TIMEOUT_SECONDS).
-- Max Tool Calls: ADK doesn't support native limits. Deferred to testing phase -
-    will implement callback-based tracking if infinite loops occur.
-- Retry Strategy (v1): Sub-agent failures propagate to orchestrator, which can
-    handle via tools or prompt instructions. Future: implement exponential backoff
-    retry wrapper around transfer_to_agent() calls.
-- Error Reporting: Callbacks check for missing state, parsing errors, and agent
-    failures. Format user-friendly messages with phase/agent/reason context.
+  * data_analysis_summaries: List of action summaries from Data Analysis Agent
+  * planner_summaries: List of action summaries from Planner Agent
 """
 
-from pathlib import Path
 from typing import Optional
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from phoenix.otel import register as register_phoenix
 
 from src.prompts.system_prompts import build_orchestrator_agent_prompt
-from src.core.state import _bootstrap_run_directory
 from src.core.logging import get_logger
 from src.tools.orchestrator import (
     validate_dataset_tool,
-    prepare_data_analysis_tool,
-    prepare_planner_tool,
     read_state_tool,
     write_user_goals_tool,
 )
-from src.agents.data_analysis.agent import create_data_analysis_agent
-from src.agents.planner.agent import create_planner_agent
-
-
-# State keys used by the orchestrator
-STATE_KEY_RUN_ID = "run_id"
-STATE_KEY_RUN_DIR = "run_dir"
-STATE_KEY_DATA_ANALYSIS_OUTPUT = "data_analysis_output"
-STATE_KEY_PLANNER_OUTPUT = "planner_output"
-STATE_KEY_USER_GOALS = "user_goals"
-STATE_KEY_DATASET_PATH = "dataset_path"
+from src.tools.delegation import (
+    delegate_data_analysis_tool,
+    delegate_planner_tool,
+)
 
 OUTPUT_KEY = "orchestrator_output"
-
 
 tracer_provider = register_phoenix(
     project_name="default",
@@ -82,106 +55,50 @@ def create_orchestrator_agent() -> LlmAgent:
     """
     Create the Dashboard Orchestrator Agent.
     
-    This is the root agent that:
+    This agent:
     1. Collects user goals and validates data availability
-    2. Invokes the Data Analysis Agent (via AgentTool)
-    3. Invokes the Planner Agent with appropriate context (via AgentTool)
+    2. Calls delegate_data_analysis to invoke the Data Analysis Agent
+    3. Calls delegate_planner to invoke the Planner Agent
     4. Handles follow-up questions and iterations
     5. Returns a synthesized summary with structured outputs
     
-    The agent uses AgentTool to explicitly invoke sub-agents as tools,
-    allowing it to see their outputs and maintain orchestration control.
+    The delegation tools are intercepted by the ManagerAgent which
+    routes to the appropriate sub-agent and returns their output.
     
     Returns:
         LlmAgent: Configured orchestrator agent
     """
-    model = LiteLlm(model="gpt-4o-mini")
-
-    # Create sub-agents wrapped as tools for explicit invocation
-    data_analysis_agent = create_data_analysis_agent()
-    planner_agent = create_planner_agent()
-    
-    # Wrap agents as tools so orchestrator can call them explicitly
-    # AgentTool automatically generates function declaration from agent's name and description
-    data_analysis_tool = AgentTool(agent=data_analysis_agent)
-    planner_tool = AgentTool(agent=planner_agent)
+    model = LiteLlm(model="gpt-5-mini")
     
     agent = LlmAgent(
         name="orchestrator_agent",
         model=model,
         instruction=build_orchestrator_agent_prompt(),
         tools=[
+            # State management tools
             validate_dataset_tool,
-            prepare_data_analysis_tool,
-            prepare_planner_tool,
             read_state_tool,
             write_user_goals_tool,
-            data_analysis_tool,
-            planner_tool,
+            # Delegation tools (intercepted by Manager)
+            delegate_data_analysis_tool,
+            delegate_planner_tool,
         ],
-        before_agent_callback=initialize_orchestrator_state,
         after_agent_callback=finalize_orchestrator_response,
+        include_contents='none',
         output_key=OUTPUT_KEY,
         description=(
-            "Root orchestrator agent that coordinates dashboard building "
-            "by managing Data Analysis and Planner agents as explicit tool calls."
+            "User-facing orchestrator agent that coordinates dashboard building "
+            "by delegating to Data Analysis and Planner agents."
         ),
     )
 
     return agent
 
 
-def initialize_orchestrator_state(
-    callback_context: CallbackContext,
-) -> Optional[types.Content]:
-    """
-    Initialize orchestrator state before the agent runs.
-    
-    This is the single point of state initialization for the entire system.
-    Creates run_id and run_dir if they don't exist, and sets up all required state keys.
-    This callback runs before each agent invocation.
-    
-    Args:
-        callback_context: ADK callback context with session state
-        
-    Returns:
-        Optional content to inject (None means no injection)
-    """
-    try:
-        state = callback_context.state
-        
-        # Initialize run_id and run_dir if not already present
-        # This is the SINGLE SOURCE OF TRUTH for run initialization
-        if STATE_KEY_RUN_ID not in state or STATE_KEY_RUN_DIR not in state:
-            run_id, run_dir = _bootstrap_run_directory()
-            state[STATE_KEY_RUN_ID] = run_id
-            state[STATE_KEY_RUN_DIR] = str(run_dir)
-            logger.info(f"Created new run: {run_id} at {run_dir}", extra={"agent": "orchestrator", "phase": "init", "run_id": run_id})
-        else:
-            logger.info(f"Using existing run: {state.get(STATE_KEY_RUN_ID)}", extra={"agent": "orchestrator", "phase": "init", "run_id": state.get(STATE_KEY_RUN_ID)})
-        
-        # Initialize user_goals if not present
-        if STATE_KEY_USER_GOALS not in state:
-            state[STATE_KEY_USER_GOALS] = {
-                "goal": None,
-                "audience": None,
-                "use_case": None,
-                "constraints": []
-            }
-        
-        # Ensure dataset_path is initialized
-        if STATE_KEY_DATASET_PATH not in state:
-            state[STATE_KEY_DATASET_PATH] = None
-        
-        return None
-    except Exception as e:
-        error_msg = f"[Orchestrator Error] Failed to initialize state: {type(e).__name__}: {str(e)}"
-        logger.error(error_msg, extra={"agent": "orchestrator", "phase": "init"})
-        # Return error content to user
-        return types.Content(
-            role="model",
-            parts=[types.Part(text=error_msg)]
-        )
+# State keys used for logging and validation
+STATE_KEY_RUN_ID = "run_id"
+STATE_KEY_DATA_ANALYSIS_OUTPUT = "data_analysis_output"
+STATE_KEY_PLANNER_OUTPUT = "planner_output"
 
 
 def finalize_orchestrator_response(
