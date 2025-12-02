@@ -102,27 +102,41 @@ The Backend Agent must have access to the following tools:
 
 9. **`read_dashboard_concept()`**: Read the `dashboard_concept.json` from the current run's planner output.
 
+10. **`copy_data_to_project()`**: Copy all cleaned data files to the Next.js project.
+    - Copies all files from `{run_dir}/data_analysis/cleaned/` to `sample-dashboard/data/`
+    - Creates the `data/` directory if it doesn't exist
+    - Returns summary of copied files with their destination paths
+    - Should be called early in workflow before creating API routes
+
 #### Directory Tools
 
-10. **`inspect_dir(path)`**: List contents of a directory, scoped to allowed paths.
+11. **`inspect_dir(path)`**: List contents of a directory, scoped to allowed paths.
 
 #### File Creation Tools
 
-11. **`create_api(route_path, content)`**: Create a new API route file.
+12. **`create_api(route_path, content)`**: Create a new API route file.
 
     - `route_path`: Relative path under `app/api/` (e.g., `kpis/attrition-rate/route.ts`)
     - `content`: Full TypeScript content for the route handler
     - Must create parent directories if they don't exist
     - Must fail if file already exists (use `patch_file` to modify)
 
-12. **`create_model(name, content)`**: Create a new TypeScript model/type file.
+13. **`create_model(name, content)`**: Create a new TypeScript model/type file.
+
     - `name`: Model name (e.g., `AttritionData`)
     - Creates file at `models/{name}.ts`
     - Must export the type/interface
 
+14. **`add_utility(imports, content)`**: Append a utility function to `lib/data-utils.ts` and merge imports.
+    - `imports`: Array of import statements to add/merge (e.g., `["import { parse } from 'papaparse'"]`)
+    - `content`: The utility function code to append
+    - Automatically deduplicates imports
+    - Appends content at the end of the file
+    - Pre-existing `lib/data-utils.ts` contains base CSV loading with `papaparse`
+
 #### File Modification Tool
 
-13. **`patch_file(file_path, patch_content)`**: Apply patches to existing files using a context-based SEARCH/REPLACE format that is LLM-friendly:
+15. **`patch_file(file_path, patch_content)`**: Apply patches to existing files using a context-based SEARCH/REPLACE format that is LLM-friendly:
 
     ```
     <<<<<<< SEARCH
@@ -139,60 +153,61 @@ The Backend Agent must have access to the following tools:
 
 #### Search Tool
 
-14. **`search_content(query, path_pattern?)`**: Search for text/patterns in allowed paths.
+16. **`search_content(query, path_pattern?)`**: Search for text/patterns in allowed paths.
     - Searches in `sample-dashboard/src/**` by default
     - Returns file paths and matching lines
     - Useful for finding existing patterns, imports, or implementations
 
 #### Validation Tools
 
-15. **`run_lint()`**: Execute `npm run lint` in the sample-dashboard project.
+17. **`run_lint()`**: Execute `npm run lint` in the sample-dashboard project.
 
     - Returns stdout/stderr and exit code
     - Working directory: `sample-dashboard/`
 
-16. **`run_build()`**: Execute `npm run build` in the sample-dashboard project.
+18. **`run_build()`**: Execute `npm run build` in the sample-dashboard project.
     - Returns stdout/stderr and exit code (truncated if too long)
     - Working directory: `sample-dashboard/`
 
 #### Documentation Tool
 
-17. **`nextjs_docs(topic)`**: Query Next.js documentation via MCP server.
+19. **`nextjs_docs(topic)`**: Query Next.js documentation via MCP server.
     - Must call `nextjs_init()` before first use in a session
     - Topics: App Router, Route Handlers, API Routes, Data Fetching, etc.
     - Agent decides what to search based on current task
 
 #### Output Tool
 
-18. **`write_backend_manifest(manifest)`**: Write the backend manifest to the run directory.
+20. **`write_backend_manifest(manifest)`**: Write the backend manifest to the run directory.
     - Manifest schema (see Section 4.4)
     - Saves to `{run_dir}/dev/backend_manifest.json`
 
 ### 4.3 Backend Agent Workflow
 
-19. The Backend Agent must follow this general workflow:
+21. The Backend Agent must follow this general workflow:
 
     ```
     1. Initialize: Call nextjs_init() to enable docs access
     2. Understand: Read dashboard_concept.json and data_profile.md
     3. Plan: Determine required API routes based on KPIs and visuals
-    4. Inspect: Check existing project structure (models/, app/api/)
-    5. Copy Data: Ensure cleaned CSV is in sample-dashboard/data/
-    6. Create Models: Generate TypeScript interfaces for data shapes
-    7. Create Routes: Generate API route handlers for each endpoint
-    8. Validate: Run lint, fix errors if any (max 3 retries)
-    9. Build: Run build, fix errors if any (max 3 retries)
-    10. Manifest: Write backend_manifest.json documenting all created artifacts
+    4. Inspect: Check existing project structure (models/, app/api/, lib/)
+    5. Copy Data: Call copy_data_to_project() to copy cleaned data to sample-dashboard/data/
+    6. Add Utilities: Use add_utility() to extend lib/data-utils.ts with needed helpers
+    7. Create Models: Generate TypeScript interfaces for data shapes
+    8. Create Routes: Generate API route handlers for each endpoint
+    9. Validate: Run lint, fix errors if any (max 3 retries)
+    10. Build: Run build, fix errors if any (max 3 retries)
+    11. Manifest: Write backend_manifest.json documenting all created artifacts
     ```
 
-20. When lint or build fails, the Backend Agent must:
+22. When lint or build fails, the Backend Agent must:
 
     - Parse the error output to identify the issue
     - Use `patch_file` or `create_api`/`create_model` to fix the issue
     - Retry the validation (max 3 total attempts per validation type)
     - If still failing after 3 attempts, report failure with context
 
-21. The Backend Agent must create API routes that:
+23. The Backend Agent must create API routes that:
     - Use Next.js App Router conventions (`route.ts` files)
     - Return JSON responses with proper typing
     - Handle query parameters for filtering (matching dashboard filters)
@@ -201,7 +216,7 @@ The Backend Agent must have access to the following tools:
 
 ### 4.4 Backend Manifest Schema
 
-22. The backend manifest must conform to this schema:
+24. The backend manifest must conform to this schema:
 
     ```typescript
     interface BackendManifest {
@@ -244,27 +259,27 @@ The Backend Agent must have access to the following tools:
 
 ### 4.5 Data Access Patterns
 
-23. The Backend Agent must be able to access:
+25. The Backend Agent must be able to access:
 
     - **Dashboard Concept**: `{run_dir}/planner/dashboard_concept.json`
     - **Data Profile**: `{run_dir}/data_analysis/data_profile.md`
     - **Cleaned Data**: `{run_dir}/data_analysis/cleaned/*.csv`
     - **Next.js Project**: `C:\Users\darks\Documents\agentic-dashboard\sample-dashboard\src\`
 
-24. The Backend Agent must copy the cleaned CSV to `sample-dashboard/data/` before creating API routes.
+26. The Backend Agent must use `copy_data_to_project()` to copy all files from `{run_dir}/data_analysis/cleaned/` to `sample-dashboard/data/` before creating API routes.
 
-25. API routes should read data using a utility function that:
+27. API routes should read data using the pre-existing `lib/data-utils.ts` that:
     - Loads CSV data (consider caching for performance)
     - Applies filters based on query parameters
     - Aggregates data as needed for KPIs/visuals
 
 ### 4.6 Integration with Existing System
 
-26. The Dev Orchestrator must be callable from the main Manager Agent after the Planner completes successfully.
+28. The Dev Orchestrator must be callable from the main Manager Agent after the Planner completes successfully.
 
-27. The Dev Orchestrator must read necessary paths from session state (set by Planner/Data Analysis agents).
+29. The Dev Orchestrator must read necessary paths from session state (set by Planner/Data Analysis agents).
 
-28. The Backend Agent must update session state with:
+30. The Backend Agent must update session state with:
     - `backend_manifest_path`: Path to the generated manifest
     - `backend_status`: "success" | "failed" | "partial"
 
@@ -316,7 +331,7 @@ src/agents/backend/
 src/tools/backend/
     ├── __init__.py
     ├── filesystem.py         # read_file, inspect_dir, search_content
-    ├── creation.py           # create_api, create_model
+    ├── creation.py           # create_api, create_model, add_utility
     ├── patching.py           # patch_file implementation
     ├── validation.py         # run_lint, run_build
     ├── data_access.py        # get_sample_rows, read_data_profile, read_dashboard_concept
@@ -393,6 +408,8 @@ sample-dashboard/
 │   │   │           └── route.ts
 │   │   ├── page.tsx
 │   │   └── layout.tsx
+│   ├── lib/
+│   │   └── data-utils.ts  # Pre-existing, extended via add_utility()
 │   └── models/            # TypeScript types created by Backend Agent
 │       └── *.ts
 ├── data/                  # Cleaned CSV copied here
@@ -460,7 +477,9 @@ All file operations must be scoped to prevent unauthorized access:
 
 ```python
 ALLOWED_PATHS = [
-    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src",
+    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/api",
+    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/models",
+    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/lib/data-utils.ts",
     "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/data",
     "{run_dir}/data_analysis/cleaned",
     "{run_dir}/data_analysis/data_profile.md",
@@ -501,18 +520,30 @@ ALLOWED_PATHS = [
 
 ---
 
-## 9. Open Questions
+## 9. Resolved Decisions
 
-1. **Data Utility Library**: Should we pre-create a `lib/data-utils.ts` with CSV loading and filtering utilities, or should the Backend Agent create this as needed?
+1. **Data Utility Library**: ✅ A pre-existing `lib/data-utils.ts` file exists with base CSV loading using `papaparse`. The Backend Agent uses the `add_utility(imports, content)` tool to extend it with additional helper functions as needed.
 
-2. **Route Granularity**: Should each KPI/visual have its own route, or should we have aggregate endpoints (e.g., `/api/kpis` returning all KPIs)?
+2. **Route Granularity**: ✅ The Backend Agent inspects the dashboard concept and data profile to decide the optimal route structure. It may create individual routes per KPI/visual or aggregate endpoints based on the data relationships and complexity.
 
-3. **Error Response Format**: What should the standard error response format be for API routes?
+3. **Error Response Format**: ✅ All API routes must return errors in this standard format:
 
-4. **CSV Parsing Library**: Should we mandate a specific CSV parsing library (e.g., `papaparse`, `csv-parse`) or let the agent decide?
+   ```typescript
+   interface ApiError {
+     error: {
+       code: string; // e.g., "INVALID_FILTER", "DATA_NOT_FOUND"
+       message: string; // Human-readable error message
+       details?: unknown; // Optional additional context
+     };
+   }
+   ```
 
-5. **Caching Strategy**: For v1, we skip caching, but should the generated code include TODO comments for future caching implementation?
+   HTTP status codes: 400 for client errors, 500 for server errors.
 
-6. **TypeScript Strictness**: Should generated code satisfy `strict: true` TypeScript configuration?
+4. **CSV Parsing Library**: ✅ `papaparse` is the mandated CSV parsing library (already installed in the project).
 
-7. **Test File Generation**: Should the Backend Agent also create basic test files for the API routes, or leave this entirely to the QA Agent?
+5. **Caching Strategy**: ✅ Generated code should include `// TODO: Add caching layer` comments at appropriate locations (e.g., data loading functions) for future implementation.
+
+6. **TypeScript Strictness**: ✅ Generated code should work correctly and follow TypeScript best practices. If `strict: true` causes issues that require complex workarounds, pragmatic solutions (e.g., targeted `// @ts-ignore` or `as unknown as Type`) are acceptable to keep the code functional.
+
+7. **Test File Generation**: ✅ No test files for v1. Test generation will be handled by the QA Agent in a future PRD.
