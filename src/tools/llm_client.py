@@ -2,6 +2,9 @@ import time
 from openai import OpenAI
 
 from ..core.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, SUMMARIZER_MODEL
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class Summarizer:
@@ -36,12 +39,10 @@ class Summarizer:
             except Exception as exc:
                 if attempt == max_attempts:
                     # Final failure → return raw text
-                    # Optional: log the error
-                    # logger.error(f"Summarizer failed after {attempt} attempts: {exc}")
+                    logger.error("Summarizer failed after max attempts", extra={"attempts": attempt, "error": str(exc)})
                     return text
                 
-                # Optional: log the warning
-                # logger.warning(f"Summarizer error (attempt {attempt}): {exc}; retrying in {backoff}s")
+                logger.warning("Summarizer error, retrying", extra={"attempt": attempt, "backoff_seconds": backoff, "error": str(exc)})
 
                 time.sleep(backoff)
                 backoff *= 2  # exponential backoff
@@ -49,6 +50,3 @@ class Summarizer:
         # Should never happen, fallback
         return text
 
-
-def summarize_content(text: str, max_tokens: int = 512) -> str:
-    return Summarizer().summarize(text, max_tokens=max_tokens)

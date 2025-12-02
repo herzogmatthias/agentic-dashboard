@@ -28,11 +28,15 @@ class DataAnalysisOutput(BaseModel):
         ),
     )
 
-    additional_artifacts_path: List[str] = Field(
-        default_factory=list,
+    data_context: str = Field(
+        "",
         description=(
-            "List of all relative file paths inside the Daytona sandbox that were created and are important for downstream use (additional calculations)"
-            ". Each path must be relative to sandbox root "
-            "(e.g. 'artifacts/data_analysis/cleaned.csv'). "
+            "Brief 2-3 sentence summary of the dataset and cleaning for the Planner Agent. "
+            "Should include: (1) What the dataset represents and key dimensions, "
+            "(2) Notable segments or patterns identified, "
+            "(3) Data quality summary and any important caveats. "
+            "Example: 'Customer transaction dataset with 15K records over 2 years. "
+            "Identified 3 key segments: high-value/low-activity, new customers <6mo, at-risk. "
+            "Data 95% complete after cleaning, minor date format issues resolved.'"
         ),
     )

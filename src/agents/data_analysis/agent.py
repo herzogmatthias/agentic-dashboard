@@ -6,8 +6,8 @@ from phoenix.otel import register as register_phoenix
 from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 import json
-from src.agents.utils.initial_state_callback import initial_state
 from src.core.daytona_client import DaytonaSandboxSingleton
+from src.core.logging import get_logger
 from src.models.data_analysis_agent_output import DataAnalysisOutput
 from src.prompts.system_prompts import build_analysis_agent_prompt
 from src.tools.filesystem import (
@@ -18,7 +18,9 @@ from src.tools.filesystem import (
     run_python_tool,
     write_cleaning_summary_tool,
     write_data_profile_tool,
+    write_metrics_summary_tool,
 )
+from src.tools.delegation import summarize_actions_tool
 
 OUTPUT_KEY = "data_analysis_output"
 
@@ -26,6 +28,8 @@ tracer_provider = register_phoenix(
     project_name="default",
     auto_instrument=True,
 )
+
+logger = get_logger(__name__)
 
 
 def create_data_analysis_agent() -> LlmAgent:
@@ -41,10 +45,12 @@ def create_data_analysis_agent() -> LlmAgent:
             read_snippet_tool,
             write_data_profile_tool,
             write_cleaning_summary_tool,
+            write_metrics_summary_tool,
             inspect_json_keys_tool,
-            inspect_json_value_tool
+            inspect_json_value_tool,
+            summarize_actions_tool,
         ],
-        before_agent_callback=initial_state,
+        include_contents='none',
         after_agent_callback=copy_data_analysis_artifacts_after_agent,
         output_key=OUTPUT_KEY,
         output_schema=DataAnalysisOutput,
@@ -66,29 +72,24 @@ def copy_data_analysis_artifacts_after_agent(
     - Return None to preserve the original agent answer
     """
     try:
-        copied = DaytonaSandboxSingleton().copy_workspace_to_artifacts(
+        intermediate_results = DaytonaSandboxSingleton().copy_workspace_to_artifacts(
             local_artifacts_dir=Path(callback_context.state["run_dir"]) / "artifacts",
             remote_root="workspace/artifacts/data_analysis"
         )
-        print(f"Copied data analysis artifacts: {copied}")
-        copied.extend(
-            DaytonaSandboxSingleton().copy_workspace_to_artifacts(
+        logger.info("Copied data analysis artifacts", extra={"agent": "data_analysis", "phase": "copy_artifacts", "count": len(intermediate_results)})
+        callback_context.state["data_analysis_intermediate_artifacts"] = intermediate_results
+        results = DaytonaSandboxSingleton().copy_workspace_to_artifacts(
             local_artifacts_dir=Path(callback_context.state["run_dir"]) / "cleaned",
             remote_root="workspace/cleaned"
         )
-        )
-        callback_context.state[OUTPUT_KEY]["additional_artifacts_path"] = copied
-
+        
+        callback_context.state["additional_artifacts_path"] = results
+        logger.info("Copied data analysis results", extra={"agent": "data_analysis", "phase": "copy_artifacts", "count": len(results)})
     except Exception as e:
-        print(f"Error copying data analysis artifacts: {e}")
+        logger.exception("Error copying data analysis artifacts", extra={"agent": "data_analysis", "phase": "copy_artifacts"})
     finally:
-        #DaytonaSandboxSingleton().stop_and_archive(copy_artifacts=True)
+        DaytonaSandboxSingleton().stop_and_archive(copy_artifacts=True)
         pass
-    
-    output = callback_context.state[OUTPUT_KEY]
 
     # Option 1: return as pretty JSON text
-    return types.Content(
-        role="model",
-        parts=[types.Part(text=json.dumps(output, indent=2))]
-    )
+    return None
