@@ -11,9 +11,8 @@ except Exception:  # pragma: no cover - fallback if not installed
     tiktoken = None  # type: ignore
 from google.adk.tools import FunctionTool, ToolContext
 
-from src.prompts.system_prompts import build_output_summary_prompt, build_snippet_summary_prompt
 from src.core.logging import get_logger
-from src.tools.llm_client import Summarizer
+from src.tools.llm_client import Summarizer, get_output_summary_prompt, get_snippet_summary_prompt
 
 from ..core.config import SANDBOX_CLEANED_CSV_PATH, SANDBOX_CSV_PATH, SLICE_LIMIT
 from ..core.daytona_client import DaytonaSandboxSingleton
@@ -59,7 +58,7 @@ def run_python(code: str, timeout_seconds: int = 180) -> Dict[str, Any]:
         if resp.artifacts.charts:
             charts = {chart.png for chart in resp.artifacts.charts}
     if token_count > 1000:
-        result = Summarizer().summarize(resp.result, system_prompt=build_output_summary_prompt(), max_tokens=500)
+        result = Summarizer().summarize(resp.result, system_prompt=get_output_summary_prompt(), max_tokens=500)
         path = f"workspace/summarized_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         sandbox.fs.upload_file(resp.result.encode(), path)
         msg = f"Output is summarized to 500 tokens. Full output saved to sandbox at {path}"
@@ -106,7 +105,7 @@ def read_snippet(file_path: str, from_line: int = 1, to_line: int = 50):
     token_count = _count_tokens(snippet_text)
     message = "Full Snippet Returned"
     if token_count > 1000:
-        snippet = Summarizer().summarize(snippet_text, system_prompt=build_snippet_summary_prompt(), max_tokens=500).splitlines()
+        snippet = Summarizer().summarize(snippet_text, system_prompt=get_snippet_summary_prompt(), max_tokens=500).splitlines()
         message = "Snippet Summarized"
     logger.info("read_snippet", extra={"agent": "filesystem", "phase": "read_snippet", "path": str(file_path)})
     return {

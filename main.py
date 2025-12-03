@@ -5,8 +5,7 @@ This wrapper allows running `python main.py` directly for the console chat inter
 
 import json
 from src.app.main import main
-from src.prompts.system_prompts import build_snippet_summary_prompt
-from src.tools.llm_client import Summarizer
+from src.tools.llm_client import Summarizer, get_snippet_summary_prompt
 
 if __name__ == "__main__":
     main()

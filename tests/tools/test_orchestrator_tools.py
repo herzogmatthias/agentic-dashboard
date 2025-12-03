@@ -3,8 +3,6 @@ from pathlib import Path
 
 from src.tools.orchestrator import (
     validate_dataset,
-    prepare_data_analysis,
-    prepare_planner,
     read_state,
     write_user_goals,
 )
@@ -20,20 +18,6 @@ def test_validate_dataset_with_tempfile(tmp_path):
     out = validate_dataset(str(p), _tc({}))
     assert out["valid"] is True
     assert "validated" in out["message"].lower()
-
-
-def test_prepare_data_analysis_requires_run_dir_and_dataset():
-    state = {"run_dir": "x", "dataset_path": "y"}
-    out = prepare_data_analysis("do things", _tc(state))
-    assert out["ready"] is True
-    assert state.get("temp:data_analysis_instructions") == "do things"
-
-
-def test_prepare_planner_requires_data_analysis_output():
-    state = {"data_analysis_output": {"success": True}}
-    out = prepare_planner("handoff text", _tc(state))
-    assert out["ready"] is True
-    assert state.get("temp:planner_handoff") == "handoff text"
 
 
 def test_read_state_allows_only_whitelist():

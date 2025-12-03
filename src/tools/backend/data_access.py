@@ -20,7 +20,8 @@ logger = get_logger(__name__)
 
 
 # Maximum rows to return from get_sample_rows (prevents excessive data transfer)
-MAX_SAMPLE_ROWS = 5
+# Keep low (1) for large cleaned datasets to avoid token bloat
+MAX_SAMPLE_ROWS = 1
 
 
 def get_sample_rows(
@@ -31,20 +32,11 @@ def get_sample_rows(
     """
     Read the first N rows of a CSV file to understand data structure.
     
-    Does not load the entire file into memory - uses polars lazy loading.
-    Maximum of 5 rows will be returned regardless of num_rows requested.
+    Uses polars lazy loading for efficiency. Maximum of 5 rows returned.
     
     Args:
         csv_path: Absolute path to the CSV file.
         num_rows: Number of rows to return (default 5, max 5).
-        tool_context: ADK tool context with session state.
-        
-    Returns:
-        Dictionary with:
-        - columns: List of column names
-        - rows: List of dictionaries representing each row
-        - total_rows_sampled: Number of rows returned
-        - error: Error message if operation failed
     """
     run_dir = tool_context.state.get("run_dir") if tool_context else None
     
@@ -93,16 +85,7 @@ def read_data_profile(
     """
     Read the data profile markdown from the current run's artifacts.
     
-    Requires `run_dir` or `data_profile_path` to be set in session state.
-    
-    Args:
-        tool_context: ADK tool context with session state.
-        
-    Returns:
-        Dictionary with:
-        - content: The markdown content of the data profile
-        - path: The resolved path to the data profile
-        - error: Error message if operation failed
+    Returns the content and path from {run_dir}/data_analysis/data_profile.md.
     """
     if tool_context is None:
         return {"error": "Tool context not provided"}
@@ -114,7 +97,8 @@ def read_data_profile(
     if data_profile_path:
         profile_path = Path(data_profile_path)
     elif run_dir:
-        profile_path = Path(run_dir) / "data_analysis" / "data_profile.md"
+        # Data profile is at {run_dir}/data_profile.md (not data_analysis/data_profile.md)
+        profile_path = Path(run_dir) / "data_profile.md"
     else:
         return {"error": "Neither 'data_profile_path' nor 'run_dir' found in session state"}
     
@@ -143,18 +127,9 @@ def read_dashboard_concept(
     tool_context: ToolContext | None = None,
 ) -> dict[str, Any]:
     """
-    Read and parse the dashboard concept JSON from the current run's planner output.
+    Read and parse the dashboard concept JSON from the planner output.
     
-    Requires `run_dir` or `dashboard_spec_path` to be set in session state.
-    
-    Args:
-        tool_context: ADK tool context with session state.
-        
-    Returns:
-        Dictionary with:
-        - concept: The parsed dashboard concept object
-        - path: The resolved path to the dashboard concept file
-        - error: Error message if operation failed
+    Returns the parsed concept from {run_dir}/planner/dashboard_concept.json.
     """
     if tool_context is None:
         return {"error": "Tool context not provided"}
@@ -177,13 +152,16 @@ def read_dashboard_concept(
         content = concept_path.read_text(encoding="utf-8")
         concept = json.loads(content)
         
+        # Return minified JSON string to save tokens
+        minified = json.dumps(concept, separators=(",", ":"))
+        
         logger.info(
             "read_dashboard_concept success",
             extra={"agent": "backend", "path": str(concept_path)},
         )
         
         return {
-            "concept": concept,
+            "concept": minified,
             "path": str(concept_path),
         }
         
@@ -233,7 +211,8 @@ def copy_data_to_project(
         else:
             source_dir = source_path
     elif run_dir:
-        source_dir = Path(run_dir) / "data_analysis" / "cleaned"
+        # Cleaned data is at {run_dir}/cleaned/ (not data_analysis/cleaned)
+        source_dir = Path(run_dir) / "cleaned"
     else:
         return {"error": "Neither 'cleaned_data_path' nor 'run_dir' found in session state"}
     

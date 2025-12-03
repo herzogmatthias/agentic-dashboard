@@ -15,9 +15,8 @@
 - `src/models/backend_manifest.py` - BackendManifest and related Pydantic models
 
 - `src/tools/backend/__init__.py` - Package init for backend tools
-- `src/tools/backend/filesystem.py` - `read_file`, `inspect_dir`, `search_content` (scoped to allowed paths)
-- `src/tools/backend/creation.py` - `create_api`, `create_model`, `add_utility`
-- `src/tools/backend/patching.py` - `patch_file` implementation (SEARCH/REPLACE blocks)
+- `src/tools/backend/filesystem.py` - `search_content` (scoped search; read/write via MCP filesystem server)
+- `src/tools/backend/creation.py` - `create_api`, `create_model` (domain-specific creation with validation)
 - `src/tools/backend/validation.py` - `run_lint`, `run_build`
 - `src/tools/backend/data_access.py` - `get_sample_rows`, `read_data_profile`, `read_dashboard_concept`, `copy_data_to_project`
 - `src/tools/backend/manifest.py` - `write_backend_manifest`
@@ -44,7 +43,8 @@
 - The Backend Agent operates on files in `sample-dashboard/src/` - all file operations must be scoped to allowed paths
 - `papaparse` is already installed in the sample-dashboard project for CSV parsing
 - `lib/data-utils.ts` already exists with base CSV loading utilities
-- Use the SEARCH/REPLACE block format for `patch_file` to avoid LLM line-number issues
+- File read/write/edit operations are handled by the MCP filesystem server
+- Custom tools (`create_api`, `create_model`) encode domain intent and validation
 
 ## Instructions for Completing Tasks
 
@@ -115,92 +115,104 @@ Update the file after completing each sub-task, not just after completing an ent
 - [x] 4.0 Implement file creation tools
   - [x] 4.1 Create `src/tools/backend/creation.py`:
     - [x] 4.1.1 Implement `create_api(route_path: str, content: str)` tool:
-      - Creates file at `sample-dashboard/src/app/api/{route_path}`
+      - Accepts Next.js route notation (e.g., "sales", "products/[id]")
+      - Auto-appends `route.ts` filename
+      - Creates file at `sample-dashboard/src/app/api/{route_path}/route.ts`
       - Creates parent directories if needed
-      - Fails if file already exists (return error message suggesting `patch_file`)
-      - Returns success message with full path
+      - Fails if file already exists (suggests MCP filesystem edit_file)
+      - Returns success message with full path and endpoint
     - [x] 4.1.2 Implement `create_model(name: str, content: str)` tool:
       - Creates file at `sample-dashboard/src/models/{name}.ts`
       - Creates `models/` directory if needed
       - Validates that content exports at least one type/interface
       - Fails if file already exists
-    - [x] 4.1.3 Implement `add_utility(imports: List[str], content: str)` tool:
-      - Reads existing `sample-dashboard/src/lib/data-utils.ts`
-      - Parses and merges import statements (deduplicate)
-      - Appends new utility function content at end of file
-      - Returns success message with summary of changes
-  - [x] 4.2 Implement import merging logic for `add_utility`:
-    - [x] 4.2.1 Parse existing imports using regex or simple string matching
-    - [x] 4.2.2 Merge new imports, combining named imports from same module
-    - [x] 4.2.3 Write merged imports at top, then existing code, then new content
-  - [x] 4.3 Add unit tests for creation tools
+  - [x] 4.2 Add unit tests for creation tools
+
+**Note:** File editing (e.g., modifying existing routes, adding utilities) is handled by the MCP filesystem server's `edit_file` tool. Custom tools focus on domain-specific creation with validation.
 
 ---
 
-### Phase 5: Backend Tools - File Patching
+### Phase 5: Backend Tools - Validation
 
-- [ ] 5.0 Implement SEARCH/REPLACE patch tool
-  - [ ] 5.1 Create `src/tools/backend/patching.py`:
-    - [ ] 5.1.1 Define patch block markers as constants:
-      - `SEARCH_MARKER = "<<<<<<< SEARCH"`
-      - `SEPARATOR = "======="`
-      - `REPLACE_MARKER = ">>>>>>> REPLACE"`
-    - [ ] 5.1.2 Implement `_validate_block_integrity(patch_content: str)` helper:
-      - Check balanced markers (equal count of SEARCH, SEPARATOR, REPLACE)
-      - Check correct sequence (SEARCH → SEPARATOR → REPLACE)
-      - Raise ValueError with descriptive message on failure
-    - [ ] 5.1.3 Implement `_parse_search_replace_blocks(patch_content: str) -> List[Tuple[str, str]]` helper:
-      - Extract all (search_text, replace_text) pairs
-      - Handle multiple blocks in single patch content
-    - [ ] 5.1.4 Implement `patch_file(file_path: str, patch_content: str)` tool:
-      - Validate path is in allowed scope
-      - Read file content
-      - Validate block integrity
-      - Parse blocks
-      - For each block: verify search text appears exactly once, then replace
-      - Write updated content
-      - Return success message with number of blocks applied
-  - [ ] 5.2 Handle edge cases:
-    - [ ] 5.2.1 Search text not found → return clear error with suggestion
-    - [ ] 5.2.2 Search text appears multiple times → return error asking for more context
-    - [ ] 5.2.3 Empty search or replace text → handle gracefully
-  - [ ] 5.3 Add comprehensive unit tests for patching tool
-
----
-
-### Phase 6: Backend Tools - Validation
-
-- [ ] 6.0 Implement validation tools
-  - [ ] 6.1 Create `src/tools/backend/validation.py`:
-    - [ ] 6.1.1 Define `SAMPLE_DASHBOARD_PATH` constant pointing to project root
-    - [ ] 6.1.2 Implement `run_lint()` tool:
+- [x] 5.0 Implement validation tools
+  - [x] 5.1 Create `src/tools/backend/validation.py`:
+    - [x] 5.1.1 Define `SAMPLE_DASHBOARD_PATH` constant pointing to project root
+    - [x] 5.1.2 Implement `check_typescript_syntax(content, filename)` tool:
+      - Uses `tsc --noEmit` on temp file for fast syntax validation
+      - Returns structured result with valid (bool) and errors (string)
+      - Gracefully handles missing tsc (allows creation to proceed)
+    - [x] 5.1.3 Implement `run_lint()` tool:
       - Execute `npm run lint` in sample-dashboard directory
       - Capture stdout/stderr
       - Return structured result with exit_code, stdout, stderr, passed (bool)
       - Truncate output if > 5000 chars
-    - [ ] 6.1.3 Implement `run_build()` tool:
+    - [x] 5.1.4 Implement `run_build()` tool:
       - Execute `npm run build` in sample-dashboard directory
       - Capture stdout/stderr
       - Return structured result with exit_code, stdout, stderr, passed (bool)
       - Truncate output if > 10000 chars (builds can be verbose)
-  - [ ] 6.2 Implement async/subprocess handling for npm commands
-  - [ ] 6.3 Add timeout handling (max 120 seconds for build, 60 seconds for lint)
-  - [ ] 6.4 Add unit tests (can mock subprocess calls)
+  - [x] 5.2 Implement subprocess handling for npm commands
+  - [x] 5.3 Add timeout handling (max 120 seconds for build, 60 seconds for lint, 10 seconds for syntax check)
+  - [x] 5.4 Integrate syntax validation into `create_api` and `create_model` (pre-check before write)
+  - [x] 5.5 Add unit tests in `tests/tools/test_validation.py` (20 tests)
 
 ---
 
-### Phase 7: Backend Tools - Next.js Documentation
+### Phase 6: Backend Tools - Next.js Documentation
 
-- [ ] 7.0 Implement Next.js MCP documentation tool
-  - [ ] 7.1 Create `src/tools/backend/nextjs_docs.py`:
-    - [ ] 7.1.1 Research Next.js DevTools MCP server integration (https://github.com/vercel/next-devtools-mcp)
-    - [ ] 7.1.2 Implement `nextjs_init()` tool - initializes MCP server connection if needed
-    - [ ] 7.1.3 Implement `nextjs_docs(topic: str)` tool - queries Next.js documentation
-    - [ ] 7.1.4 Handle MCP server connection errors gracefully
-  - [ ] 7.2 If MCP integration is complex, implement as a fallback:
-    - [ ] 7.2.1 Use Context7 MCP (`mcp_io_github_ups_get-library-docs`) with Next.js library ID
-    - [ ] 7.2.2 Or embed key Next.js App Router patterns in the Backend Agent's system prompt
-  - [ ] 7.3 Document the chosen approach in code comments
+- [x] 6.0 Implement Next.js MCP documentation tool
+  - [x] 6.1 Create `src/tools/backend/nextjs_docs.py`:
+    - [x] 6.1.1 Research Next.js DevTools MCP server integration (https://github.com/vercel/next-devtools-mcp)
+    - [x] 6.1.2 Implement `nextjs_init()` tool - initializes MCP server connection if needed
+    - [x] 6.1.3 Implement `nextjs_docs(topic: str)` tool - queries Next.js documentation
+    - [x] 6.1.4 Handle MCP server connection errors gracefully
+  - [x] 6.2 Implemented MCP integration using ADK McpToolset:
+    - [x] 6.2.1 `NextJsDocsMcp` class manages connection lifecycle with manual `init` call
+    - [x] 6.2.2 `create_nextjs_toolset()` helper for direct McpToolset integration
+    - [x] 6.2.3 Wrapper `nextjs_docs_tool` and `nextjs_init_tool` FunctionTools available
+  - [x] 6.3 Document the chosen approach in code comments (see nextjs_docs.py header)
+  - [x] 6.4 Add unit tests in `tests/tools/test_nextjs_docs.py` (26 tests)
+
+---
+
+### Phase 7: MCP Filesystem Server Integration
+
+- [x] 7.0 Configure MCP filesystem server for Backend Agent
+  - [x] 7.1 Document MCP server configuration:
+    - [x] 7.1.1 Define allowed directories for the filesystem MCP server:
+      - `sample-dashboard/src/app/api` - API routes
+      - `sample-dashboard/src/models` - TypeScript models
+      - `sample-dashboard/src/lib` - Utility functions
+      - **NOTE**: `data` directory removed - read-only access via `get_sample_rows` tool and state templating
+    - [x] 7.1.2 Create `src/tools/backend/filesystem_mcp.py` with programmatic McpToolset factory
+    - [x] 7.1.3 Document the MCP tools available to the Backend Agent:
+      - `read_file` - Read file contents
+      - `write_file` - Create new files (prefer `create_api`/`create_model` for domain types)
+      - `edit_file` - Modify existing files with search/replace
+      - `list_directory` - List directory contents
+      - `directory_tree` - Get directory structure
+      - `read_multiple_files` - Read multiple files at once
+      - `search_files` - Search for files by pattern
+      - `list_allowed_directories` - List allowed directories
+  - [x] 7.2 Update Backend Agent prompts:
+    - [x] 7.2.1 Created `src/agents/backend/prompts.py` with `build_backend_agent_prompt()`
+    - [x] 7.2.2 Implemented "Information Gathering First" workflow:
+      - MUST read dashboard_concept, data_profile, sample_rows BEFORE coding
+      - Clear phase-based workflow: Understand → Plan → Copy Data → Models → Routes → Validate → Manifest
+    - [x] 7.2.3 Document that `create_api` and `create_model` should be preferred for new files
+    - [x] 7.2.4 Document that `edit_file` should be used for modifying existing files
+    - [x] 7.2.5 Refactored prompts structure:
+      - Moved agent prompts from `src/prompts/system_prompts.py` to respective agent folders
+      - Created `src/agents/data_analysis/prompts.py`
+      - Created `src/agents/planner/prompts.py`
+      - Created `src/agents/orchestrator/prompts.py`
+      - Moved summarizer prompts to `src/tools/llm_client.py` as `get_output_summary_prompt()` and `get_snippet_summary_prompt()`
+      - Deleted `src/prompts/` folder
+    - [x] 7.2.6 Removed `data` directory from MCP filesystem allowed paths (read-only via state templating)
+  - [x] 7.3 Test MCP filesystem integration:
+    - [x] 7.3.1 Created `tests/tools/test_filesystem_mcp.py` with 19 unit tests
+    - [x] 7.3.2 All factory function tests pass (correct filter, npx command, allowed paths, timeout)
+    - [x] 7.3.3 Module exports correctly via `__init__.py` with renamed constants
 
 ---
 
@@ -297,18 +309,14 @@ Update the file after completing each sub-task, not just after completing an ent
 ### Phase 12: Testing
 
 - [ ] 12.0 Add comprehensive tests
-  - [ ] 12.1 Create `tests/tools/test_backend_tools.py`:
-    - [ ] 12.1.1 Test `_validate_path` with allowed and disallowed paths
-    - [ ] 12.1.2 Test `read_file` with various line ranges
-    - [ ] 12.1.3 Test `inspect_dir` output format
-    - [ ] 12.1.4 Test `search_content` with regex patterns
-    - [ ] 12.1.5 Test `create_api` creates files correctly
-    - [ ] 12.1.6 Test `create_api` fails on existing file
-    - [ ] 12.1.7 Test `create_model` validates exports
-    - [ ] 12.1.8 Test `add_utility` merges imports correctly
-    - [ ] 12.1.9 Test `patch_file` with single and multiple blocks
-    - [ ] 12.1.10 Test `patch_file` error cases (not found, multiple matches)
-    - [ ] 12.1.11 Test `copy_data_to_project` copies all files
+  - [x] 12.1 Create `tests/tools/test_backend_tools.py`:
+    - [x] 12.1.1 Test `_validate_path` with allowed and disallowed paths
+    - [x] 12.1.2 Test `search_content` with regex patterns
+    - [x] 12.1.3 Test `create_api` creates files correctly with Next.js notation
+    - [x] 12.1.4 Test `create_api` fails on existing file
+    - [x] 12.1.5 Test `create_model` validates exports
+    - [x] 12.1.6 Test `copy_data_to_project` copies all files
+    - [x] 12.1.7 Test data access tools (get_sample_rows, read_data_profile, read_dashboard_concept)
   - [ ] 12.2 Create `tests/agents/test_backend_agent.py`:
     - [ ] 12.2.1 Test Backend Agent initialization
     - [ ] 12.2.2 Test Backend Agent has all required tools
@@ -342,40 +350,80 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tool Reference
 
-### Tools to Implement (Summary)
+### Custom Tools (Summary)
 
-| Tool                     | File             | Purpose                              |
-| ------------------------ | ---------------- | ------------------------------------ |
-| `read_file`              | `filesystem.py`  | Read file contents (scoped)          |
-| `inspect_dir`            | `filesystem.py`  | List directory contents              |
-| `search_content`         | `filesystem.py`  | Search for patterns in files         |
-| `get_sample_rows`        | `data_access.py` | Read CSV sample rows                 |
-| `read_data_profile`      | `data_access.py` | Read data profile markdown           |
-| `read_dashboard_concept` | `data_access.py` | Read dashboard spec JSON             |
-| `copy_data_to_project`   | `data_access.py` | Copy cleaned data to Next.js project |
-| `create_api`             | `creation.py`    | Create new API route file            |
-| `create_model`           | `creation.py`    | Create new TypeScript model          |
-| `add_utility`            | `creation.py`    | Extend data-utils.ts                 |
-| `patch_file`             | `patching.py`    | Apply SEARCH/REPLACE patches         |
-| `run_lint`               | `validation.py`  | Execute npm run lint                 |
-| `run_build`              | `validation.py`  | Execute npm run build                |
-| `nextjs_init`            | `nextjs_docs.py` | Initialize Next.js docs access       |
-| `nextjs_docs`            | `nextjs_docs.py` | Query Next.js documentation          |
-| `write_backend_manifest` | `manifest.py`    | Write manifest JSON                  |
+| Tool                     | File             | Purpose                                               |
+| ------------------------ | ---------------- | ----------------------------------------------------- |
+| `search_content`         | `filesystem.py`  | Search for patterns in files (scoped)                 |
+| `get_sample_rows`        | `data_access.py` | Read CSV sample rows (max 5)                          |
+| `read_data_profile`      | `data_access.py` | Read data profile markdown                            |
+| `read_dashboard_concept` | `data_access.py` | Read dashboard spec JSON                              |
+| `copy_data_to_project`   | `data_access.py` | Copy cleaned data to Next.js project                  |
+| `create_api`             | `creation.py`    | Create new API route (Next.js notation + syntax)      |
+| `create_model`           | `creation.py`    | Create new TypeScript model with validation           |
+| `run_lint`               | `validation.py`  | Execute npm run lint                                  |
+| `run_build`              | `validation.py`  | Execute npm run build                                 |
+| `nextjs_init`            | `nextjs_docs.py` | Initialize Next.js MCP connection (call before agent) |
+| `nextjs_docs`            | `nextjs_docs.py` | Query Next.js documentation via MCP                   |
+| `write_backend_manifest` | `manifest.py`    | Write manifest JSON                                   |
 
-### Allowed Paths for File Operations
+> Note: TypeScript syntax validation (`_check_typescript_syntax`) is an internal helper used by `create_api` and `create_model`, not exposed as a tool.
+
+> Note: `nextjs_init` should be called once before the agent starts (via `NextJsDocsMcp.connect()`) to initialize the MCP connection and call the required `init` tool. Only `nextjs_docs` is exposed to the agent via `tool_filter=['nextjs_docs']`.
+
+### MCP Filesystem Server Tools
+
+| Tool                  | Purpose                                              |
+| --------------------- | ---------------------------------------------------- |
+| `read_file`           | Read file contents                                   |
+| `write_file`          | Create new files (prefer custom tools for API/model) |
+| `edit_file`           | Modify existing files with search/replace            |
+| `list_directory`      | List directory contents                              |
+| `directory_tree`      | Get directory structure                              |
+| `read_multiple_files` | Read multiple files at once                          |
+| `search_files`        | Search for files by pattern                          |
+| `get_file_info`       | Get file metadata                                    |
+| `move_file`           | Move or rename files                                 |
+
+### Filesystem MCP Integration
+
+The MCP filesystem server is integrated programmatically via `src/tools/backend/filesystem_mcp.py`:
 
 ```python
-ALLOWED_PATHS = [
-    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/app/api",
-    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/models",
-    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/lib/data-utils.ts",
-    "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/data",
-    "{run_dir}/data_analysis/cleaned",
-    "{run_dir}/data_analysis/data_profile.md",
-    "{run_dir}/planner/dashboard_concept.json",
+from src.tools.backend import create_filesystem_toolset
+
+# Create toolset with default allowed directories
+toolset = create_filesystem_toolset()
+
+# Or with additional paths (e.g., run directory)
+toolset = create_filesystem_toolset_with_run_dir("runs/run_123")
+
+# Add to agent's tools list
+agent = LlmAgent(
+    model="gemini-2.0-flash",
+    name="backend_agent",
+    tools=[
+        toolset,  # McpToolset auto-connects when agent runs
+        # ... other tools
+    ],
+)
+```
+
+### Allowed Paths (Filesystem MCP)
+
+The filesystem MCP server is configured with these directories (defined in `filesystem_mcp.py`):
+
+```python
+ALLOWED_DIRECTORIES = [
+    "sample-dashboard/src/app/api",   # API routes
+    "sample-dashboard/src/models",    # TypeScript models
+    "sample-dashboard/src/lib",       # Utility functions
+    # NOTE: data/ directory NOT included - no write access
+    # Data paths provided via state templating, read via get_sample_rows
 ]
 ```
+
+Additional paths can be added via `create_filesystem_toolset(additional_paths=[...])` or `create_filesystem_toolset_with_run_dir(run_dir)`.
 
 ### State Keys
 

@@ -30,7 +30,7 @@ from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 from phoenix.otel import register as register_phoenix
 
-from src.prompts.system_prompts import build_orchestrator_agent_prompt
+from .prompts import build_orchestrator_agent_prompt
 from src.core.logging import get_logger
 from src.tools.orchestrator import (
     validate_dataset_tool,

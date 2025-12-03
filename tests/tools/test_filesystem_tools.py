@@ -25,9 +25,10 @@ def test_write_profile_and_cleaning(tmp_path):
 
 def test_write_metrics_summary(tmp_path):
     state = {"run_dir": str(tmp_path)}
-    p = write_metrics_summary("# metrics", _tc(state), filename="metrics.md")
+    p = write_metrics_summary("# metrics", _tc(state))
     assert Path(p).exists()
-    assert Path(p).parent.name == "cleaned"
+    # Metrics summary goes to run_dir directly (not cleaned subdirectory)
+    assert Path(p).name == "metrics_summary.md"
 
 
 def test_inspect_json_keys_and_value(tmp_path):

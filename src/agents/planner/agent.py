@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from src.core.logging import get_logger
 from src.models.planner_output import PlannerOutput
-from src.prompts.system_prompts import build_planner_agent_prompt
+from .prompts import build_planner_agent_prompt
 from src.tools.planner import create_dashboard_tool
 from src.tools.filesystem import (
     inspect_json_keys_tool,

@@ -6,7 +6,6 @@ from google.adk.runners import InMemoryRunner
 from google.genai import types as genai_types
 
 from src.agents.manager.agent import create_manager_agent
-from src.prompts.user_prompts import build_planner_handoff_message
 
 from ..core.config import APP_NAME, USER_ID
 from ..core.daytona_client import DaytonaSandboxSingleton

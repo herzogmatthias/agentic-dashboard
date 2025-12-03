@@ -206,9 +206,9 @@ class BackendManifest(BaseModel):
     all created API routes, models, and validation status.
     """
     
-    created_at: str = Field(
-        default_factory=lambda: datetime.now().isoformat(),
-        description="ISO timestamp when this manifest was created"
+    created_at: Optional[str] = Field(
+        default=None,
+        description="ISO timestamp when this manifest was created (auto-populated if not provided)"
     )
     run_id: str = Field(
         ...,
@@ -234,57 +234,6 @@ class BackendManifest(BaseModel):
         default_factory=list,
         description="Important notes for Frontend/QA agents (e.g., known limitations, TODOs)"
     )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "created_at": "2025-12-02T12:00:00",
-                "run_id": "run_20251202_120000",
-                "data_source": {
-                    "original_path": "runs/run_20251202_120000/data_analysis/cleaned/data.csv",
-                    "project_path": "data/cleaned.csv",
-                    "row_count": 10127,
-                    "columns": ["CLIENTNUM", "Attrition_Flag", "Customer_Age", "Gender"]
-                },
-                "models": [
-                    {
-                        "name": "AttritionData",
-                        "file_path": "models/AttritionData.ts",
-                        "description": "Type definitions for attrition dashboard data",
-                        "exports": ["AttritionRecord", "AttritionRateResponse", "KpiResponse"]
-                    }
-                ],
-                "routes": [
-                    {
-                        "path": "/api/kpis/attrition-rate",
-                        "file_path": "app/api/kpis/attrition-rate/route.ts",
-                        "method": "GET",
-                        "description": "Returns overall attrition rate with optional filtering",
-                        "serves_visual_ids": ["kpi_1"],
-                        "query_params": [
-                            {
-                                "name": "income_category",
-                                "type": "string",
-                                "required": False,
-                                "description": "Filter by income category"
-                            }
-                        ],
-                        "response_schema": "AttritionRateResponse"
-                    }
-                ],
-                "validation": {
-                    "lint_passed": True,
-                    "build_passed": True,
-                    "errors": None
-                },
-                "notes": [
-                    "TODO: Add caching layer for data loading",
-                    "Credit_Limit filter uses numeric range comparison"
-                ]
-            }
-        }
-
-
 # =============================================================================
 # Backend Status Enum
 # =============================================================================

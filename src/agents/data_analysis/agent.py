@@ -9,7 +9,7 @@ import json
 from src.core.daytona_client import DaytonaSandboxSingleton
 from src.core.logging import get_logger
 from src.models.data_analysis_agent_output import DataAnalysisOutput
-from src.prompts.system_prompts import build_analysis_agent_prompt
+from .prompts import build_analysis_agent_prompt
 from src.tools.filesystem import (
     inspect_directory_tool,
     inspect_json_keys_tool,
