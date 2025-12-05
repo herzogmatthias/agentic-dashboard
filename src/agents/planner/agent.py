@@ -10,10 +10,12 @@ from src.core.logging import get_logger
 from src.models.planner_output import PlannerOutput
 from .prompts import build_planner_agent_prompt
 from src.tools.planner import create_dashboard_tool
-from src.tools.filesystem import (
-    inspect_json_keys_tool,
-    inspect_json_value_tool,
-    read_snippet_tool,
+from src.tools.planner_tools import (
+    read_data_profile_tool,
+    read_cleaning_summary_tool,
+    read_metrics_summary_tool,
+    get_sample_rows_tool,
+    inspect_json_preview_tool,
 )
 from src.tools.delegation import summarize_actions_tool
 
@@ -145,9 +147,11 @@ def create_planner_agent() -> LlmAgent:
         instruction=build_planner_agent_prompt(),
         tools=[
             create_dashboard_tool,
-            inspect_json_keys_tool,
-            inspect_json_value_tool,
-            read_snippet_tool,
+            read_data_profile_tool,
+            read_cleaning_summary_tool,
+            read_metrics_summary_tool,
+            get_sample_rows_tool,
+            inspect_json_preview_tool,
             summarize_actions_tool,
         ],
         include_contents='none',

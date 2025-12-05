@@ -12,10 +12,9 @@ from src.models.data_analysis_agent_output import DataAnalysisOutput
 from .prompts import build_analysis_agent_prompt
 from src.tools.filesystem import (
     inspect_directory_tool,
-    inspect_json_keys_tool,
-    inspect_json_value_tool,
-    read_snippet_tool,
     run_python_tool,
+)
+from src.tools.data_analyst.artifacts import (
     write_cleaning_summary_tool,
     write_data_profile_tool,
     write_metrics_summary_tool,
@@ -42,12 +41,9 @@ def create_data_analysis_agent() -> LlmAgent:
         tools=[
             run_python_tool,
             inspect_directory_tool,
-            read_snippet_tool,
             write_data_profile_tool,
             write_cleaning_summary_tool,
             write_metrics_summary_tool,
-            inspect_json_keys_tool,
-            inspect_json_value_tool,
             summarize_actions_tool,
         ],
         include_contents='none',

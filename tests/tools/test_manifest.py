@@ -264,7 +264,12 @@ class TestWriteBackendManifest:
         assert MANIFEST_FILENAME in state["backend_manifest_path"]
     
     def test_sets_backend_status_success(self, tmp_path):
-        """Test that backend_status is 'success' when validation passes."""
+        """Test that backend_status is 'success' when validation passes.
+        
+        Note: With the new validation gating, the manifest is ONLY written
+        if both lint and type-check pass, so status is always 'success'
+        when a manifest is successfully written.
+        """
         state = {"run_dir": str(tmp_path)}
         manifest = _valid_manifest(lint_passed=True, build_passed=True)
         
@@ -272,32 +277,23 @@ class TestWriteBackendManifest:
         
         assert state["backend_status"] == "success"
     
-    def test_sets_backend_status_partial_lint_only(self, tmp_path):
-        """Test that backend_status is 'partial' when only lint passes."""
+    def test_validation_gating_lint_and_type_check_run(self, tmp_path):
+        """Test that lint and type-check are run before writing manifest.
+        
+        This is verified by checking the result contains validation info.
+        Note: These tests run against the actual sample-dashboard project,
+        so they will pass if that project has no lint/type errors.
+        """
         state = {"run_dir": str(tmp_path)}
-        manifest = _valid_manifest(lint_passed=True, build_passed=False, errors=["Build failed"])
+        manifest = _valid_manifest()
         
-        write_backend_manifest(manifest, _tc(state))
+        result = write_backend_manifest(manifest, _tc(state))
         
-        assert state["backend_status"] == "partial"
-    
-    def test_sets_backend_status_partial_build_only(self, tmp_path):
-        """Test that backend_status is 'partial' when only build passes."""
-        state = {"run_dir": str(tmp_path)}
-        manifest = _valid_manifest(lint_passed=False, build_passed=True, errors=["Lint failed"])
-        
-        write_backend_manifest(manifest, _tc(state))
-        
-        assert state["backend_status"] == "partial"
-    
-    def test_sets_backend_status_failed(self, tmp_path):
-        """Test that backend_status is 'failed' when both fail."""
-        state = {"run_dir": str(tmp_path)}
-        manifest = _valid_manifest(lint_passed=False, build_passed=False, errors=["Both failed"])
-        
-        write_backend_manifest(manifest, _tc(state))
-        
-        assert state["backend_status"] == "failed"
+        # The result should include validation status
+        assert result["success"] is True
+        assert "validation" in result
+        assert result["validation"]["lint_passed"] is True
+        assert result["validation"]["type_check_passed"] is True
     
     def test_fails_when_run_dir_missing(self):
         """Test that write fails when run_dir is not in state."""

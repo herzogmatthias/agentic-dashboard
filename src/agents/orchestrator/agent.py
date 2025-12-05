@@ -27,6 +27,8 @@ from typing import Optional
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents.callback_context import CallbackContext
+from google.adk.models.llm_request import LlmRequest
+from google.adk.models.llm_response import LlmResponse
 from google.genai import types
 from phoenix.otel import register as register_phoenix
 
@@ -50,6 +52,32 @@ tracer_provider = register_phoenix(
 )
 
 logger = get_logger(__name__)
+
+
+def remove_for_context_messages(
+    callback_context: CallbackContext,
+    llm_request: LlmRequest,
+) -> Optional[LlmResponse]:
+    """
+    Removes "For context: ... [AgentX] said: ..." messages from the LLM request.
+    
+    These messages are added by ADK for multi-agent context sharing but can
+    bloat the context window. Filtering them out reduces token usage.
+    
+    Args:
+        callback_context: ADK callback context
+        llm_request: The LLM request to modify (mutated in place)
+        
+    Returns:
+        None to allow normal execution, or LlmResponse to short-circuit
+    """
+    if llm_request.contents:
+        llm_request.contents = [
+            c for c in llm_request.contents
+            if not (c.parts and c.parts[0].text and c.parts[0].text.startswith("For context:"))
+        ]
+    return None  # Allow normal execution
+
 
 def create_orchestrator_agent() -> LlmAgent:
     """
@@ -83,8 +111,8 @@ def create_orchestrator_agent() -> LlmAgent:
             delegate_data_analysis_tool,
             delegate_planner_tool,
         ],
+        before_model_callback=remove_for_context_messages,
         after_agent_callback=finalize_orchestrator_response,
-        include_contents='none',
         output_key=OUTPUT_KEY,
         description=(
             "User-facing orchestrator agent that coordinates dashboard building "

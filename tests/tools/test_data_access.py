@@ -1,6 +1,7 @@
 """
-Tests for data access tools (get_sample_rows, read_data_profile, read_dashboard_concept, copy_data_to_project).
+Tests for data access tools (get_sample_rows, inspect_json_preview, copy_data_to_project, load_context_for_backend).
 """
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,10 +11,15 @@ from tests.tools.conftest import make_tool_context
 from src.tools.backend.data_access import (
     MAX_SAMPLE_ROWS,
     get_sample_rows,
-    read_data_profile,
-    read_dashboard_concept,
     copy_data_to_project,
 )
+from src.tools.shared import (
+    TOKEN_THRESHOLD,
+    inspect_json_preview,
+    _count_tokens,
+    _minify_json,
+)
+from src.agents.utils import load_context_for_backend
 
 
 class TestGetSampleRows:
@@ -104,93 +110,113 @@ class TestGetSampleRows:
 
 
 class TestReadDataProfile:
-    """Tests for the read_data_profile tool."""
+    """Tests for the inspect_json_preview tool and _minify_json helper."""
     
-    def test_read_profile_from_run_dir(self, temp_run_dir: Path):
-        """Should read data profile from run directory."""
+    def test_token_threshold_constant(self):
+        """TOKEN_THRESHOLD should be 1000."""
+        assert TOKEN_THRESHOLD == 1000
+    
+    def test_count_tokens_basic(self):
+        """Should count tokens approximately."""
+        result = _count_tokens("hello world")
+        assert result >= 1
+    
+    def test_minify_json_truncates_depth(self):
+        """Should truncate at max depth."""
+        deep = {"a": {"b": {"c": {"d": "value"}}}}
+        result = _minify_json(deep, max_depth=2)
+        assert result["a"]["b"] == "{...}"
+    
+    def test_minify_json_keeps_first_array_element(self):
+        """Should keep only first array element."""
+        data = {"items": [1, 2, 3, 4, 5]}
+        result = _minify_json(data, max_depth=3)
+        assert result["items"] == [1]
+    
+    def test_inspect_json_full_content(self, temp_run_dir: Path):
+        """Should return full content for small files."""
+        profile_path = temp_run_dir / "data_profile.json"
         tc = make_tool_context({"run_dir": str(temp_run_dir)})
         
-        result = read_data_profile(tool_context=tc)
+        result = inspect_json_preview(str(profile_path), tool_context=tc)
         
         assert "error" not in result
         assert "content" in result
-        assert "Data Profile" in result["content"]
+        assert result["truncated"] is False
     
-    def test_read_profile_from_explicit_path(self, temp_run_dir: Path):
-        """Should use data_profile_path from state if provided."""
-        profile_path = temp_run_dir / "data_profile.md"
-        tc = make_tool_context({"data_profile_path": str(profile_path)})
+    def test_inspect_json_truncated_content(self, tmp_path: Path):
+        """Should truncate large files."""
+        # Create a large JSON file
+        large_data = {"items": [{"id": i, "data": "x" * 100} for i in range(100)]}
+        large_json = tmp_path / "large.json"
+        large_json.write_text(json.dumps(large_data), encoding="utf-8")
         
-        result = read_data_profile(tool_context=tc)
+        tc = make_tool_context({"run_dir": str(tmp_path)})
+        
+        result = inspect_json_preview(str(large_json), tool_context=tc)
         
         assert "error" not in result
         assert "content" in result
+        # Large file should be truncated
+        assert result["truncated"] is True
     
-    def test_read_profile_missing_state(self):
-        """Should return error if no run_dir or path in state."""
-        tc = make_tool_context({})
+    def test_inspect_json_not_found(self, tmp_path: Path):
+        """Should return error for missing file."""
+        tc = make_tool_context({"run_dir": str(tmp_path)})
         
-        result = read_data_profile(tool_context=tc)
+        result = inspect_json_preview("nonexistent.json", tool_context=tc)
         
         assert "error" in result
+        assert "not found" in result["error"].lower()
     
-    def test_read_profile_no_context(self):
-        """Should return error if no tool context provided."""
-        result = read_data_profile(tool_context=None)
-        
-        assert "error" in result
-
-
-class TestReadDashboardConcept:
-    """Tests for the read_dashboard_concept tool."""
-    
-    def test_read_concept_from_run_dir(self, temp_run_dir: Path):
-        """Should read dashboard concept from run directory as minified JSON string."""
-        tc = make_tool_context({"run_dir": str(temp_run_dir)})
-        
-        result = read_dashboard_concept(tool_context=tc)
-        
-        assert "error" not in result
-        assert "concept" in result
-        # concept is now a minified JSON string
-        import json
-        concept = json.loads(result["concept"])
-        assert concept["goal"] == "Sales Dashboard"
-        assert len(concept["kpis"]) == 1
-    
-    def test_read_concept_from_explicit_path(self, temp_run_dir: Path):
-        """Should use dashboard_spec_path from state if provided."""
-        concept_path = temp_run_dir / "planner" / "dashboard_concept.json"
-        tc = make_tool_context({"dashboard_spec_path": str(concept_path)})
-        
-        result = read_dashboard_concept(tool_context=tc)
-        
-        assert "error" not in result
-        assert "concept" in result
-        # concept is a minified JSON string
-        assert isinstance(result["concept"], str)
-    
-    def test_read_concept_invalid_json(self, tmp_path: Path):
+    def test_inspect_json_invalid_json(self, tmp_path: Path):
         """Should return error for invalid JSON."""
-        planner_dir = tmp_path / "planner"
-        planner_dir.mkdir()
-        bad_json = planner_dir / "dashboard_concept.json"
+        bad_json = tmp_path / "bad.json"
         bad_json.write_text("{invalid json}", encoding="utf-8")
         
         tc = make_tool_context({"run_dir": str(tmp_path)})
         
-        result = read_dashboard_concept(tool_context=tc)
+        result = inspect_json_preview(str(bad_json), tool_context=tc)
         
         assert "error" in result
         assert "Invalid JSON" in result["error"]
+
+
+class TestLoadContextForBackend:
+    """Tests for the load_context_for_backend helper function."""
     
-    def test_read_concept_missing_state(self):
-        """Should return error if no run_dir or path in state."""
-        tc = make_tool_context({})
+    def test_load_context_with_all_files(self, temp_run_dir: Path):
+        """Should load all available context files."""
+        # Create metrics_summary.json too
+        metrics = {"key_metrics": [{"name": "test", "value": 123}]}
+        (temp_run_dir / "metrics_summary.json").write_text(json.dumps(metrics), encoding="utf-8")
         
-        result = read_dashboard_concept(tool_context=tc)
+        result = load_context_for_backend(temp_run_dir)
         
-        assert "error" in result
+        assert "dashboard_concept" in result
+        assert "data_profile" in result
+        assert "metrics_summary" in result
+    
+    def test_load_context_missing_files(self, tmp_path: Path):
+        """Should handle missing files gracefully."""
+        result = load_context_for_backend(tmp_path)
+        
+        # Should return empty dict, not error
+        assert "dashboard_concept" not in result
+        assert "data_profile" not in result
+    
+    def test_load_context_returns_minified_json(self, temp_run_dir: Path):
+        """Should return minified JSON strings."""
+        result = load_context_for_backend(temp_run_dir)
+        
+        # Should be valid JSON strings
+        if "dashboard_concept" in result:
+            parsed = json.loads(result["dashboard_concept"])
+            assert "goal" in parsed
+        
+        if "data_profile" in result:
+            parsed = json.loads(result["data_profile"])
+            assert "dataset_overview" in parsed
 
 
 class TestCopyDataToProject:

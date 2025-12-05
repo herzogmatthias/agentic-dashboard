@@ -1,20 +1,21 @@
 """
 Data access tools for the Backend Agent.
 
-Provides tools for reading sample data, data profiles, and dashboard concepts.
+Provides tools for reading sample data.
 Also provides the copy_data_to_project function for use in callbacks (not as a tool).
 """
 from __future__ import annotations
 
-import json
 import shutil
 from pathlib import Path
 from typing import Any
 
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
 from src.tools.backend.filesystem import SAMPLE_DASHBOARD_ROOT, _validate_path
+from src.tools.shared import inspect_json_preview_tool  # Re-export from shared
 
 logger = get_logger(__name__)
 
@@ -79,100 +80,6 @@ def get_sample_rows(
         return {"error": f"Failed to read CSV: {exc}", "path": str(resolved_path)}
 
 
-def read_data_profile(
-    tool_context: ToolContext | None = None,
-) -> dict[str, Any]:
-    """
-    Read the data profile markdown from the current run's artifacts.
-    
-    Returns the content and path from {run_dir}/data_analysis/data_profile.md.
-    """
-    if tool_context is None:
-        return {"error": "Tool context not provided"}
-    
-    # Try to get path from state
-    data_profile_path = tool_context.state.get("data_profile_path")
-    run_dir = tool_context.state.get("run_dir")
-    
-    if data_profile_path:
-        profile_path = Path(data_profile_path)
-    elif run_dir:
-        # Data profile is at {run_dir}/data_profile.md (not data_analysis/data_profile.md)
-        profile_path = Path(run_dir) / "data_profile.md"
-    else:
-        return {"error": "Neither 'data_profile_path' nor 'run_dir' found in session state"}
-    
-    if not profile_path.exists():
-        return {"error": f"Data profile not found: {profile_path}", "path": str(profile_path)}
-    
-    try:
-        content = profile_path.read_text(encoding="utf-8")
-        
-        logger.info(
-            "read_data_profile success",
-            extra={"agent": "backend", "path": str(profile_path)},
-        )
-        
-        return {
-            "content": content,
-            "path": str(profile_path),
-        }
-        
-    except Exception as exc:
-        logger.error("read_data_profile failed", extra={"path": str(profile_path), "error": str(exc)})
-        return {"error": f"Failed to read data profile: {exc}", "path": str(profile_path)}
-
-
-def read_dashboard_concept(
-    tool_context: ToolContext | None = None,
-) -> dict[str, Any]:
-    """
-    Read and parse the dashboard concept JSON from the planner output.
-    
-    Returns the parsed concept from {run_dir}/planner/dashboard_concept.json.
-    """
-    if tool_context is None:
-        return {"error": "Tool context not provided"}
-    
-    # Try to get path from state
-    dashboard_spec_path = tool_context.state.get("dashboard_spec_path")
-    run_dir = tool_context.state.get("run_dir")
-    
-    if dashboard_spec_path:
-        concept_path = Path(dashboard_spec_path)
-    elif run_dir:
-        concept_path = Path(run_dir) / "planner" / "dashboard_concept.json"
-    else:
-        return {"error": "Neither 'dashboard_spec_path' nor 'run_dir' found in session state"}
-    
-    if not concept_path.exists():
-        return {"error": f"Dashboard concept not found: {concept_path}", "path": str(concept_path)}
-    
-    try:
-        content = concept_path.read_text(encoding="utf-8")
-        concept = json.loads(content)
-        
-        # Return minified JSON string to save tokens
-        minified = json.dumps(concept, separators=(",", ":"))
-        
-        logger.info(
-            "read_dashboard_concept success",
-            extra={"agent": "backend", "path": str(concept_path)},
-        )
-        
-        return {
-            "concept": minified,
-            "path": str(concept_path),
-        }
-        
-    except json.JSONDecodeError as exc:
-        logger.error("read_dashboard_concept JSON error", extra={"path": str(concept_path), "error": str(exc)})
-        return {"error": f"Invalid JSON in dashboard concept: {exc}", "path": str(concept_path)}
-    except Exception as exc:
-        logger.error("read_dashboard_concept failed", extra={"path": str(concept_path), "error": str(exc)})
-        return {"error": f"Failed to read dashboard concept: {exc}", "path": str(concept_path)}
-
-
 def copy_data_to_project(
     state: dict[str, Any],
 ) -> dict[str, Any]:
@@ -183,7 +90,7 @@ def copy_data_to_project(
     Dev Orchestrator's before_agent_callback to ensure data is copied before the
     Backend Agent starts creating API routes.
     
-    Copies all files from `{run_dir}/data_analysis/cleaned/` to `sample-dashboard/data/`.
+    Copies all files from `{run_dir}/cleaned/` to `sample-dashboard/data/`.
     Creates the `data/` directory if it doesn't exist.
     
     Args:
@@ -211,7 +118,7 @@ def copy_data_to_project(
         else:
             source_dir = source_path
     elif run_dir:
-        # Cleaned data is at {run_dir}/cleaned/ (not data_analysis/cleaned)
+        # Cleaned data is at {run_dir}/cleaned/
         source_dir = Path(run_dir) / "cleaned"
     else:
         return {"error": "Neither 'cleaned_data_path' nor 'run_dir' found in session state"}
@@ -281,9 +188,7 @@ def copy_data_to_project(
 # ============================================================================
 
 get_sample_rows_tool = FunctionTool(func=get_sample_rows)
-read_data_profile_tool = FunctionTool(func=read_data_profile)
-read_dashboard_concept_tool = FunctionTool(func=read_dashboard_concept)
+# inspect_json_preview_tool is imported from src.tools.shared
 
 # Note: copy_data_to_project is NOT exported as a tool.
-# It should be called from a before_agent_callback in the Dev Orchestrator,
-# not by the agent itself.
+# It is a callback helper function.

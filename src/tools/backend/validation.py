@@ -3,7 +3,8 @@ Validation tools for the Backend Agent.
 
 Provides tools for:
 - Running ESLint on the sample-dashboard project
-- Running Next.js build to verify type correctness
+- Running TypeScript type-check for fast type verification
+- Running Next.js build for full compilation (internal use)
 
 Also provides internal helper _check_typescript_syntax() used by creation tools.
 """
@@ -28,12 +29,14 @@ logger = get_logger(__name__)
 # ============================================================================
 
 # Timeout limits (seconds)
-LINT_TIMEOUT = 60
-BUILD_TIMEOUT = 120
+LINT_TIMEOUT = 120  # 2 minutes for lint
+TYPE_CHECK_TIMEOUT = 60  # 1 minute for type-check
+BUILD_TIMEOUT = 180  # 3 minutes for full build (internal use)
 SYNTAX_CHECK_TIMEOUT = 10
 
 # Output truncation limits (characters)
 LINT_OUTPUT_LIMIT = 5000
+TYPE_CHECK_OUTPUT_LIMIT = 8000
 BUILD_OUTPUT_LIMIT = 10000
 
 
@@ -44,10 +47,11 @@ BUILD_OUTPUT_LIMIT = 10000
 
 def _check_typescript_syntax(content: str, filename: str = "check.ts") -> tuple[bool, str]:
     """
-    Check TypeScript content for syntax errors using tsc.
+    Check TypeScript content for syntax errors.
     
-    Uses `tsc --noEmit` on a temporary file for fast syntax validation.
-    This catches syntax errors before writing files, giving immediate feedback.
+    NOTE: Syntax validation via tsc is DISABLED because standalone file checking
+    cannot resolve imports (e.g., from '@/lib/...' or 'next/server'), causing
+    false positives. Rely on run_lint() and run_build() for full validation.
     
     Args:
         content: TypeScript code to validate.
@@ -55,7 +59,26 @@ def _check_typescript_syntax(content: str, filename: str = "check.ts") -> tuple[
         
     Returns:
         Tuple of (is_valid, error_message).
-        If valid, error_message is empty string.
+        Always returns (True, "") - validation is deferred to lint/build.
+    """
+    # Syntax validation disabled - tsc cannot resolve imports in standalone files
+    # Use run_lint() and run_build() after file creation for full validation
+    return True, ""
+
+
+def _check_typescript_syntax_full(content: str, filename: str = "check.ts") -> tuple[bool, str]:
+    """
+    Full TypeScript syntax check using tsc (currently unused).
+    
+    This function is preserved for potential future use but is not called
+    because tsc cannot resolve module imports in standalone temp files.
+    
+    Args:
+        content: TypeScript code to validate.
+        filename: Filename hint for error messages.
+        
+    Returns:
+        Tuple of (is_valid, error_message).
     """
     try:
         # Create a temporary file with the content
@@ -71,6 +94,7 @@ def _check_typescript_syntax(content: str, filename: str = "check.ts") -> tuple[
         try:
             # Run tsc with --noEmit to check syntax without generating output
             # Using npx to ensure we use the project's TypeScript version
+            # shell=True is required on Windows to find npx in PATH
             result = subprocess.run(
                 [
                     "npx",
@@ -88,6 +112,7 @@ def _check_typescript_syntax(content: str, filename: str = "check.ts") -> tuple[
                 text=True,
                 timeout=SYNTAX_CHECK_TIMEOUT,
                 cwd=str(SAMPLE_DASHBOARD_ROOT),
+                shell=True,  # Required on Windows for npx
             )
             
             if result.returncode == 0:
@@ -226,6 +251,27 @@ def run_lint(tool_context: ToolContext | None = None) -> dict[str, Any]:
     return result
 
 
+def run_type_check(tool_context: ToolContext | None = None) -> dict[str, Any]:
+    """
+    Run TypeScript type-check on the sample-dashboard project.
+    
+    Executes `npm run type-check` in the sample-dashboard directory.
+    Faster than a full build - only checks types without compiling.
+    Use this after creating or modifying files to verify type correctness.
+    """
+    logger.info("Running type-check", extra={"project": str(SAMPLE_DASHBOARD_ROOT)})
+    
+    result = _run_npm_command("type-check", TYPE_CHECK_TIMEOUT, TYPE_CHECK_OUTPUT_LIMIT)
+    result["project_path"] = str(SAMPLE_DASHBOARD_ROOT)
+    
+    if result["passed"]:
+        logger.info("Type-check passed")
+    else:
+        logger.warning("Type-check failed", extra={"exit_code": result["exit_code"]})
+    
+    return result
+
+
 def run_build(tool_context: ToolContext | None = None) -> dict[str, Any]:
     """
     Run Next.js build on the sample-dashboard project.
@@ -251,4 +297,8 @@ def run_build(tool_context: ToolContext | None = None) -> dict[str, Any]:
 # ============================================================================
 
 run_lint_tool = FunctionTool(func=run_lint)
-run_build_tool = FunctionTool(func=run_build)
+run_type_check_tool = FunctionTool(func=run_type_check)
+
+# run_build is kept for internal/manual use but not exposed as a tool
+# Use run_type_check_tool for faster type verification
+run_build_tool = FunctionTool(func=run_build)  # Internal use only

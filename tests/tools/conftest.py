@@ -27,17 +27,45 @@ def temp_run_dir(tmp_path: Path) -> Path:
     """Create a temporary run directory structure for testing.
     
     Structure mirrors actual run directory layout:
-    - {run_dir}/cleaned/          <- cleaned data files
-    - {run_dir}/data_profile.md   <- data profile markdown
-    - {run_dir}/planner/          <- planner outputs
+    - {run_dir}/cleaned/                <- cleaned data files
+    - {run_dir}/data_profile.json       <- data profile JSON
+    - {run_dir}/cleaning_summary.json   <- cleaning summary JSON
+    - {run_dir}/planner/                <- planner outputs
     """
     # Create cleaned directory at root level (not under data_analysis)
     cleaned_dir = tmp_path / "cleaned"
     cleaned_dir.mkdir(parents=True)
     
-    # Create sample data profile at root level
-    profile_path = tmp_path / "data_profile.md"
-    profile_path.write_text("# Data Profile\n\n- Rows: 100\n- Columns: 5", encoding="utf-8")
+    # Create sample data profile as JSON at root level
+    profile_data = {
+        "dataset_overview": {
+            "row_count": 100,
+            "column_count_raw": 5,
+            "column_count_clean": 5,
+            "new_columns": [],
+            "notes": []
+        },
+        "key_columns": [],
+        "all_column_names": ["id", "name", "value", "category", "date"],
+        "missingness": {
+            "overall_missing_pct": 2.5,
+            "columns_with_missing": 1,
+            "high_missing_columns": []
+        },
+        "domain_signals": {
+            "label_columns": [],
+            "date_columns": ["date"],
+            "identifier_columns": ["id"],
+            "has_time_series": False,
+            "has_geolocation": False,
+            "pii_detected": False,
+            "extra_tags": []
+        },
+        "warnings": [],
+        "extra": {}
+    }
+    profile_path = tmp_path / "data_profile.json"
+    profile_path.write_text(json.dumps(profile_data), encoding="utf-8")
     
     # Create sample cleaned CSV
     csv_path = cleaned_dir / "cleaned.csv"

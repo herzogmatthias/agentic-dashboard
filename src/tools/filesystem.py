@@ -131,91 +131,6 @@ def inspect_directory(path: str = "workspace") -> Dict[str, Any]:
     logger.info("inspect_directory", extra={"agent": "filesystem", "phase": "inspect_directory", "path": path})
     return info
 
-
-def write_data_profile(
-    markdown: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Save a DataProfile markdown file to the host run directory.
-    Requires `run_dir` to be present in session state.
-    
-    Also saves the path to state["data_profile_path"] for templating in other agent prompts.
-    """
-    if tool_context is None or "run_dir" not in tool_context.state:
-        raise RuntimeError("Session state missing 'run_dir'; cannot write data profile.")
-
-    base_dir = Path(tool_context.state["run_dir"])
-    base_dir.mkdir(parents=True, exist_ok=True)
-    path = base_dir / "data_profile.md"
-    path.write_text(markdown, encoding="utf-8")
-    
-    # Save path to state for prompt templating
-    tool_context.state["data_profile_path"] = str(path.resolve())
-    
-    logger.info("write_data_profile", extra={"agent": "filesystem", "phase": "write_data_profile", "path": str(path)})
-    return str(path.resolve())
-
-
-def write_cleaning_summary(
-    markdown: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Save a CleaningSummary markdown file to the host run directory.
-    Requires `run_dir` to be present in session state.
-    
-    Also saves the path to state["cleaning_summary_path"] for templating in other agent prompts.
-    """
-    if tool_context is None or "run_dir" not in tool_context.state:
-        raise RuntimeError("Session state missing 'run_dir'; cannot write cleaning summary.")
-
-    base_dir = Path(tool_context.state["run_dir"])
-    base_dir.mkdir(parents=True, exist_ok=True)
-    path = base_dir / "cleaning_summary.md"
-    path.write_text(markdown, encoding="utf-8")
-    
-    # Save path to state for prompt templating
-    tool_context.state["cleaning_summary_path"] = str(path.resolve())
-    
-    logger.info("write_cleaning_summary", extra={"agent": "filesystem", "phase": "write_cleaning_summary", "path": str(path)})
-    return str(path.resolve())
-
-
-def write_metrics_summary(
-    markdown: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Save a metrics summary markdown file to the host run directory.
-    This is for additional analysis artifacts (regressions, correlations, key metrics)
-    that aren't directly in cleaned.csv.
-    
-    Requires `run_dir` to be present in session state.
-    
-    Also saves the path to state["metrics_summary_path"] for templating in other agent prompts.
-    
-    Args:
-        markdown: Markdown content describing key metrics and analysis results
-        tool_context: Tool context with session state
-    
-    Returns:
-        Absolute path to the written file
-    """
-    if tool_context is None or "run_dir" not in tool_context.state:
-        raise RuntimeError("Session state missing 'run_dir'; cannot write metrics summary.")
-
-    base_dir = Path(tool_context.state["run_dir"])
-    base_dir.mkdir(parents=True, exist_ok=True)
-    path = base_dir / "metrics_summary.md"
-    path.write_text(markdown, encoding="utf-8")
-    
-    # Save path to state for prompt templating
-    tool_context.state["metrics_summary_path"] = str(path.resolve())
-    
-    logger.info("write_metrics_summary", extra={"agent": "filesystem", "phase": "write_metrics_summary", "path": str(path)})
-    return str(path.resolve())
-
 def inspect_json_keys(
     file_path: str,
     max_depth: int = 2,
@@ -437,8 +352,5 @@ def inspect_json_value(
 run_python_tool = FunctionTool(func=run_python)
 inspect_directory_tool = FunctionTool(func=inspect_directory)
 read_snippet_tool = FunctionTool(func=read_snippet)
-write_data_profile_tool = FunctionTool(func=write_data_profile)
-write_cleaning_summary_tool = FunctionTool(func=write_cleaning_summary)
-write_metrics_summary_tool = FunctionTool(func=write_metrics_summary)
 inspect_json_keys_tool = FunctionTool(func=inspect_json_keys)
 inspect_json_value_tool = FunctionTool(func=inspect_json_value)

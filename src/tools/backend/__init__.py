@@ -30,11 +30,13 @@ from src.tools.backend.data_access import (
     MAX_SAMPLE_ROWS,
     get_sample_rows,
     get_sample_rows_tool,
-    read_data_profile,
-    read_data_profile_tool,
-    read_dashboard_concept,
-    read_dashboard_concept_tool,
+    inspect_json_preview_tool,  # Re-exported from shared
     copy_data_to_project,  # Callback helper, not a tool
+)
+
+from src.tools.shared import (
+    inspect_json_preview,
+    TOKEN_THRESHOLD,
 )
 
 from src.tools.backend.creation import (
@@ -47,9 +49,12 @@ from src.tools.backend.creation import (
 from src.tools.backend.validation import (
     run_lint,
     run_lint_tool,
+    run_type_check,
+    run_type_check_tool,
     run_build,
     run_build_tool,
     LINT_TIMEOUT,
+    TYPE_CHECK_TIMEOUT,
     BUILD_TIMEOUT,
 )
 
@@ -77,12 +82,10 @@ __all__ = [
     "create_filesystem_toolset_with_run_dir",
     # Data access functions
     "get_sample_rows",
-    "read_data_profile",
-    "read_dashboard_concept",
+    "inspect_json_preview",
     # Data access tools
     "get_sample_rows_tool",
-    "read_data_profile_tool",
-    "read_dashboard_concept_tool",
+    "inspect_json_preview_tool",
     # Creation functions
     "create_api",
     "create_model",
@@ -91,9 +94,11 @@ __all__ = [
     "create_model_tool",
     # Validation functions
     "run_lint",
+    "run_type_check",
     "run_build",
     # Validation tools
     "run_lint_tool",
+    "run_type_check_tool",
     "run_build_tool",
     # Next.js docs toolset factory
     "create_nextjs_docs_toolset",
@@ -110,8 +115,10 @@ __all__ = [
     "FILESYSTEM_CONNECTION_TIMEOUT",
     # Constants - data access
     "MAX_SAMPLE_ROWS",
+    "TOKEN_THRESHOLD",
     # Constants - validation
     "LINT_TIMEOUT",
+    "TYPE_CHECK_TIMEOUT",
     "BUILD_TIMEOUT",
     # Constants - nextjs docs
     "NEXTJS_DEVTOOLS_PACKAGE",

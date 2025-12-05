@@ -19,54 +19,29 @@ from src.tools.backend.validation import (
 
 
 class TestCheckTypescriptSyntaxInternal:
-    """Tests for the internal _check_typescript_syntax helper."""
+    """Tests for the internal _check_typescript_syntax helper.
     
-    def test_timeout_handling(self):
-        """Should handle subprocess timeout gracefully."""
-        with patch("src.tools.backend.validation.subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.TimeoutExpired("tsc", 10)
-            
-            is_valid, errors = _check_typescript_syntax("export const x = 1;")
-            
-            assert is_valid is False
-            assert "timed out" in errors.lower()
+    Note: Syntax validation is currently disabled (always returns True)
+    because tsc cannot resolve imports in standalone files.
+    These tests verify the disabled behavior.
+    """
     
-    def test_tsc_not_found(self):
-        """Should gracefully handle missing tsc/npx."""
-        with patch("src.tools.backend.validation.subprocess.run") as mock_run:
-            mock_run.side_effect = FileNotFoundError("npx not found")
-            
-            is_valid, errors = _check_typescript_syntax("export const x = 1;")
-            
-            # Should allow creation to proceed if tsc is not available
-            assert is_valid is True
-            assert errors == ""
-    
-    def test_successful_check(self):
-        """Should return success for valid TypeScript."""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = ""
-        mock_result.stderr = ""
+    def test_always_returns_valid(self):
+        """Should always return valid since syntax checking is disabled."""
+        # Valid TypeScript
+        is_valid, errors = _check_typescript_syntax("export const x = 1;")
+        assert is_valid is True
+        assert errors == ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
-            is_valid, errors = _check_typescript_syntax("export const x = 1;")
-            
-            assert is_valid is True
-            assert errors == ""
+        # Invalid TypeScript - still returns valid (deferred to lint/build)
+        is_valid, errors = _check_typescript_syntax("export const x = ")
+        assert is_valid is True
+        assert errors == ""
     
-    def test_failed_check_with_errors(self):
-        """Should return errors for invalid TypeScript."""
-        mock_result = MagicMock()
-        mock_result.returncode = 1
-        mock_result.stdout = "error TS1005: ';' expected."
-        mock_result.stderr = ""
-        
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
-            is_valid, errors = _check_typescript_syntax("export const x = ")
-            
-            assert is_valid is False
-            assert "error TS" in errors or errors
+    def test_returns_empty_error_message(self):
+        """Should return empty error message since validation is disabled."""
+        is_valid, errors = _check_typescript_syntax("any content here")
+        assert errors == ""
 
 
 class TestRunLint:
