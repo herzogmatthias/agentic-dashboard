@@ -47,7 +47,7 @@ tracer_provider = register_phoenix(
 logger = get_logger(__name__)
 
 # Model configuration
-BACKEND_MODEL = "xai/grok-4-1-fast-non-reasoning-latest"
+BACKEND_MODEL = "xai/grok-code-fast-1"
 
 
 
