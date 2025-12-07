@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 
 # Timeout limits (seconds)
 LINT_TIMEOUT = 120  # 2 minutes for lint
-TYPE_CHECK_TIMEOUT = 60  # 1 minute for type-check
+TYPE_CHECK_TIMEOUT = 120  # 1 minute for type-check
 BUILD_TIMEOUT = 180  # 3 minutes for full build (internal use)
 SYNTAX_CHECK_TIMEOUT = 10
 

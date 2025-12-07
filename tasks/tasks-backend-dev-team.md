@@ -9,28 +9,47 @@
 - `src/agents/backend_dev_team/planner/tools.py` - create_backend_todo_list tool
 - `src/agents/backend_dev_team/planner/callbacks.py` - Context injection callbacks
 - `src/agents/backend_dev_team/loop/__init__.py` - Loop subpackage init
-- `src/agents/backend_dev_team/loop/agent.py` - Loop Agent boilerplate
-- `src/agents/backend_dev_team/loop/tools.py` - Tool stubs for artifact management
-- `src/agents/backend_dev_team/dev/__init__.py` - Dev subpackage init
-- `src/agents/backend_dev_team/dev/agent.py` - Placeholder Dev Agent
-- `src/agents/backend_dev_team/tester/__init__.py` - Tester subpackage init
-- `src/agents/backend_dev_team/tester/agent.py` - Placeholder Tester Agent
-- `src/agents/backend_dev_team/qa/__init__.py` - QA subpackage init
-- `src/agents/backend_dev_team/qa/agent.py` - Placeholder QA Agent
+- `src/agents/backend_dev_team/loop/agent.py` - Custom BackendDevLoopAgent (BaseAgent) with smart routing
+- `src/agents/backend_dev_team/loop/tools.py` - State keys, exit_loop tool, state helpers
+- `src/agents/backend_dev_team/loop/callbacks.py` - State injection callbacks for sub-agents
 - `src/models/backend_planner_todos.py` - Existing Pydantic models (PlannerTodoList, PlannerArtifactTodo)
+- `src/models/backend_planner_input.py` - Barebone input models for ADK tool compatibility
 - `tests/agents/backend_dev_team/__init__.py` - Test package init
 - `tests/agents/backend_dev_team/test_planner_agent.py` - Tests for Backend Planner Agent
 - `tests/agents/backend_dev_team/test_planner_tools.py` - Tests for create_backend_todo_list tool
 - `tests/agents/backend_dev_team/test_loop_agent.py` - Tests for Loop Agent
-- `tests/agents/backend_dev_team/test_loop_tools.py` - Tests for Loop Agent tools
 
 ### Notes
 
 - Unit tests should be placed in `tests/agents/backend_dev_team/` mirroring the source structure
 - Use `python -m pytest tests/agents/backend_dev_team/ -v` to run tests for this feature
 - The existing `src/models/backend_planner_todos.py` contains the Pydantic models to use
-- Backend Planner uses GPT-5 model
-- Loop Agent max retries is 5 before marking artifact as failed
+- Backend Planner uses GPT-5 model (gpt-5.1)
+- Loop Agent uses custom BaseAgent with max_iterations=5
+- Sub-agents (Dev, Tester, QA) are integrated into loop/agent.py with structured output schemas
+- Dev/Tester/QA directories are NOT used - sub-agents live in loop/agent.py
+
+## Architecture
+
+### Flow
+
+```
+Planner → injects artifact to state → Loop(Dev ↔ Tester ↔ QA) → result in state → Planner reads result
+```
+
+### Loop Agent Routing Logic
+
+- **Route artifacts** (`kind="route"`): Dev → Tester → QA (full cycle)
+- **Helper artifacts** (`kind="helper"`): Dev → Tester only (skip QA)
+- **On Tester failure**: Route back to Dev immediately (don't proceed to QA)
+- **On QA failure**: Route back to Dev immediately
+- **Max iterations**: 5 cycles before marking as failed
+
+### Structured Output Schemas
+
+- `DevResult`: success, files_created, code_summary, error_message
+- `TesterResult`: success, tests_passed, test_files, test_count, failure_message, error_message
+- `QAResult`: passed, issues, recommendations, error_message
 
 ## Instructions for Completing Tasks
 
@@ -72,51 +91,54 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.5 Implement session state storage under key `backend_todo_list`
   - [x] 3.6 Return confirmation with file path and artifact count
   - [x] 3.7 Create FunctionTool wrapper and add to planner agent tools list
+  - [x] 3.8 Create barebone input models in `src/models/backend_planner_input.py` (ADK can't parse datetime fields)
+  - [x] 3.9 Add metrics_ref validation against dashboard_concept.json IDs
 
-- [ ] 4.0 Implement Loop Agent boilerplate
+- [x] 4.0 Implement Custom Loop Agent (BackendDevLoopAgent)
 
-  - [ ] 4.1 Create `src/agents/backend_dev_team/loop/tools.py` with tool stubs:
-    - `get_next_artifact` - retrieve next pending artifact respecting depends_on and priority
-    - `update_artifact_status` - update status in both JSON file and session state
-  - [ ] 4.2 Create `src/agents/backend_dev_team/loop/agent.py` with:
-    - LlmAgent setup (can use lighter model)
-    - System prompt explaining the Dev → Tester → QA cycle
-    - Max retries constant (5)
-    - Sub-agent placeholders structure
-  - [ ] 4.3 Update `src/agents/backend_dev_team/loop/__init__.py` to export agent factory functions
-  - [ ] 4.4 Implement artifact status transition logic (pending → in_progress → done/failed)
+  - [x] 4.1 Create `src/agents/backend_dev_team/loop/tools.py` with:
+    - State keys (STATE_KEY_CURRENT_ARTIFACT, STATE_KEY_LOOP_RESULT, etc.)
+    - `exit_loop` tool for signaling loop termination
+    - State helper functions (get_current_artifact, set_loop_result, inject_artifact_to_state, etc.)
+  - [x] 4.2 Create `src/agents/backend_dev_team/loop/callbacks.py` with:
+    - `initialize_loop_state` - validates artifact in state
+    - `inject_artifact_context_for_dev/tester/qa` - per-sub-agent context injection
+  - [x] 4.3 Create `src/agents/backend_dev_team/loop/agent.py` with:
+    - Structured output schemas: `DevResult`, `TesterResult`, `QAResult`
+    - Sub-agent factories: `create_dev_agent`, `create_tester_agent`, `create_qa_agent`
+    - Custom `BackendDevLoopAgent(BaseAgent)` with `_run_async_impl`
+    - Smart routing logic (routes→full cycle, helpers→skip QA, failures→back to Dev)
+    - Max iterations constant (5)
+  - [x] 4.4 Update `src/agents/backend_dev_team/loop/__init__.py` to export:
+    - `BackendDevLoopAgent`, `create_loop_agent`, `get_loop_agent`
+    - Sub-agent factories and structured output schemas
+    - State keys, constants, and helper functions
 
-- [ ] 5.0 Create placeholder agents (Dev, Tester, QA)
+- [ ] 5.0 Add tests for Backend Planner and Loop Agent
 
-  - [ ] 5.1 Create `src/agents/backend_dev_team/dev/agent.py` with placeholder DevAgent class and TODO comments
-  - [ ] 5.2 Create `src/agents/backend_dev_team/tester/agent.py` with placeholder TesterAgent class and TODO comments
-  - [ ] 5.3 Create `src/agents/backend_dev_team/qa/agent.py` with placeholder QAAgent class and TODO comments
-  - [ ] 5.4 Update each subpackage `__init__.py` to export placeholder agents
-  - [ ] 5.5 Update main `src/agents/backend_dev_team/__init__.py` to export all agents
-
-- [ ] 6.0 Add tests for Backend Planner and Loop Agent
-
-  - [ ] 6.1 Create `tests/agents/backend_dev_team/test_planner_agent.py`:
+  - [ ] 5.1 Create `tests/agents/backend_dev_team/test_planner_agent.py`:
     - Test agent creation and configuration
     - Test instruction provider returns valid prompt
     - Test context injection callback
-  - [ ] 6.2 Create `tests/agents/backend_dev_team/test_planner_tools.py`:
+  - [ ] 5.2 Create `tests/agents/backend_dev_team/test_planner_tools.py`:
     - Test create_backend_todo_list validates input
     - Test JSON file is created at correct path
     - Test session state is updated
     - Test system fields are populated correctly
+    - Test metrics_ref validation
     - Test returns correct confirmation
-  - [ ] 6.3 Create `tests/agents/backend_dev_team/test_loop_agent.py`:
-    - Test agent creation
-    - Test max retries constant is 5
-  - [ ] 6.4 Create `tests/agents/backend_dev_team/test_loop_tools.py`:
-    - Test get_next_artifact returns pending artifact with lowest priority
-    - Test get_next_artifact respects depends_on
-    - Test update_artifact_status updates both file and state
+  - [ ] 5.3 Create `tests/agents/backend_dev_team/test_loop_agent.py`:
+    - Test BackendDevLoopAgent creation with default sub-agents
+    - Test BackendDevLoopAgent creation with custom sub-agents
+    - Test max_iterations constant is 5
+    - Test routing logic (helper skips QA)
+    - Test failure routing (tester fail → back to dev)
+    - Test structured output schemas (DevResult, TesterResult, QAResult)
 
-- [ ] 7.0 Integration and manual testing
-  - [ ] 7.1 Run all new tests with `python -m pytest tests/agents/backend_dev_team/ -v`
-  - [ ] 7.2 Run full test suite to ensure no regressions: `python -m pytest tests/ -v`
-  - [ ] 7.3 Manually test Backend Planner Agent with existing run directory (e.g., runs/run_20251204_142914)
-  - [ ] 7.4 Verify JSON output at `{run_dir}/backend_dev_team/backend_todos.json` is valid and complete
-  - [ ] 7.5 Verify all artifacts have required fields populated
+- [ ] 6.0 Integration and manual testing
+  - [ ] 6.1 Run all new tests with `python -m pytest tests/agents/backend_dev_team/ -v`
+  - [ ] 6.2 Run full test suite to ensure no regressions: `python -m pytest tests/ -v`
+  - [ ] 6.3 Manually test Backend Planner Agent with existing run directory (e.g., runs/run_20251204_142914)
+  - [ ] 6.4 Verify JSON output at `{run_dir}/backend_dev_team/backend_todos.json` is valid and complete
+  - [ ] 6.5 Verify all artifacts have required fields populated
+  - [ ] 6.6 Test Loop Agent with mock artifact in state

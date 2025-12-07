@@ -143,8 +143,8 @@ class PlannerArtifactTodo(BaseModel):
     )
 
     http_method: Optional[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]] = Field(
-        default="GET",
-        description="HTTP method for this route."
+        default=None,
+        description="HTTP method for this route. Use null for helpers, 'GET' for data routes."
     )
 
     query_params: Optional[List[QueryParamSpec]] = Field(
@@ -154,7 +154,7 @@ class PlannerArtifactTodo(BaseModel):
 
     metrics_ref: Optional[str] = Field(
         default=None,
-        description="Reference to a metrics block that the route implements, e.g. 'attrition_by_income'."
+        description="Reference to a valid dashboard_concept ID (kpi_*, v_*, f_*, or section key like 'kpis', 'visuals')."
     )
 
     expected_shape: Optional[ExpectedShape] = Field(

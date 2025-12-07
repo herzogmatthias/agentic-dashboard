@@ -55,9 +55,11 @@ class ArtifactInput(BaseModel):
     title: str = Field(description="Short human-readable name")
     description: Optional[str] = Field(default=None, description="What this artifact does")
     
-    # Route-specific (optional)
+    # Route-specific (optional) - set http_method=null for helpers
     http_path: Optional[str] = Field(default=None, description="HTTP path, e.g. '/api/sales'")
-    http_method: Optional[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]] = Field(default="GET")
+    http_method: Optional[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]] = Field(
+        default=None, description="HTTP method. Use null for helpers, 'GET' for data routes."
+    )
     query_params: Optional[list[QueryParamInput]] = Field(default=None, description="Query parameters")
     metrics_ref: Optional[str] = Field(default=None, description="Reference to metrics block")
     expected_shape: Optional[ExpectedShapeInput] = Field(default=None, description="Expected JSON response shape")

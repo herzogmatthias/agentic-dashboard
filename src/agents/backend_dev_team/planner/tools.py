@@ -36,6 +36,87 @@ logger = get_logger(__name__)
 BACKEND_DEV_TEAM_DIR = "backend_dev_team"
 BACKEND_TODOS_FILENAME = "backend_todos.json"
 
+# Valid section keys for metrics_ref
+VALID_SECTION_KEYS = {"kpis", "visuals", "global_filters"}
+
+
+def _load_valid_metrics_refs(run_dir: Path) -> set[str]:
+    """
+    Load valid metrics_ref values from dashboard_concept.json.
+    
+    Valid refs are:
+    - Section keys: 'kpis', 'visuals', 'global_filters'
+    - KPI IDs: items in kpis[].id
+    - Visual IDs: items in visuals[].id
+    - Filter IDs: items in global_filters[].id
+    
+    Returns:
+        Set of valid metrics_ref strings
+    """
+    valid_refs = set(VALID_SECTION_KEYS)
+    
+    dashboard_path = run_dir / "planner" / "dashboard_concept.json"
+    if not dashboard_path.exists():
+        logger.warning(
+            f"dashboard_concept.json not found at {dashboard_path}, skipping metrics_ref validation"
+        )
+        return valid_refs  # Return just section keys if file missing
+    
+    try:
+        with open(dashboard_path, "r", encoding="utf-8") as f:
+            dashboard = json.load(f)
+        
+        # Extract IDs from each section
+        for kpi in dashboard.get("kpis", []):
+            if "id" in kpi:
+                valid_refs.add(kpi["id"])
+        
+        for visual in dashboard.get("visuals", []):
+            if "id" in visual:
+                valid_refs.add(visual["id"])
+        
+        for gf in dashboard.get("global_filters", []):
+            if "id" in gf:
+                valid_refs.add(gf["id"])
+        
+        logger.debug(
+            f"Loaded {len(valid_refs)} valid metrics_ref values from dashboard_concept",
+            extra={"valid_refs_count": len(valid_refs)}
+        )
+        
+    except Exception as e:
+        logger.warning(
+            f"Failed to parse dashboard_concept.json: {e}, skipping metrics_ref validation"
+        )
+    
+    return valid_refs
+
+
+def _validate_metrics_refs(
+    artifacts: list,
+    valid_refs: set[str]
+) -> list[str]:
+    """
+    Validate that all metrics_ref values are valid dashboard_concept IDs.
+    
+    Args:
+        artifacts: List of artifact inputs
+        valid_refs: Set of valid metrics_ref values
+        
+    Returns:
+        List of error messages (empty if all valid)
+    """
+    errors = []
+    
+    for artifact in artifacts:
+        if artifact.metrics_ref and artifact.metrics_ref not in valid_refs:
+            errors.append(
+                f"Artifact '{artifact.id}' has invalid metrics_ref '{artifact.metrics_ref}'. "
+                f"Must be one of: {', '.join(sorted(valid_refs))}"
+            )
+    
+    return errors
+
 
 def create_backend_todo_list(
     todo_list: TodoListInput,
@@ -71,6 +152,17 @@ def create_backend_todo_list(
         # Generate run_id from run_dir name if not present
         if not run_id:
             run_id = run_dir.name
+        
+        # Validate metrics_ref values against dashboard_concept
+        valid_refs = _load_valid_metrics_refs(run_dir)
+        metrics_ref_errors = _validate_metrics_refs(todo_list.artifacts, valid_refs)
+        if metrics_ref_errors:
+            return {
+                "success": False,
+                "error": "Invalid metrics_ref values found",
+                "details": metrics_ref_errors,
+                "valid_refs": sorted(valid_refs),
+            }
         
         now = datetime.utcnow()
         
