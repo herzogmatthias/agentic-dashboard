@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.tools.conftest import make_tool_context
-from src.tools.backend.data_access import (
+from src.tools.backend_dev.data_access import (
     MAX_SAMPLE_ROWS,
     get_sample_rows,
     copy_data_to_project,
@@ -32,7 +32,7 @@ class TestGetSampleRows:
     def test_read_csv_default_rows(self, temp_csv: Path):
         """Should read 1 row by default (MAX_SAMPLE_ROWS)."""
         # Patch _validate_path to allow temp directory
-        with patch("src.tools.backend.data_access._validate_path") as mock_validate:
+        with patch("src.tools.backend_dev.data_access._validate_path") as mock_validate:
             mock_validate.return_value = (True, temp_csv, "")
             
             result = get_sample_rows(str(temp_csv), tool_context=None)
@@ -43,7 +43,7 @@ class TestGetSampleRows:
     
     def test_read_csv_respects_max_limit(self, temp_csv: Path):
         """Should cap rows at MAX_SAMPLE_ROWS even if more requested."""
-        with patch("src.tools.backend.data_access._validate_path") as mock_validate:
+        with patch("src.tools.backend_dev.data_access._validate_path") as mock_validate:
             mock_validate.return_value = (True, temp_csv, "")
             
             result = get_sample_rows(str(temp_csv), num_rows=100, tool_context=None)
@@ -54,7 +54,7 @@ class TestGetSampleRows:
     
     def test_read_csv_returns_columns(self, temp_csv: Path):
         """Should return column names."""
-        with patch("src.tools.backend.data_access._validate_path") as mock_validate:
+        with patch("src.tools.backend_dev.data_access._validate_path") as mock_validate:
             mock_validate.return_value = (True, temp_csv, "")
             
             result = get_sample_rows(str(temp_csv), tool_context=None)
@@ -64,7 +64,7 @@ class TestGetSampleRows:
     
     def test_read_csv_returns_dicts(self, temp_csv: Path):
         """Rows should be dictionaries with column keys."""
-        with patch("src.tools.backend.data_access._validate_path") as mock_validate:
+        with patch("src.tools.backend_dev.data_access._validate_path") as mock_validate:
             mock_validate.return_value = (True, temp_csv, "")
             
             result = get_sample_rows(str(temp_csv), num_rows=2, tool_context=None)
@@ -88,7 +88,7 @@ class TestGetSampleRows:
         txt_file = tmp_path / "test.txt"
         txt_file.write_text("not a csv")
         
-        with patch("src.tools.backend.data_access._validate_path") as mock_validate:
+        with patch("src.tools.backend_dev.data_access._validate_path") as mock_validate:
             mock_validate.return_value = (True, txt_file, "")
             
             result = get_sample_rows(str(txt_file), tool_context=None)
@@ -227,7 +227,7 @@ class TestCopyDataToProject:
         # Mock SAMPLE_DASHBOARD_ROOT to use temp path
         dest_root = tmp_path / "sample-dashboard"
         
-        with patch("src.tools.backend.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
+        with patch("src.tools.backend_dev.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
             state = {"run_dir": str(temp_run_dir)}
             
             result = copy_data_to_project(state=state)
@@ -239,7 +239,7 @@ class TestCopyDataToProject:
         """Should copy all files from cleaned directory."""
         dest_root = tmp_path / "sample-dashboard"
         
-        with patch("src.tools.backend.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
+        with patch("src.tools.backend_dev.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
             state = {"run_dir": str(temp_run_dir)}
             
             result = copy_data_to_project(state=state)
@@ -252,7 +252,7 @@ class TestCopyDataToProject:
         """Should return summary of copied files."""
         dest_root = tmp_path / "sample-dashboard"
         
-        with patch("src.tools.backend.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
+        with patch("src.tools.backend_dev.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
             state = {"run_dir": str(temp_run_dir)}
             
             result = copy_data_to_project(state=state)
@@ -272,7 +272,7 @@ class TestCopyDataToProject:
         
         dest_root = tmp_path / "sample-dashboard"
         
-        with patch("src.tools.backend.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
+        with patch("src.tools.backend_dev.data_access.SAMPLE_DASHBOARD_ROOT", dest_root):
             state = {"run_dir": str(run_dir)}
             
             result = copy_data_to_project(state=state)

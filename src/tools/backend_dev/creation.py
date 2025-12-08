@@ -1,8 +1,8 @@
 """
-File creation tools for the Backend Agent.
+File creation tools for the Backend Dev Agent.
 
-Provides tools for creating API routes and TypeScript models
-within the sample-dashboard Next.js project.
+Provides tools for creating API routes, TypeScript models, and helper/utility
+files within the sample-dashboard Next.js project.
 
 File editing operations are handled by the MCP filesystem server.
 Files are validated for TypeScript syntax before being written.
@@ -12,11 +12,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.backend.filesystem import SAMPLE_DASHBOARD_ROOT, _validate_path
-from src.tools.backend.validation import _check_typescript_syntax
+from src.tools.backend_dev.filesystem import SAMPLE_DASHBOARD_ROOT, _validate_path
+from src.tools.backend_dev.validation import _check_typescript_syntax
 
 logger = get_logger(__name__)
 
@@ -38,7 +39,7 @@ def _validate_typescript_exports(content: str) -> tuple[bool, str]:
     """
     # Look for export statements
     export_patterns = [
-        r'export\s+(?:interface|type|const|function|class|enum)\s+\w+',
+        r'export\s+(?:interface|type|const|function|class|enum|async\s+function)\s+\w+',
         r'export\s+\{[^}]+\}',
         r'export\s+default\s+',
     ]
@@ -123,7 +124,7 @@ def create_api(
         endpoint = f"/api/{route_path}"
         logger.info(
             "create_api success",
-            extra={"agent": "backend", "path": relative_path, "endpoint": endpoint},
+            extra={"agent": "backend_dev", "path": relative_path, "endpoint": endpoint},
         )
         
         return {
@@ -211,7 +212,7 @@ def create_model(
         relative_path = f"src/models/{name}.ts"
         logger.info(
             "create_model success",
-            extra={"agent": "backend", "path": relative_path},
+            extra={"agent": "backend_dev", "path": relative_path},
         )
         
         return {
@@ -230,9 +231,101 @@ def create_model(
         }
 
 
+def create_helper(
+    name: str,
+    content: str,
+    tool_context: ToolContext | None = None,
+) -> dict[str, Any]:
+    """
+    Create a new TypeScript helper/utility file in the lib directory.
+    
+    Creates file at: sample-dashboard/src/lib/{name}.ts
+    
+    Use this for shared utilities like data loading functions, formatters,
+    aggregation helpers, etc. Content must export at least one function,
+    type, interface, or const.
+    
+    Args:
+        name: Name of the helper file (without .ts extension).
+              Use semantic names like 'data_utils', 'formatters', 'aggregations'.
+        content: TypeScript content for the helper file.
+    """
+    run_dir = tool_context.state.get("run_dir") if tool_context else None
+    
+    # Normalize the helper name
+    name = name.strip().replace(".ts", "")
+    
+    # Construct the full path
+    lib_dir = SAMPLE_DASHBOARD_ROOT / "src" / "lib"
+    full_path = lib_dir / f"{name}.ts"
+    
+    # Validate the path is within allowed scope
+    is_valid, resolved_path, error = _validate_path(str(full_path), run_dir, allow_new=True)
+    if not is_valid:
+        logger.warning("create_helper blocked", extra={"path": str(full_path), "error": error})
+        return {"success": False, "error": error, "path": str(full_path)}
+    
+    # Check if file already exists
+    if resolved_path.exists():
+        return {
+            "success": False,
+            "error": f"File already exists: {resolved_path}. Use the MCP filesystem edit_file tool to modify existing files.",
+            "path": str(resolved_path),
+        }
+    
+    # Validate that content exports something
+    is_valid_content, validation_error = _validate_typescript_exports(content)
+    if not is_valid_content:
+        return {
+            "success": False,
+            "error": validation_error,
+            "path": str(full_path),
+        }
+    
+    # Validate TypeScript syntax before writing
+    syntax_valid, syntax_errors = _check_typescript_syntax(content, f"{name}.ts")
+    if not syntax_valid:
+        logger.warning("create_helper syntax check failed", extra={"helper": name})
+        return {
+            "success": False,
+            "error": f"TypeScript syntax error - file not created:\n{syntax_errors}",
+            "path": str(full_path),
+            "syntax_errors": syntax_errors,
+        }
+    
+    try:
+        # Create lib directory if needed
+        resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write the file
+        resolved_path.write_text(content, encoding="utf-8")
+        
+        relative_path = f"src/lib/{name}.ts"
+        logger.info(
+            "create_helper success",
+            extra={"agent": "backend_dev", "path": relative_path},
+        )
+        
+        return {
+            "success": True,
+            "path": str(resolved_path),
+            "relative_path": relative_path,
+            "message": f"Created helper at {relative_path}",
+        }
+        
+    except Exception as exc:
+        logger.error("create_helper failed", extra={"path": str(full_path), "error": str(exc)})
+        return {
+            "success": False,
+            "error": f"Failed to create helper: {exc}",
+            "path": str(full_path),
+        }
+
+
 # ============================================================================
 # Tool Exports
 # ============================================================================
 
 create_api_tool = FunctionTool(func=create_api)
 create_model_tool = FunctionTool(func=create_model)
+create_helper_tool = FunctionTool(func=create_helper)

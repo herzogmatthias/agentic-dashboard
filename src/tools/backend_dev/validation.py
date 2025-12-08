@@ -1,5 +1,5 @@
 """
-Validation tools for the Backend Agent.
+Validation tools for the Backend Dev Agent.
 
 Provides tools for:
 - Running ESLint on the sample-dashboard project
@@ -10,16 +10,16 @@ Also provides internal helper _check_typescript_syntax() used by creation tools.
 """
 from __future__ import annotations
 
-import asyncio
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
 
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.backend.filesystem import SAMPLE_DASHBOARD_ROOT
+from src.tools.backend_dev.filesystem import SAMPLE_DASHBOARD_ROOT
 
 logger = get_logger(__name__)
 
@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 
 # Timeout limits (seconds)
 LINT_TIMEOUT = 120  # 2 minutes for lint
-TYPE_CHECK_TIMEOUT = 120  # 1 minute for type-check
+TYPE_CHECK_TIMEOUT = 120  # 2 minutes for type-check
 BUILD_TIMEOUT = 180  # 3 minutes for full build (internal use)
 SYNTAX_CHECK_TIMEOUT = 10
 

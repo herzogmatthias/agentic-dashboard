@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tools.backend.filesystem_mcp import (
+from src.tools.backend_dev.filesystem_mcp import (
     FILESYSTEM_MCP_PACKAGE,
     SAMPLE_DASHBOARD_ROOT,
     ALLOWED_DIRECTORIES,
@@ -30,7 +30,7 @@ from src.tools.backend.filesystem_mcp import (
 class TestCreateFilesystemToolset:
     """Tests for create_filesystem_toolset()."""
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_correct_filter(self, mock_toolset_class):
         """Test that create_filesystem_toolset creates toolset with correct filter."""
         create_filesystem_toolset()
@@ -40,7 +40,7 @@ class TestCreateFilesystemToolset:
         
         assert call_kwargs["tool_filter"] == EXPOSED_TOOLS
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_npx_command(self, mock_toolset_class):
         """Test that create_filesystem_toolset uses npx command."""
         create_filesystem_toolset()
@@ -54,7 +54,7 @@ class TestCreateFilesystemToolset:
         assert "-y" in connection_params.server_params.args
         assert FILESYSTEM_MCP_PACKAGE in connection_params.server_params.args
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_allowed_paths(self, mock_toolset_class):
         """Test that create_filesystem_toolset includes allowed directories."""
         create_filesystem_toolset()
@@ -68,7 +68,7 @@ class TestCreateFilesystemToolset:
         for allowed_dir in ALLOWED_DIRECTORIES:
             assert str(allowed_dir) in args
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_additional_paths(self, mock_toolset_class):
         """Test that additional_paths are added to allowed directories."""
         extra_path = Path("/extra/path")
@@ -81,7 +81,7 @@ class TestCreateFilesystemToolset:
         
         assert str(extra_path) in args
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_custom_filter(self, mock_toolset_class):
         """Test that custom tool_filter overrides default."""
         custom_filter = ["read_file", "list_directory"]
@@ -92,7 +92,7 @@ class TestCreateFilesystemToolset:
         
         assert call_kwargs["tool_filter"] == custom_filter
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_creates_toolset_with_timeout(self, mock_toolset_class):
         """Test that create_filesystem_toolset sets connection timeout."""
         create_filesystem_toolset()
@@ -103,7 +103,7 @@ class TestCreateFilesystemToolset:
         
         assert connection_params.timeout == CONNECTION_TIMEOUT
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_returns_toolset_instance(self, mock_toolset_class):
         """Test that create_filesystem_toolset returns the McpToolset instance."""
         mock_toolset = MagicMock()
@@ -117,7 +117,7 @@ class TestCreateFilesystemToolset:
 class TestCreateFilesystemToolsetWithRunDir:
     """Tests for create_filesystem_toolset_with_run_dir()."""
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_adds_run_dir_to_paths(self, mock_toolset_class):
         """Test that run directory is added to allowed paths."""
         run_dir = "runs/run_123"
@@ -131,7 +131,7 @@ class TestCreateFilesystemToolsetWithRunDir:
         # The path gets converted via Path(), so check for the resolved path
         assert str(Path(run_dir)) in args
     
-    @patch("src.tools.backend.filesystem_mcp.McpToolset")
+    @patch("src.tools.backend_dev.filesystem_mcp.McpToolset")
     def test_accepts_path_object(self, mock_toolset_class):
         """Test that Path objects are accepted for run_dir."""
         run_dir = Path("runs/run_456")
@@ -201,7 +201,7 @@ class TestModuleExports:
     
     def test_exports_from_init(self):
         """Test that key items are exported from __init__.py."""
-        from src.tools.backend import (
+        from src.tools.backend_dev import (
             create_filesystem_toolset,
             create_filesystem_toolset_with_run_dir,
             FILESYSTEM_MCP_PACKAGE,

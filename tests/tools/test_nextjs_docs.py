@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.tools.backend.nextjs_docs import (
+from src.tools.backend_dev.nextjs_docs import (
     NEXTJS_DEVTOOLS_PACKAGE,
     EXPOSED_TOOLS,
     CONNECTION_TIMEOUT,
@@ -28,7 +28,7 @@ from src.tools.backend.nextjs_docs import (
 class TestCreateNextjsDocsToolset:
     """Tests for create_nextjs_docs_toolset()."""
     
-    @patch("src.tools.backend.nextjs_docs.McpToolset")
+    @patch("src.tools.backend_dev.nextjs_docs.McpToolset")
     def test_creates_toolset_with_correct_filter(self, mock_toolset_class):
         """Test that create_nextjs_docs_toolset creates toolset with correct filter."""
         create_nextjs_docs_toolset()
@@ -38,7 +38,7 @@ class TestCreateNextjsDocsToolset:
         
         assert call_kwargs["tool_filter"] == EXPOSED_TOOLS
     
-    @patch("src.tools.backend.nextjs_docs.McpToolset")
+    @patch("src.tools.backend_dev.nextjs_docs.McpToolset")
     def test_creates_toolset_with_npx_command(self, mock_toolset_class):
         """Test that create_nextjs_docs_toolset uses npx command."""
         create_nextjs_docs_toolset()
@@ -52,7 +52,7 @@ class TestCreateNextjsDocsToolset:
         assert "-y" in connection_params.server_params.args
         assert NEXTJS_DEVTOOLS_PACKAGE in connection_params.server_params.args
     
-    @patch("src.tools.backend.nextjs_docs.McpToolset")
+    @patch("src.tools.backend_dev.nextjs_docs.McpToolset")
     def test_creates_toolset_with_timeout(self, mock_toolset_class):
         """Test that create_nextjs_docs_toolset sets connection timeout."""
         create_nextjs_docs_toolset()
@@ -63,7 +63,7 @@ class TestCreateNextjsDocsToolset:
         
         assert connection_params.timeout == CONNECTION_TIMEOUT
     
-    @patch("src.tools.backend.nextjs_docs.McpToolset")
+    @patch("src.tools.backend_dev.nextjs_docs.McpToolset")
     def test_returns_toolset_instance(self, mock_toolset_class):
         """Test that create_nextjs_docs_toolset returns the McpToolset instance."""
         mock_toolset = MagicMock()
@@ -174,7 +174,7 @@ class TestModuleExports:
     
     def test_exports_from_init(self):
         """Test that key items are exported from __init__.py."""
-        from src.tools.backend import (
+        from src.tools.backend_dev import (
             create_nextjs_docs_toolset,
             call_nextjs_init,
             NEXTJS_DEVTOOLS_PACKAGE,

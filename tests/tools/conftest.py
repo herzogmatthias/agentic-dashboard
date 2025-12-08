@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from src.tools.backend.filesystem import SAMPLE_DASHBOARD_ROOT
+from src.tools.backend_dev.filesystem import SAMPLE_DASHBOARD_ROOT
 
 
 def make_tool_context(state: dict[str, Any]) -> SimpleNamespace:

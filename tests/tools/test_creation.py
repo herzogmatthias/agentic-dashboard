@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tests.tools.conftest import make_tool_context, patch_allowed_paths_for_temp
-from src.tools.backend.creation import (
+from src.tools.backend_dev.creation import (
     create_api,
     create_model,
     _validate_typescript_exports,
@@ -29,9 +29,9 @@ export async function GET() {
 '''
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     # Use Next.js route notation (just the path, route.ts is auto-appended)
@@ -52,9 +52,9 @@ export async function GET() {
         content = 'export async function GET() { return Response.json({}); }'
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     # Use Next.js route notation (e.g., products/[id]/reviews)
@@ -79,9 +79,9 @@ export async function GET() {
         existing_file.write_text("// existing content")
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     # Use Next.js notation (just "existing", not "existing/route.ts")
@@ -104,9 +104,9 @@ export async function GET() {
         
         content = 'export async function GET() { return Response.json({}); }'
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     # Even if route.ts is provided, it should be stripped and re-added
@@ -141,9 +141,9 @@ class TestCreateModel:
 '''
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     result = create_model(name="product", content=content, tool_context=tc)
@@ -160,9 +160,9 @@ class TestCreateModel:
         content = 'export type Status = "active" | "inactive";'
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     result = create_model(name="status", content=content, tool_context=tc)
@@ -177,9 +177,9 @@ class TestCreateModel:
         content = 'export const VERSION = "1.0.0";'
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     result = create_model(name="config.ts", content=content, tool_context=tc)
@@ -201,9 +201,9 @@ const private_value = 42;
 '''
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     result = create_model(name="internal", content=content, tool_context=tc)
@@ -220,9 +220,9 @@ const private_value = 42;
         (models_dir / "existing.ts").write_text("export interface Existing {}")
         allowed_paths = patch_allowed_paths_for_temp(dest_root)
         
-        with patch("src.tools.backend.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
-            with patch("src.tools.backend.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
-                with patch("src.tools.backend.filesystem.ALLOWED_PATHS", allowed_paths):
+        with patch("src.tools.backend_dev.creation.SAMPLE_DASHBOARD_ROOT", dest_root):
+            with patch("src.tools.backend_dev.filesystem.SAMPLE_DASHBOARD_ROOT", dest_root):
+                with patch("src.tools.backend_dev.filesystem.ALLOWED_PATHS", allowed_paths):
                     tc = make_tool_context({})
                     
                     result = create_model(

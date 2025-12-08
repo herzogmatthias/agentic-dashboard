@@ -10,12 +10,11 @@ Flow:
     Planner injects artifact → Loop(Dev ↔ Tester ↔ QA) → Result in state → Planner reads result
 """
 
-import json
 from typing import AsyncGenerator
 
 from google.adk.agents import BaseAgent, LlmAgent
 from google.adk.agents.invocation_context import InvocationContext
-from google.adk.events import Event, EventActions
+from google.adk.events import Event
 from google.adk.models.lite_llm import LiteLlm
 from google.genai import types as gt
 from pydantic import BaseModel, Field
@@ -32,28 +31,21 @@ from src.agents.backend_dev_team.loop.tools import (
     STATE_KEY_LOOP_ERROR,
 )
 from src.agents.backend_dev_team.loop.callbacks import (
-    inject_artifact_context_for_dev,
-    inject_artifact_context_for_tester,
-    inject_artifact_context_for_qa,
+    initialize_dev_state,
+    STATE_KEY_PREVIOUS_SUMMARIES,
 )
+from src.agents.backend_dev_team.dev import create_backend_dev_agent
+from src.models.backend_dev import BackendDevResult
 
 logger = get_logger(__name__)
 
-# Model for sub-agents (lighter model for implementation tasks)
+# Model for Tester/QA sub-agents
 SUB_AGENT_MODEL = "openai/gpt-4.1-mini-2025-04-14"
 
 
 # =============================================================================
-# Structured Output Schemas for sub-agents
+# Structured Output Schemas for Tester and QA agents
 # =============================================================================
-
-class DevResult(BaseModel):
-    """Structured output from the Backend Dev Agent."""
-    success: bool = Field(description="Whether implementation was successful")
-    files_created: list[str] = Field(default_factory=list, description="List of file paths created")
-    code_summary: str = Field(default="", description="Brief description of implementation")
-    error_message: str | None = Field(default=None, description="Error message if failed")
-
 
 class TesterResult(BaseModel):
     """Structured output from the Tester Agent."""
@@ -74,35 +66,8 @@ class QAResult(BaseModel):
 
 
 # =============================================================================
-# Sub-agent instruction builders
+# Sub-agent instruction builders (Tester and QA)
 # =============================================================================
-
-def _build_dev_agent_instruction() -> str:
-    """Build instruction for the Dev Agent."""
-    return """
-# Backend Dev Agent
-
-You implement backend artifacts (API routes and helpers) for a Next.js dashboard.
-
-## Your Task
-Implement the artifact specified in the session state. The artifact details are
-available via the `current_artifact` state key.
-
-## Important
-- Read the artifact specification carefully
-- Implement according to the spec (route/helper, endpoint, method, etc.)
-- Report your results in the structured output format
-
-## Output Format
-You MUST respond with a JSON object matching this schema:
-{
-    "success": true/false,
-    "files_created": ["path/to/file1.ts", ...],
-    "code_summary": "Brief description of what was implemented",
-    "error_message": "Only if success is false"
-}
-"""
-
 
 def _build_tester_agent_instruction() -> str:
     """Build instruction for the Tester Agent."""
@@ -171,44 +136,45 @@ You MUST respond with a JSON object matching this schema:
 # =============================================================================
 
 def create_dev_agent() -> LlmAgent:
-    """Create the Backend Dev Agent with structured output."""
-    model = LiteLlm(model=SUB_AGENT_MODEL)
+    """
+    Create the Backend Dev Agent.
     
-    return LlmAgent(
-        name="backend_dev",
-        model=model,
-        instruction=_build_dev_agent_instruction(),
-        output_schema=DevResult,
-        output_key=STATE_KEY_DEV_RESULT,
-        before_agent_callback=inject_artifact_context_for_dev,
-    )
+    Uses create_backend_dev_agent() which provides:
+    - Full tools (create_api, create_model, create_helper, MCP filesystem, etc.)
+    - PlanReActPlanner for structured reasoning
+    - BackendDevResult output schema
+    - Dynamic instruction provider that reads from state
+    
+    We add output_key so the result goes to STATE_KEY_DEV_RESULT for loop checking.
+    
+    Note: State initialization happens ONCE at the start of _run_async_impl,
+    NOT on every Dev Agent invocation.
+    """
+    agent = create_backend_dev_agent()
+    # Set output_key so Loop Agent can read dev_result from state
+    agent.output_key = STATE_KEY_DEV_RESULT
+    return agent
 
 
 def create_tester_agent() -> LlmAgent:
     """Create the Tester Agent with structured output."""
-    model = LiteLlm(model=SUB_AGENT_MODEL)
-    
     return LlmAgent(
         name="backend_tester",
-        model=model,
+        model=LiteLlm(model=SUB_AGENT_MODEL),
         instruction=_build_tester_agent_instruction(),
         output_schema=TesterResult,
         output_key=STATE_KEY_TESTER_RESULT,
-        before_agent_callback=inject_artifact_context_for_tester,
     )
 
 
 def create_qa_agent() -> LlmAgent:
     """Create the QA Agent with structured output."""
-    model = LiteLlm(model=SUB_AGENT_MODEL)
-    
     return LlmAgent(
         name="backend_qa",
-        model=model,
+        model=LiteLlm(model=SUB_AGENT_MODEL),
         instruction=_build_qa_agent_instruction(),
         output_schema=QAResult,
         output_key=STATE_KEY_QA_RESULT,
-        before_agent_callback=inject_artifact_context_for_qa,
     )
 
 
@@ -230,14 +196,15 @@ class BackendDevLoopAgent(BaseAgent):
     
     State Requirements (input):
         - current_artifact: The artifact to process
+        - run_dir: Path to run directory (for dashboard_concept, cleaned data)
         
     State Output:
         - loop_result: "pass" | "fail" | "max_iterations"
         - loop_iteration: Number of cycles executed
         - dev_result, tester_result, qa_result: Sub-agent outputs
+        - previous_summaries: Updated with completed artifact summary
     """
     
-    # Pydantic field declarations for custom fields
     dev_agent: LlmAgent
     tester_agent: LlmAgent
     qa_agent: LlmAgent
@@ -254,29 +221,17 @@ class BackendDevLoopAgent(BaseAgent):
         max_iterations: int = MAX_ITERATIONS,
         **kwargs,
     ):
-        """
-        Initialize the Backend Dev Loop Agent.
-        
-        Args:
-            name: Agent name
-            dev_agent: Backend Dev Agent (created if None)
-            tester_agent: Tester Agent (created if None)
-            qa_agent: QA Agent (created if None)
-            max_iterations: Max Dev→Tester→QA cycles before giving up
-        """
-        # Create default sub-agents if not provided
+        """Initialize the Backend Dev Loop Agent."""
         _dev = dev_agent or create_dev_agent()
         _tester = tester_agent or create_tester_agent()
         _qa = qa_agent or create_qa_agent()
         
-        # Initialize BaseAgent with required parameters
         super().__init__(
             name=name,
             sub_agents=[_dev, _tester, _qa],
             **kwargs,
         )
         
-        # Set instance attributes directly (Pydantic will validate via annotations)
         object.__setattr__(self, "dev_agent", _dev)
         object.__setattr__(self, "tester_agent", _tester)
         object.__setattr__(self, "qa_agent", _qa)
@@ -285,15 +240,7 @@ class BackendDevLoopAgent(BaseAgent):
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
-        """
-        Execute the Dev → Tester → QA loop with smart routing.
-        
-        Args:
-            ctx: Invocation context with session state
-            
-        Yields:
-            Events from sub-agents and status updates
-        """
+        """Execute the Dev → Tester → QA loop with smart routing."""
         state = ctx.session.state
         
         # Get artifact from state
@@ -302,23 +249,23 @@ class BackendDevLoopAgent(BaseAgent):
             logger.error("No artifact in state - cannot proceed")
             state[STATE_KEY_LOOP_RESULT] = "fail"
             state[STATE_KEY_LOOP_ERROR] = "No artifact provided in state"
-            yield Event(
-                author=self.name,
-                content=gt.Content(
-                    role="model",
-                    parts=[gt.Part.from_text(text="Error: No artifact to process")]
-                ),
-            )
+            yield self._create_status_event("Error: No artifact to process")
             return
         
         artifact_id = artifact.get("id", "unknown")
-        artifact_kind = artifact.get("kind", "route")  # "route" or "helper"
-        needs_qa = artifact_kind == "route"  # Helpers skip QA
+        artifact_kind = artifact.get("kind", "route")
+        needs_qa = artifact_kind == "route"
         
         logger.info(
             f"Starting loop for {artifact_id} (kind={artifact_kind}, needs_qa={needs_qa})",
             extra={"agent": self.name, "artifact_id": artifact_id}
         )
+        
+        # =================================================================
+        # INITIALIZE STATE ONCE before the loop starts
+        # This sets workspace_root, metrics_ref_context, cleaned_data_files
+        # =================================================================
+        initialize_dev_state(state, artifact)
         
         # Initialize iteration counter
         state[STATE_KEY_LOOP_ITERATION] = 0
@@ -336,7 +283,6 @@ class BackendDevLoopAgent(BaseAgent):
             async for event in self.dev_agent.run_async(ctx):
                 yield event
             
-            # Check Dev result
             dev_result = state.get(STATE_KEY_DEV_RESULT)
             if not self._check_dev_success(dev_result):
                 logger.warning(f"[{artifact_id}] Dev Agent failed - exiting loop")
@@ -350,15 +296,13 @@ class BackendDevLoopAgent(BaseAgent):
             async for event in self.tester_agent.run_async(ctx):
                 yield event
             
-            # Check Tester result
             tester_result = state.get(STATE_KEY_TESTER_RESULT)
             if not self._check_tester_success(tester_result):
-                # Tests failed - route back to Dev
                 logger.info(f"[{artifact_id}] Tests failed - routing back to Dev")
                 yield self._create_status_event(
                     f"Tests failed for {artifact_id}, routing back to Dev (iteration {iteration})"
                 )
-                continue  # Go back to Dev
+                continue
             
             # --- QA PHASE (only for routes) ---
             if needs_qa:
@@ -366,19 +310,18 @@ class BackendDevLoopAgent(BaseAgent):
                 async for event in self.qa_agent.run_async(ctx):
                     yield event
                 
-                # Check QA result
                 qa_result = state.get(STATE_KEY_QA_RESULT)
                 if not self._check_qa_success(qa_result):
-                    # QA failed - route back to Dev
                     logger.info(f"[{artifact_id}] QA failed - routing back to Dev")
                     yield self._create_status_event(
                         f"QA failed for {artifact_id}, routing back to Dev (iteration {iteration})"
                     )
-                    continue  # Go back to Dev
+                    continue
             
             # --- SUCCESS ---
             logger.info(f"[{artifact_id}] Loop completed successfully!")
             state[STATE_KEY_LOOP_RESULT] = "pass"
+            self._append_dev_summary_to_state(state, dev_result, artifact_id)
             yield self._create_status_event(
                 f"SUCCESS: {artifact_id} completed in {iteration} iteration(s)"
             )
@@ -388,17 +331,15 @@ class BackendDevLoopAgent(BaseAgent):
         logger.warning(f"[{artifact_id}] Max iterations ({self.max_iterations}) reached")
         state[STATE_KEY_LOOP_RESULT] = "max_iterations"
         state[STATE_KEY_LOOP_ERROR] = f"Max iterations ({self.max_iterations}) reached"
-        yield self._create_status_event(
-            f"FAILED: {artifact_id} - max iterations reached"
-        )
+        yield self._create_status_event(f"FAILED: {artifact_id} - max iterations reached")
     
-    def _check_dev_success(self, dev_result: dict | DevResult | None) -> bool:
-        """Check if Dev Agent succeeded."""
+    def _check_dev_success(self, dev_result: dict | BackendDevResult | None) -> bool:
+        """Check if Dev Agent succeeded (status='success')."""
         if dev_result is None:
             return False
         if isinstance(dev_result, dict):
-            return dev_result.get("success", False)
-        return dev_result.success
+            return dev_result.get("status") == "success"
+        return dev_result.status == "success"
     
     def _check_tester_success(self, tester_result: dict | TesterResult | None) -> bool:
         """Check if Tester Agent succeeded AND tests passed."""
@@ -416,14 +357,39 @@ class BackendDevLoopAgent(BaseAgent):
             return qa_result.get("passed", False)
         return qa_result.passed
     
+    def _append_dev_summary_to_state(
+        self,
+        state: dict,
+        dev_result: dict | BackendDevResult | None,
+        artifact_id: str,
+    ) -> None:
+        """Extract summary from DevReport and append to previous_summaries."""
+        if dev_result is None:
+            return
+        
+        summary = None
+        if isinstance(dev_result, dict):
+            report = dev_result.get("report", {})
+            if isinstance(report, dict):
+                summary = report.get("summary")
+            if not summary:
+                summary = dev_result.get("summary")
+        elif hasattr(dev_result, "report") and dev_result.report:
+            summary = dev_result.report.summary
+        
+        if not summary:
+            summary = f"Completed {artifact_id}"
+        
+        if STATE_KEY_PREVIOUS_SUMMARIES not in state:
+            state[STATE_KEY_PREVIOUS_SUMMARIES] = []
+        
+        state[STATE_KEY_PREVIOUS_SUMMARIES].append(f"[{artifact_id}] {summary}")
+    
     def _create_status_event(self, message: str) -> Event:
         """Create a status event from this agent."""
         return Event(
             author=self.name,
-            content=gt.Content(
-                role="model",
-                parts=[gt.Part.from_text(text=message)]
-            ),
+            content=gt.Content(role="model", parts=[gt.Part.from_text(text=message)]),
         )
 
 
@@ -437,32 +403,14 @@ def create_loop_agent(
     qa_agent: LlmAgent | None = None,
     max_iterations: int = MAX_ITERATIONS,
 ) -> BackendDevLoopAgent:
-    """
-    Create a Backend Dev Loop Agent.
-    
-    Args:
-        dev_agent: Optional custom Dev Agent
-        tester_agent: Optional custom Tester Agent
-        qa_agent: Optional custom QA Agent
-        max_iterations: Max cycles before giving up
-        
-    Returns:
-        Configured BackendDevLoopAgent instance
-    """
-    agent = BackendDevLoopAgent(
+    """Create a Backend Dev Loop Agent."""
+    return BackendDevLoopAgent(
         name="backend_loop",
         dev_agent=dev_agent,
         tester_agent=tester_agent,
         qa_agent=qa_agent,
         max_iterations=max_iterations,
     )
-    
-    logger.info(
-        f"Loop Agent created (max_iterations={max_iterations})",
-        extra={"agent": "backend_loop", "phase": "create"}
-    )
-    
-    return agent
 
 
 def get_loop_agent() -> BackendDevLoopAgent:
@@ -470,24 +418,15 @@ def get_loop_agent() -> BackendDevLoopAgent:
     return create_loop_agent()
 
 
-# =============================================================================
-# Exports
-# =============================================================================
-
 __all__ = [
-    # Main agent
     "BackendDevLoopAgent",
     "create_loop_agent",
     "get_loop_agent",
-    # Sub-agent factories
     "create_dev_agent",
     "create_tester_agent",
     "create_qa_agent",
-    # Structured output schemas
-    "DevResult",
     "TesterResult",
     "QAResult",
-    # Constants
     "SUB_AGENT_MODEL",
     "MAX_ITERATIONS",
 ]

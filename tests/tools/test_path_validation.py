@@ -3,7 +3,7 @@ Tests for path validation and scoping in backend tools.
 """
 from pathlib import Path
 
-from src.tools.backend.filesystem import (
+from src.tools.backend_dev.filesystem import (
     ALLOWED_PATHS,
     _validate_path,
     _resolve_allowed_paths,

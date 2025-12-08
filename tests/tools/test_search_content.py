@@ -3,7 +3,7 @@ Tests for the search_content tool.
 """
 from pathlib import Path
 
-from src.tools.backend.filesystem import search_content
+from src.tools.backend_dev.filesystem import search_content
 
 
 class TestSearchContent:

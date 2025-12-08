@@ -1,5 +1,5 @@
 """
-File system constants and search tool for the Backend Agent.
+File system constants and search tool for the Backend Dev Agent.
 
 Provides path constants and content search functionality.
 Read/write/edit operations are handled by the MCP filesystem server.
@@ -12,7 +12,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
 
@@ -25,7 +26,7 @@ logger = get_logger(__name__)
 # Base path to the sample-dashboard Next.js project
 SAMPLE_DASHBOARD_ROOT = Path("C:/Users/darks/Documents/agentic-dashboard/sample-dashboard")
 
-# Allowed paths for Backend Agent file operations
+# Allowed paths for Backend Dev Agent file operations
 # These should match the MCP filesystem server configuration
 ALLOWED_PATHS: list[str] = [
     "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard/src/app/api",
@@ -230,7 +231,7 @@ def search_content(
         logger.info(
             "search_content success",
             extra={
-                "agent": "backend",
+                "agent": "backend_dev",
                 "query": query,
                 "matches": len(matches),
                 "total": total_matches,

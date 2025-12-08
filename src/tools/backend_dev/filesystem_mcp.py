@@ -1,15 +1,15 @@
 """
-MCP Filesystem Server integration for the Backend Agent.
+MCP Filesystem Server integration for the Backend Dev Agent.
 
 Provides file operations (read, write, edit, list, tree) via the Anthropic MCP filesystem server.
 https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
 
 Usage:
-    from src.tools.backend.filesystem_mcp import create_filesystem_toolset
+    from src.tools.backend_dev.filesystem_mcp import create_filesystem_toolset
     
     agent = LlmAgent(
         model="gemini-2.0-flash",
-        name="backend_agent",
+        name="backend_dev_agent",
         tools=[create_filesystem_toolset()],
     )
 

@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from src.tools.backend.validation import (
+from src.tools.backend_dev.validation import (
     run_lint,
     run_build,
     _check_typescript_syntax,
@@ -54,7 +54,7 @@ class TestRunLint:
         mock_result.stdout = "No lint errors found."
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_lint()
             
             assert result["passed"] is True
@@ -68,7 +68,7 @@ class TestRunLint:
         mock_result.stdout = "src/app/api/test/route.ts:5:10: 'unused' is defined but never used."
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_lint()
             
             assert result["passed"] is False
@@ -77,7 +77,7 @@ class TestRunLint:
     
     def test_lint_timeout(self):
         """Should handle lint timeout gracefully."""
-        with patch("src.tools.backend.validation.subprocess.run") as mock_run:
+        with patch("src.tools.backend_dev.validation.subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.TimeoutExpired("npm", LINT_TIMEOUT)
             
             result = run_lint()
@@ -87,7 +87,7 @@ class TestRunLint:
     
     def test_lint_npm_not_found(self):
         """Should handle missing npm gracefully."""
-        with patch("src.tools.backend.validation.subprocess.run") as mock_run:
+        with patch("src.tools.backend_dev.validation.subprocess.run") as mock_run:
             mock_run.side_effect = FileNotFoundError("npm not found")
             
             result = run_lint()
@@ -106,7 +106,7 @@ class TestRunBuild:
         mock_result.stdout = "Build completed successfully."
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_build()
             
             assert result["passed"] is True
@@ -120,7 +120,7 @@ class TestRunBuild:
         mock_result.stdout = ""
         mock_result.stderr = "Type error: Property 'foo' does not exist on type 'Bar'."
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_build()
             
             assert result["passed"] is False
@@ -129,7 +129,7 @@ class TestRunBuild:
     
     def test_build_timeout(self):
         """Should handle build timeout gracefully."""
-        with patch("src.tools.backend.validation.subprocess.run") as mock_run:
+        with patch("src.tools.backend_dev.validation.subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.TimeoutExpired("npm", BUILD_TIMEOUT)
             
             result = run_build()
@@ -149,7 +149,7 @@ class TestOutputTruncation:
         mock_result.stdout = long_output
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_lint()
             
             assert result["truncated"] is True
@@ -164,7 +164,7 @@ class TestOutputTruncation:
         mock_result.stdout = long_output
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_build()
             
             assert result["truncated"] is True
@@ -178,7 +178,7 @@ class TestOutputTruncation:
         mock_result.stdout = short_output
         mock_result.stderr = ""
         
-        with patch("src.tools.backend.validation.subprocess.run", return_value=mock_result):
+        with patch("src.tools.backend_dev.validation.subprocess.run", return_value=mock_result):
             result = run_lint()
             
             assert result["truncated"] is False

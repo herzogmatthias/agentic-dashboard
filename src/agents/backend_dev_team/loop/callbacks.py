@@ -1,262 +1,187 @@
 """
-Loop Agent callbacks - State injection and initialization for testability.
+Loop Agent callbacks and state initialization helpers.
 
-These callbacks allow the Loop Agent (and its sub-agents) to:
-1. Receive artifact context via state injection
-2. Be tested independently with mocked state
+State initialization for the Dev Agent happens ONCE at the start of the
+Loop Agent's _run_async_impl, not on every Dev Agent invocation.
 """
 
-from typing import Any, Optional
-
-from google.adk.agents.callback_context import CallbackContext
-from google.adk.agents.readonly_context import ReadonlyContext
-from google.genai import types as gt
+import json
+from pathlib import Path
+from typing import Any
 
 from src.core.logging import get_logger
 from src.agents.backend_dev_team.loop.tools import (
-    STATE_KEY_CURRENT_ARTIFACT,
-    STATE_KEY_CURRENT_ARTIFACT_ID,
-    STATE_KEY_LOOP_ITERATION,
-    STATE_KEY_LOOP_RESULT,
     STATE_KEY_RUN_DIR,
-    MAX_ITERATIONS,
 )
 
 logger = get_logger(__name__)
 
 
-def initialize_loop_state(callback_context: CallbackContext) -> gt.Content | None:
-    """
-    Initialize/validate loop state before the LoopAgent runs.
-    
-    This callback:
-    1. Validates that an artifact has been injected into state
-    2. Initializes the iteration counter if not present
-    
-    For testing, inject state before running:
-        state[STATE_KEY_CURRENT_ARTIFACT] = {"id": "test", ...}
-    
-    Args:
-        callback_context: The callback context with state access
-        
-    Returns:
-        None to allow normal execution, or Content to skip with error
-    """
-    try:
-        state = callback_context.state
-        
-        # Check for current artifact
-        artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
-        if not artifact:
-            logger.warning(
-                "No artifact in state - loop cannot proceed",
-                extra={"agent": "loop", "phase": "init"}
-            )
-            return gt.Content(
-                role="model",
-                parts=[gt.Part.from_text(
-                    text="Error: No artifact provided. Inject artifact via state before running loop."
-                )]
-            )
-        
-        # Initialize iteration counter
-        if STATE_KEY_LOOP_ITERATION not in state:
-            state[STATE_KEY_LOOP_ITERATION] = 0
-        
-        artifact_id = artifact.get("id", "unknown")
-        iteration = state[STATE_KEY_LOOP_ITERATION]
-        
-        logger.info(
-            f"Loop initialized for artifact {artifact_id}, iteration {iteration}",
-            extra={
-                "agent": "loop",
-                "phase": "init",
-                "artifact_id": artifact_id,
-                "iteration": iteration,
-            }
-        )
-        
-        return None
-        
-    except Exception as e:
-        logger.exception(f"Failed to initialize loop state: {e}")
-        return gt.Content(
-            role="model",
-            parts=[gt.Part.from_text(text=f"Error initializing loop: {e}")]
-        )
+# =============================================================================
+# State Keys for Dev Agent
+# =============================================================================
 
+STATE_KEY_WORKSPACE_ROOT = "workspace_root"
+STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
+STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
+STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
 
-def increment_loop_iteration(callback_context: CallbackContext) -> gt.Content | None:
-    """
-    Increment the loop iteration counter at the start of each cycle.
-    
-    This callback should be attached to the LoopAgent's before_agent_callback
-    to track how many Dev→Tester→QA cycles have occurred.
-    
-    Args:
-        callback_context: The callback context with state access
-        
-    Returns:
-        None to continue, or Content to skip if max iterations reached
-    """
-    try:
-        state = callback_context.state
-        
-        # Increment iteration
-        iteration = state.get(STATE_KEY_LOOP_ITERATION, 0)
-        iteration += 1
-        state[STATE_KEY_LOOP_ITERATION] = iteration
-        
-        artifact = state.get(STATE_KEY_CURRENT_ARTIFACT, {})
-        artifact_id = artifact.get("id", "unknown")
-        
-        logger.info(
-            f"Loop iteration {iteration}/{MAX_ITERATIONS} for {artifact_id}",
-            extra={
-                "agent": "loop",
-                "artifact_id": artifact_id,
-                "iteration": iteration,
-                "max_iterations": MAX_ITERATIONS,
-            }
-        )
-        
-        # Note: max_iterations is handled by LoopAgent itself, but we log it
-        return None
-        
-    except Exception as e:
-        logger.exception(f"Failed to increment loop iteration: {e}")
-        return None
-
-
-def after_loop_callback(callback_context: CallbackContext) -> gt.Content | None:
-    """
-    Callback that runs after the loop completes.
-    
-    This callback:
-    1. Logs the final loop result
-    2. Can modify the output if needed
-    
-    Args:
-        callback_context: The callback context with state access
-        
-    Returns:
-        None to use agent's output, or Content to replace it
-    """
-    try:
-        state = callback_context.state
-        
-        artifact = state.get(STATE_KEY_CURRENT_ARTIFACT, {})
-        artifact_id = artifact.get("id", "unknown")
-        result = state.get(STATE_KEY_LOOP_RESULT, "unknown")
-        iteration = state.get(STATE_KEY_LOOP_ITERATION, 0)
-        
-        logger.info(
-            f"Loop completed for {artifact_id}: result={result}, iterations={iteration}",
-            extra={
-                "agent": "loop",
-                "phase": "complete",
-                "artifact_id": artifact_id,
-                "result": result,
-                "iterations": iteration,
-            }
-        )
-        
-        return None
-        
-    except Exception as e:
-        logger.exception(f"Error in after_loop_callback: {e}")
-        return None
+# Default sample-dashboard root (relative to project)
+SAMPLE_DASHBOARD_ROOT = Path(__file__).parent.parent.parent.parent.parent / "sample-dashboard"
 
 
 # =============================================================================
-# Sub-agent callbacks (for Dev, Tester, QA)
+# State initialization (called ONCE at start of Loop)
 # =============================================================================
 
-def inject_artifact_context_for_dev(callback_context: CallbackContext) -> gt.Content | None:
+def initialize_dev_state(state: dict[str, Any], artifact: dict[str, Any]) -> None:
     """
-    Inject artifact context for the Dev Agent.
+    Initialize state for the Dev Agent before the loop starts.
     
-    The Dev Agent needs the full artifact spec to implement it.
+    Called ONCE at the start of BackendDevLoopAgent._run_async_impl.
+    Sets up:
+    - workspace_root: Path to sample-dashboard project
+    - metrics_ref_context: KPI/visual spec from dashboard_concept
+    - cleaned_data_files: List of available data files
+    - previous_summaries: Initialize if not present
     
     Args:
-        callback_context: The callback context with state access
-        
-    Returns:
-        None to allow execution
+        state: Session state dict (mutable)
+        artifact: The artifact being processed
     """
-    state = callback_context.state
-    artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
+    artifact_id = artifact.get("id", "unknown")
     
-    if not artifact:
-        logger.warning("Dev Agent: No artifact in state")
-        return gt.Content(
-            role="model",
-            parts=[gt.Part.from_text(text="Error: No artifact to implement.")]
-        )
+    # Set workspace_root
+    if STATE_KEY_WORKSPACE_ROOT not in state:
+        state[STATE_KEY_WORKSPACE_ROOT] = str(SAMPLE_DASHBOARD_ROOT.resolve())
     
-    logger.debug(
-        f"Dev Agent processing: {artifact.get('id')}",
-        extra={"agent": "dev", "artifact_id": artifact.get("id")}
+    # Look up metrics_ref context from dashboard_concept
+    run_dir = state.get(STATE_KEY_RUN_DIR)
+    metrics_ref = artifact.get("metrics_ref")
+    
+    if run_dir:
+        dashboard_concept = _load_dashboard_concept(run_dir)
+        state[STATE_KEY_METRICS_REF_CONTEXT] = _lookup_metrics_ref(dashboard_concept, metrics_ref)
+        state[STATE_KEY_CLEANED_DATA_FILES] = _get_cleaned_data_files(run_dir)
+    else:
+        state[STATE_KEY_METRICS_REF_CONTEXT] = "(no run_dir in state)"
+        state[STATE_KEY_CLEANED_DATA_FILES] = []
+    
+    # Initialize previous_summaries if not present
+    if STATE_KEY_PREVIOUS_SUMMARIES not in state:
+        state[STATE_KEY_PREVIOUS_SUMMARIES] = []
+    
+    logger.info(
+        f"Dev state initialized for {artifact_id}",
+        extra={
+            "agent": "loop",
+            "artifact_id": artifact_id,
+            "metrics_ref": metrics_ref,
+            "workspace_root": state.get(STATE_KEY_WORKSPACE_ROOT),
+            "cleaned_files_count": len(state.get(STATE_KEY_CLEANED_DATA_FILES, [])),
+        }
     )
+
+
+# =============================================================================
+# Helper functions
+# =============================================================================
+
+def _load_dashboard_concept(run_dir: str | Path) -> dict[str, Any] | None:
+    """Load dashboard_concept.json from run directory."""
+    run_path = Path(run_dir)
+    concept_path = run_path / "planner" / "dashboard_concept.json"
     
-    return None
+    if not concept_path.exists():
+        logger.debug(f"Dashboard concept not found at {concept_path}")
+        return None
+    
+    try:
+        with open(concept_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load dashboard concept: {e}")
+        return None
 
 
-def inject_artifact_context_for_tester(callback_context: CallbackContext) -> gt.Content | None:
+def _lookup_metrics_ref(
+    dashboard_concept: dict[str, Any] | None,
+    metrics_ref: str | None,
+) -> str:
     """
-    Inject artifact context for the Tester Agent.
+    Look up KPI/visual from dashboard_concept by metrics_ref.
     
-    The Tester Agent needs the artifact spec and Dev result to create tests.
+    Patterns:
+    - "kpi_<name>" → specific KPI
+    - "v_<name>" → specific visual
+    - "f_<name>" → specific filter
+    - "kpis", "visuals", "filters" → entire section
+    """
+    if not metrics_ref:
+        return "(no metrics_ref specified)"
     
-    Args:
-        callback_context: The callback context with state access
+    if not dashboard_concept:
+        return f"(metrics_ref={metrics_ref}, but dashboard_concept not found)"
+    
+    try:
+        # Check KPIs
+        if metrics_ref.startswith("kpi_") or metrics_ref == "kpis":
+            kpis = dashboard_concept.get("kpis", [])
+            if metrics_ref == "kpis":
+                return json.dumps(kpis, separators=(",", ":"))
+            for kpi in kpis:
+                if kpi.get("id") == metrics_ref or kpi.get("name") == metrics_ref.replace("kpi_", ""):
+                    return json.dumps(kpi, separators=(",", ":"))
         
-    Returns:
-        None to allow execution
-    """
-    state = callback_context.state
-    artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
-    
-    if not artifact:
-        logger.warning("Tester Agent: No artifact in state")
-        return gt.Content(
-            role="model",
-            parts=[gt.Part.from_text(text="Error: No artifact to test.")]
-        )
-    
-    logger.debug(
-        f"Tester Agent processing: {artifact.get('id')}",
-        extra={"agent": "tester", "artifact_id": artifact.get("id")}
-    )
-    
-    return None
-
-
-def inject_artifact_context_for_qa(callback_context: CallbackContext) -> gt.Content | None:
-    """
-    Inject artifact context for the QA Agent.
-    
-    The QA Agent needs the artifact spec, Dev result, and Tester result to validate.
-    
-    Args:
-        callback_context: The callback context with state access
+        # Check visuals
+        if metrics_ref.startswith("v_") or metrics_ref == "visuals":
+            visuals = dashboard_concept.get("visuals", dashboard_concept.get("charts", []))
+            if metrics_ref == "visuals":
+                return json.dumps(visuals, separators=(",", ":"))
+            for visual in visuals:
+                if visual.get("id") == metrics_ref or visual.get("name") == metrics_ref.replace("v_", ""):
+                    return json.dumps(visual, separators=(",", ":"))
         
-    Returns:
-        None to allow execution
-    """
-    state = callback_context.state
-    artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
+        # Check filters
+        if metrics_ref.startswith("f_") or metrics_ref == "filters":
+            filters = dashboard_concept.get("filters", [])
+            if metrics_ref == "filters":
+                return json.dumps(filters, separators=(",", ":"))
+            for f in filters:
+                if f.get("id") == metrics_ref or f.get("name") == metrics_ref.replace("f_", ""):
+                    return json.dumps(f, separators=(",", ":"))
+        
+        # Direct key lookup
+        if metrics_ref in dashboard_concept:
+            return json.dumps(dashboard_concept[metrics_ref], separators=(",", ":"))
+        
+        return f"(metrics_ref={metrics_ref} not found)"
+        
+    except Exception as e:
+        logger.warning(f"Error looking up metrics_ref {metrics_ref}: {e}")
+        return f"(error: {metrics_ref})"
+
+
+def _get_cleaned_data_files(run_dir: str | Path) -> list[str]:
+    """Get list of cleaned data files from run directory."""
+    run_path = Path(run_dir)
+    cleaned_dir = run_path / "cleaned"
     
-    if not artifact:
-        logger.warning("QA Agent: No artifact in state")
-        return gt.Content(
-            role="model",
-            parts=[gt.Part.from_text(text="Error: No artifact to validate.")]
-        )
+    if not cleaned_dir.exists():
+        return []
     
-    logger.debug(
-        f"QA Agent processing: {artifact.get('id')}",
-        extra={"agent": "qa", "artifact_id": artifact.get("id")}
-    )
+    files = []
+    for ext in ["*.csv", "*.parquet"]:
+        files.extend([f.name for f in cleaned_dir.glob(ext)])
     
-    return None
+    return files
+
+
+__all__ = [
+    "initialize_dev_state",
+    "STATE_KEY_WORKSPACE_ROOT",
+    "STATE_KEY_PREVIOUS_SUMMARIES",
+    "STATE_KEY_CLEANED_DATA_FILES",
+    "STATE_KEY_METRICS_REF_CONTEXT",
+    "SAMPLE_DASHBOARD_ROOT",
+]

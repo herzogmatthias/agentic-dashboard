@@ -19,8 +19,7 @@ from src.agents.backend_dev_team.loop.agent import (
     create_dev_agent,
     create_tester_agent,
     create_qa_agent,
-    # Structured output schemas
-    DevResult,
+    # Structured output schemas (Tester/QA only - Dev uses BackendDevResult)
     TesterResult,
     QAResult,
     # Constants
@@ -53,12 +52,11 @@ from src.agents.backend_dev_team.loop.tools import (
     inject_artifact_to_state,
 )
 from src.agents.backend_dev_team.loop.callbacks import (
-    initialize_loop_state,
-    increment_loop_iteration,
-    after_loop_callback,
-    inject_artifact_context_for_dev,
-    inject_artifact_context_for_tester,
-    inject_artifact_context_for_qa,
+    initialize_dev_state,
+    STATE_KEY_WORKSPACE_ROOT,
+    STATE_KEY_PREVIOUS_SUMMARIES,
+    STATE_KEY_CLEANED_DATA_FILES,
+    STATE_KEY_METRICS_REF_CONTEXT,
 )
 
 __all__ = [
@@ -71,7 +69,6 @@ __all__ = [
     "create_tester_agent",
     "create_qa_agent",
     # Structured output schemas
-    "DevResult",
     "TesterResult",
     "QAResult",
     # Tool and FunctionTool wrapper
@@ -90,6 +87,10 @@ __all__ = [
     "STATE_KEY_DEV_RESULT",
     "STATE_KEY_TESTER_RESULT",
     "STATE_KEY_QA_RESULT",
+    "STATE_KEY_WORKSPACE_ROOT",
+    "STATE_KEY_PREVIOUS_SUMMARIES",
+    "STATE_KEY_CLEANED_DATA_FILES",
+    "STATE_KEY_METRICS_REF_CONTEXT",
     # Constants
     "MAX_ITERATIONS",
     "SUB_AGENT_MODEL",
@@ -99,11 +100,5 @@ __all__ = [
     "set_loop_result",
     "clear_loop_state",
     "inject_artifact_to_state",
-    # Callbacks
-    "initialize_loop_state",
-    "increment_loop_iteration",
-    "after_loop_callback",
-    "inject_artifact_context_for_dev",
-    "inject_artifact_context_for_tester",
-    "inject_artifact_context_for_qa",
+    "initialize_dev_state",
 ]

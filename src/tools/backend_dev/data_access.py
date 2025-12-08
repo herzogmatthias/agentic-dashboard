@@ -1,11 +1,12 @@
 """
-Data access tools for the Backend Agent.
+Data access tools for the Backend Dev Agent.
 
-Provides tools for reading sample data.
+Provides tools for reading sample data and loading the data profile.
 Also provides the copy_data_to_project function for use in callbacks (not as a tool).
 """
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,7 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.backend.filesystem import SAMPLE_DASHBOARD_ROOT, _validate_path
+from src.tools.backend_dev.filesystem import SAMPLE_DASHBOARD_ROOT, _validate_path
 from src.tools.shared import inspect_json_preview_tool  # Re-export from shared
 
 logger = get_logger(__name__)
@@ -66,7 +67,7 @@ def get_sample_rows(
         
         logger.info(
             "get_sample_rows success",
-            extra={"agent": "backend", "path": str(resolved_path), "rows": len(rows)},
+            extra={"agent": "backend_dev", "path": str(resolved_path), "rows": len(rows)},
         )
         
         return {
@@ -88,7 +89,7 @@ def copy_data_to_project(
     
     This is a callback helper function, NOT a tool. It should be called from the
     Dev Orchestrator's before_agent_callback to ensure data is copied before the
-    Backend Agent starts creating API routes.
+    Backend Dev Agent starts creating API routes.
     
     Copies all files from `{run_dir}/cleaned/` to `sample-dashboard/data/`.
     Creates the `data/` directory if it doesn't exist.
@@ -162,7 +163,7 @@ def copy_data_to_project(
         logger.info(
             "copy_data_to_project success",
             extra={
-                "agent": "backend",
+                "agent": "backend_dev",
                 "source": str(source_dir),
                 "destination": str(dest_dir),
                 "files": len(copied_files),
@@ -183,11 +184,81 @@ def copy_data_to_project(
         return {"error": f"Failed to copy data files: {exc}", "source": str(source_dir)}
 
 
+def load_data_profile(
+    tool_context: ToolContext | None = None,
+) -> dict[str, Any]:
+    """
+    Load the minified data profile JSON for the current run.
+    
+    The data profile contains information about the dataset structure:
+    - Column names and types
+    - Cardinality and uniqueness
+    - Missing value statistics
+    - Domain signals (date columns, identifiers, etc.)
+    
+    Use this tool when you need detailed information about the dataset
+    to implement your artifact correctly.
+    
+    Returns:
+        Dictionary with:
+        - profile: The minified data profile JSON
+        - error: Error message if loading failed
+    """
+    if tool_context is None:
+        return {"error": "Tool context not provided"}
+    
+    run_dir = tool_context.state.get("run_dir")
+    if not run_dir:
+        return {"error": "run_dir not found in session state"}
+    
+    run_path = Path(run_dir)
+    
+    # Try both .json and .md formats
+    profile_json_path = run_path / "data_profile.json"
+    
+    if not profile_json_path.exists():
+        return {
+            "error": f"Data profile not found at {profile_json_path}",
+            "run_dir": str(run_dir),
+        }
+    
+    try:
+        with open(profile_json_path, "r", encoding="utf-8") as f:
+            profile_data = json.load(f)
+        
+        # Return minified JSON string
+        minified = json.dumps(profile_data, separators=(",", ":"))
+        
+        logger.info(
+            "load_data_profile success",
+            extra={"agent": "backend_dev", "path": str(profile_json_path)},
+        )
+        
+        return {
+            "profile": minified,
+            "path": str(profile_json_path),
+        }
+        
+    except json.JSONDecodeError as exc:
+        logger.error(
+            "load_data_profile failed - invalid JSON",
+            extra={"path": str(profile_json_path), "error": str(exc)},
+        )
+        return {"error": f"Invalid JSON in data profile: {exc}"}
+    except Exception as exc:
+        logger.error(
+            "load_data_profile failed",
+            extra={"path": str(profile_json_path), "error": str(exc)},
+        )
+        return {"error": f"Failed to load data profile: {exc}"}
+
+
 # ============================================================================
 # Tool Exports
 # ============================================================================
 
 get_sample_rows_tool = FunctionTool(func=get_sample_rows)
+load_data_profile_tool = FunctionTool(func=load_data_profile)
 # inspect_json_preview_tool is imported from src.tools.shared
 
 # Note: copy_data_to_project is NOT exported as a tool.

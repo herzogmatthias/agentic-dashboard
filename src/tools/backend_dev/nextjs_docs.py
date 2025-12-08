@@ -1,29 +1,29 @@
 """
-Next.js Documentation MCP integration for the Backend Agent.
+Next.js Documentation MCP integration for the Backend Dev Agent.
 
 Provides access to official Next.js documentation via the Next.js DevTools MCP server.
 https://github.com/vercel/next-devtools-mcp
 
 Usage:
     # Option 1: Let agent call init (automatic)
-    from src.tools.backend.nextjs_docs import create_nextjs_docs_toolset
+    from src.tools.backend_dev.nextjs_docs import create_nextjs_docs_toolset
     
     agent = LlmAgent(
         model="gemini-2.0-flash",
-        name="backend_agent",
+        name="backend_dev_agent",
         instruction="Call 'init' before using 'nextjs_docs'.",
         tools=[create_nextjs_docs_toolset()],
     )
     
     # Option 2: Call init manually before agent runs (recommended)
-    from src.tools.backend.nextjs_docs import create_nextjs_docs_toolset, call_init
+    from src.tools.backend_dev.nextjs_docs import create_nextjs_docs_toolset, call_init
     
     toolset = create_nextjs_docs_toolset()
     await call_init(toolset)  # Pre-initialize, no ToolContext needed
     
     agent = LlmAgent(
         model="gemini-2.0-flash",
-        name="backend_agent",
+        name="backend_dev_agent",
         tools=[toolset],  # Now only 'nextjs_docs' is needed
     )
 
