@@ -7,9 +7,20 @@ from src.models.backend_dev import (
     BackendDevResult,
 )
 
+from src.models.testing_agent import (
+    TestReport,
+    TestAgentInput,
+    TestAgentResult,
+)
+
 __all__ = [
+    # Backend Dev models
     "FileChange",
     "DevReport",
     "BackendDevInput",
     "BackendDevResult",
+    # Testing Agent models
+    "TestReport",
+    "TestAgentInput",
+    "TestAgentResult",
 ]

@@ -1,46 +1,48 @@
 """Backend Dev Agent tools for file system operations, creation, validation, and data access.
 
 This module consolidates all tools needed by the Backend Dev Agent:
-- Filesystem: Path constants, content search, MCP filesystem toolset
+- Filesystem: Content search (local), MCP filesystem toolset (shared)
 - Creation: create_api, create_model, create_helper
 - Validation: run_lint, run_type_check, run_build
-- Data access: get_sample_rows, inspect_json_preview
+- Data access: load_data_profile, read_backend_manifest, inspect_json_preview
 - Next.js docs: MCP integration with Next.js DevTools
 
-Note: Read/write/edit operations are handled by the MCP filesystem server.
+Note: Read/write/edit operations are handled by the shared MCP filesystem server.
+Note: Testing Agent tools are in a separate module: src.tools.tester
+Note: copy_data_to_project is now in src.core.utils
 """
 
 from src.tools.backend_dev.filesystem import (
     search_content,
     search_content_tool,
     ALLOWED_PATHS,
-    SAMPLE_DASHBOARD_ROOT,
     _validate_path,
     _get_relative_display_path,
 )
 
-from src.tools.backend_dev.filesystem_mcp import (
-    create_filesystem_toolset,
-    create_filesystem_toolset_with_run_dir,
-    FILESYSTEM_MCP_PACKAGE,
-    ALLOWED_DIRECTORIES,
-    EXPOSED_TOOLS as FILESYSTEM_EXPOSED_TOOLS,
+# Use shared filesystem MCP toolset
+from src.tools.shared import (
+    create_backend_dev_filesystem_toolset,
+    inspect_json_preview,
+    inspect_json_preview_tool,
+    TOKEN_THRESHOLD,
+    get_sample_rows,
+    get_sample_rows_tool,
+    FULL_ACCESS_TOOLS as FILESYSTEM_EXPOSED_TOOLS,
     CONNECTION_TIMEOUT as FILESYSTEM_CONNECTION_TIMEOUT,
+    FILESYSTEM_MCP_PACKAGE,
+)
+
+from src.tools.utils import (
+    SAMPLE_DASHBOARD_ROOT,
+    BACKEND_DEV_ALLOWED_PATHS as ALLOWED_DIRECTORIES,
 )
 
 from src.tools.backend_dev.data_access import (
-    MAX_SAMPLE_ROWS,
-    get_sample_rows,
-    get_sample_rows_tool,
     load_data_profile,
     load_data_profile_tool,
-    inspect_json_preview_tool,  # Re-exported from shared
-    copy_data_to_project,  # Callback helper, not a tool
-)
-
-from src.tools.shared import (
-    inspect_json_preview,
-    TOKEN_THRESHOLD,
+    read_backend_manifest,
+    read_backend_manifest_tool,
 )
 
 from src.tools.backend_dev.creation import (
@@ -80,26 +82,31 @@ from typing import Any
 # Tool Aggregation for Backend Dev Agent
 # ============================================================================
 
-def get_dev_tools() -> tuple[list, Any]:
+def get_backend_dev_tools(run_dir: str | None = None) -> list:
     """
-    Get all tools for the Backend Dev Agent.
+    Get all FunctionTools for the Backend Dev Agent.
     
-    Returns a tuple of (regular_tools, mcp_toolset) that the Backend Dev Agent needs:
-    - Data exploration: get_sample_rows, inspect_json_preview, load_data_profile
+    Returns a list of tools that the Backend Dev Agent needs:
+    - Data exploration: get_sample_rows, inspect_json_preview, load_data_profile, read_backend_manifest
     - File creation: create_api, create_model, create_helper
     - Content search: search_content
     - Validation: run_lint, run_type_check
-    - MCP filesystem toolset for read/write/edit
+    
+    Note: For MCP filesystem tools (read_file, write_file, etc.), use
+    `get_backend_dev_mcp_toolset(run_dir)` separately.
+    
+    Args:
+        run_dir: Optional run directory (reserved for future use).
     
     Returns:
-        Tuple of (regular_tools_list, mcp_toolset).
-        The caller should spread regular_tools and handle mcp_toolset appropriately.
+        List of FunctionTool instances.
     """
-    tools = [
+    return [
         # Data exploration
         get_sample_rows_tool,
         inspect_json_preview_tool,
         load_data_profile_tool,
+        read_backend_manifest_tool,
         # File creation
         create_api_tool,
         create_model_tool,
@@ -110,10 +117,30 @@ def get_dev_tools() -> tuple[list, Any]:
         run_lint_tool,
         run_type_check_tool,
     ]
+
+
+def get_backend_dev_mcp_toolset(run_dir: str | None = None) -> Any:
+    """
+    Get the MCP filesystem toolset for the Backend Dev Agent.
     
-    filesystem_toolset = create_filesystem_toolset()
+    This provides MCP-based file operations (read_file, write_file, 
+    list_directory, etc.) with access restricted to:
+    - src/app/api/** (API routes)
+    - src/models/** (TypeScript types/interfaces)
+    - src/lib/** (Helper utilities)
+    - data/** (Data files)
     
-    return tools, filesystem_toolset
+    Args:
+        run_dir: Optional run directory to add to allowed paths.
+        
+    Returns:
+        McpToolset instance configured for backend dev agent.
+    """
+    return create_backend_dev_filesystem_toolset(run_dir=run_dir)
+
+
+# Legacy alias for backward compatibility
+get_dev_tools = get_backend_dev_tools
 
 
 # ============================================================================
@@ -124,17 +151,19 @@ __all__ = [
     # Search tool
     "search_content",
     "search_content_tool",
-    # Filesystem MCP toolset factories
-    "create_filesystem_toolset",
-    "create_filesystem_toolset_with_run_dir",
+    # Filesystem MCP toolset factory (from shared)
+    "create_backend_dev_filesystem_toolset",
+    "get_backend_dev_mcp_toolset",
     # Data access functions
     "get_sample_rows",
     "inspect_json_preview",
     "load_data_profile",
+    "read_backend_manifest",
     # Data access tools
     "get_sample_rows_tool",
     "inspect_json_preview_tool",
     "load_data_profile_tool",
+    "read_backend_manifest_tool",
     # Creation functions
     "create_api",
     "create_model",
@@ -155,10 +184,9 @@ __all__ = [
     "create_nextjs_docs_toolset",
     # Next.js docs manual init helper
     "call_nextjs_init",
-    # Callback helpers (not tools)
-    "copy_data_to_project",
     # Tool aggregation
-    "get_dev_tools",
+    "get_backend_dev_tools",
+    "get_dev_tools",  # Legacy alias
     # Constants - filesystem
     "ALLOWED_PATHS",
     "FILESYSTEM_MCP_PACKAGE",
@@ -167,7 +195,6 @@ __all__ = [
     "FILESYSTEM_EXPOSED_TOOLS",
     "FILESYSTEM_CONNECTION_TIMEOUT",
     # Constants - data access
-    "MAX_SAMPLE_ROWS",
     "TOKEN_THRESHOLD",
     # Constants - validation
     "LINT_TIMEOUT",

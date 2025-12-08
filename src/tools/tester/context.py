@@ -1,9 +1,7 @@
 """
-Data access tools for the Backend Dev Agent.
+Context tools for the Testing Agent.
 
-Provides tools for loading data profiles and backend manifests.
-For sample CSV data, use the shared get_sample_rows tool.
-For file copying, use src.core.utils.copy_data_to_project callback.
+Provides tools for reading dev reports and other context needed for test generation.
 """
 from __future__ import annotations
 
@@ -15,30 +13,31 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.shared import inspect_json_preview_tool  # Re-export from shared
 
 logger = get_logger(__name__)
 
 
-def load_data_profile(
+# ============================================================================
+# Tool Implementations
+# ============================================================================
+
+
+def read_dev_report(
+    artifact_id: str,
     tool_context: ToolContext | None = None,
 ) -> dict[str, Any]:
     """
-    Load the minified data profile JSON for the current run.
+    Read the dev report for a specific artifact from the current run.
     
-    The data profile contains information about the dataset structure:
-    - Column names and types
-    - Cardinality and uniqueness
-    - Missing value statistics
-    - Domain signals (date columns, identifiers, etc.)
+    Dev reports contain information about what was implemented:
+    - Files created/modified (API routes, helpers, models)
+    - Endpoints and their structure
+    - Implementation notes
     
-    Use this tool when you need detailed information about the dataset
-    to implement your artifact correctly.
+    Use this tool to understand what needs to be tested for a given artifact.
     
-    Returns:
-        Dictionary with:
-        - profile: The minified data profile JSON
-        - error: Error message if loading failed
+    Args:
+        artifact_id: The artifact identifier to get the dev report for.
     """
     if tool_context is None:
         return {"error": "Tool context not provided"}
@@ -49,43 +48,49 @@ def load_data_profile(
     
     run_path = Path(run_dir)
     
-    profile_json_path = run_path / "data_profile.json"
+    # Dev reports are stored at {run_dir}/dev_reports/{artifact_id}.json
+    dev_report_dir = run_path / "dev_reports"
+    dev_report_path = dev_report_dir / f"{artifact_id}.json"
     
-    if not profile_json_path.exists():
-        return {
-            "error": f"Data profile not found at {profile_json_path}",
-            "run_dir": str(run_dir),
-        }
+    if not dev_report_path.exists():
+        # Try alternative location
+        alt_path = run_path / f"dev_report_{artifact_id}.json"
+        if alt_path.exists():
+            dev_report_path = alt_path
+        else:
+            return {
+                "error": f"Dev report not found for artifact '{artifact_id}'",
+                "searched_paths": [str(dev_report_path), str(alt_path)],
+                "run_dir": str(run_dir),
+            }
     
     try:
-        with open(profile_json_path, "r", encoding="utf-8") as f:
-            profile_data = json.load(f)
-        
-        # Return minified JSON string
-        minified = json.dumps(profile_data, separators=(",", ":"))
+        with open(dev_report_path, "r", encoding="utf-8") as f:
+            report_data = json.load(f)
         
         logger.info(
-            "load_data_profile success",
-            extra={"agent": "backend_dev", "path": str(profile_json_path)},
+            "read_dev_report success",
+            extra={"agent": "tester", "artifact_id": artifact_id, "path": str(dev_report_path)},
         )
         
         return {
-            "profile": minified,
-            "path": str(profile_json_path),
+            "artifact_id": artifact_id,
+            "report": report_data,
+            "path": str(dev_report_path),
         }
         
     except json.JSONDecodeError as exc:
         logger.error(
-            "load_data_profile failed - invalid JSON",
-            extra={"path": str(profile_json_path), "error": str(exc)},
+            "read_dev_report failed - invalid JSON",
+            extra={"path": str(dev_report_path), "error": str(exc)},
         )
-        return {"error": f"Invalid JSON in data profile: {exc}"}
+        return {"error": f"Invalid JSON in dev report: {exc}", "path": str(dev_report_path)}
     except Exception as exc:
         logger.error(
-            "load_data_profile failed",
-            extra={"path": str(profile_json_path), "error": str(exc)},
+            "read_dev_report failed",
+            extra={"path": str(dev_report_path), "error": str(exc)},
         )
-        return {"error": f"Failed to load data profile: {exc}"}
+        return {"error": f"Failed to read dev report: {exc}", "path": str(dev_report_path)}
 
 
 def read_backend_manifest(
@@ -99,14 +104,7 @@ def read_backend_manifest(
     - File paths for each artifact
     - Dependencies between artifacts
     
-    Use this tool to understand the overall structure of what was built
-    or what needs to be built.
-    
-    Returns:
-        Dictionary with:
-        - manifest: The manifest data
-        - path: Path to the manifest file
-        - error: Error message if loading failed
+    Use this tool to understand the overall structure of what was built.
     """
     if tool_context is None:
         return {"error": "Tool context not provided"}
@@ -117,11 +115,12 @@ def read_backend_manifest(
     
     run_path = Path(run_dir)
     
+    # Backend manifest is stored at {run_dir}/backend_manifest.json
     manifest_path = run_path / "backend_manifest.json"
     
     if not manifest_path.exists():
         return {
-            "error": "Backend manifest not found",
+            "error": f"Backend manifest not found",
             "searched_path": str(manifest_path),
             "run_dir": str(run_dir),
         }
@@ -132,7 +131,7 @@ def read_backend_manifest(
         
         logger.info(
             "read_backend_manifest success",
-            extra={"agent": "backend_dev", "path": str(manifest_path)},
+            extra={"agent": "tester", "path": str(manifest_path)},
         )
         
         return {
@@ -158,6 +157,5 @@ def read_backend_manifest(
 # Tool Exports
 # ============================================================================
 
-load_data_profile_tool = FunctionTool(func=load_data_profile)
+read_dev_report_tool = FunctionTool(func=read_dev_report)
 read_backend_manifest_tool = FunctionTool(func=read_backend_manifest)
-# inspect_json_preview_tool is imported from src.tools.shared
