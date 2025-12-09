@@ -22,6 +22,95 @@ from src.models.backend_planner_todos import PlannerArtifactTodo
 
 
 # =============================================================================
+# Current State and Changes - Structured tracking (mirrors DevReport pattern)
+# =============================================================================
+
+class TestCurrentState(BaseModel):
+    """
+    Current state of test coverage after this iteration.
+    
+    Used by manifest builder to populate test_paths in BackendManifest.
+    """
+    
+    test_paths: List[str] = Field(
+        default_factory=list,
+        description=(
+            "All test file paths that currently cover this artifact, "
+            "relative to workspace_root. Used by manifest builder."
+        )
+    )
+
+
+class TestChanges(BaseModel):
+    """
+    Delta of changes made in this iteration.
+    
+    Tracks what test files were created, modified, or deleted during
+    this iteration of test development.
+    """
+    
+    files_created: List[str] = Field(
+        default_factory=list,
+        description="Test files created in this iteration, relative to workspace_root"
+    )
+    
+    files_modified: List[str] = Field(
+        default_factory=list,
+        description="Test files modified in this iteration, relative to workspace_root"
+    )
+    
+    files_deleted: List[str] = Field(
+        default_factory=list,
+        description="Test files deleted in this iteration (e.g., during refactoring)"
+    )
+
+
+# =============================================================================
+# Test Execution Results
+# =============================================================================
+
+class TestExecutionResult(BaseModel):
+    """
+    Results from running the test suite.
+    
+    Captures the outcome of `npm test` or similar command.
+    """
+    
+    tests_run: int = Field(
+        default=0,
+        description="Number of tests executed for this artifact"
+    )
+    
+    tests_passed: int = Field(
+        default=0,
+        description="Number of passing tests"
+    )
+    
+    tests_failed: int = Field(
+        default=0,
+        description="Number of failing tests"
+    )
+    
+    failed_test_names: List[str] = Field(
+        default_factory=list,
+        description="Identifiers or names of failing tests, if available"
+    )
+    
+    command_used: str = Field(
+        default="npm test",
+        description="The test command or script used, e.g. 'npm test -- <pattern>'"
+    )
+    
+    output_snippet: Optional[str] = Field(
+        default=None,
+        description=(
+            "Trimmed stdout/stderr snippet relevant to this artifact. "
+            "Used for debugging failed tests. Should be truncated to ~500 chars."
+        )
+    )
+
+
+# =============================================================================
 # Test Report - Detailed Testing Report per Artifact
 # =============================================================================
 
@@ -32,8 +121,10 @@ class TestReport(BaseModel):
     This is the detailed output from the Testing Agent, capturing
     everything needed for retry decisions and manifest building.
     
-    The manifest builder uses `current_tests` to populate `test_paths`
-    in the BackendManifest.
+    Structure follows current_state + changes pattern (mirrors DevReport):
+    - current_state: TestCurrentState with test_paths
+    - changes: TestChanges with files_created, files_modified, files_deleted
+    - execution: TestExecutionResult with tests_run, tests_failed, etc.
     """
     
     artifact_id: str = Field(
@@ -50,68 +141,32 @@ class TestReport(BaseModel):
     # Current state (used by manifest builder)
     # -------------------------------------------------------------------------
     
-    current_tests: List[str] = Field(
-        default_factory=list,
-        description=(
-            "All test file paths that currently cover this artifact, "
-            "relative to workspace_root. Used by manifest builder for test_paths."
-        )
+    current_state: TestCurrentState = Field(
+        default_factory=TestCurrentState,
+        description="Current state of test coverage after this iteration"
     )
     
     # -------------------------------------------------------------------------
-    # Delta for this iteration only
+    # Delta for this iteration
     # -------------------------------------------------------------------------
     
-    test_files_created: List[str] = Field(
-        default_factory=list,
-        description="Test file paths created in this iteration, relative to workspace_root"
-    )
-    
-    test_files_modified: List[str] = Field(
-        default_factory=list,
-        description="Test file paths modified in this iteration, relative to workspace_root"
-    )
-    
-    test_files_deleted: List[str] = Field(
-        default_factory=list,
-        description="Test file paths deleted in this iteration (e.g., during refactoring)"
+    changes: TestChanges = Field(
+        default_factory=TestChanges,
+        description="Test files created, modified, or deleted in this iteration"
     )
     
     # -------------------------------------------------------------------------
     # Test execution results
     # -------------------------------------------------------------------------
     
-    tests_run: int = Field(
-        default=0,
-        description="Number of tests executed for this artifact"
-    )
-    
-    tests_failed: int = Field(
-        default=0,
-        description="Number of failing tests"
-    )
-    
-    failed_test_names: List[str] = Field(
-        default_factory=list,
-        description="Identifiers or names of failing tests, if available"
+    execution: TestExecutionResult = Field(
+        default_factory=TestExecutionResult,
+        description="Results from running the test suite"
     )
     
     # -------------------------------------------------------------------------
-    # Execution context
+    # Notes
     # -------------------------------------------------------------------------
-    
-    command_used: str = Field(
-        default="npm test",
-        description="The test command or script used, e.g. 'npm test -- <pattern>'"
-    )
-    
-    output_snippet: Optional[str] = Field(
-        default=None,
-        description=(
-            "Trimmed stdout/stderr snippet relevant to this artifact. "
-            "Used for debugging failed tests. Should be truncated to ~500 chars."
-        )
-    )
     
     notes: Optional[str] = Field(
         default=None,
@@ -119,6 +174,55 @@ class TestReport(BaseModel):
             "Additional notes, e.g. limitations, skipped cases, "
             "or TODOs for future iterations"
         )
+    )
+    
+    # -------------------------------------------------------------------------
+    # Legacy fields (kept for backward compatibility)
+    # -------------------------------------------------------------------------
+    
+    current_tests: List[str] = Field(
+        default_factory=list,
+        description="[DEPRECATED] Use current_state.test_paths instead."
+    )
+    
+    test_files_created: List[str] = Field(
+        default_factory=list,
+        description="[DEPRECATED] Use changes.files_created instead."
+    )
+    
+    test_files_modified: List[str] = Field(
+        default_factory=list,
+        description="[DEPRECATED] Use changes.files_modified instead."
+    )
+    
+    test_files_deleted: List[str] = Field(
+        default_factory=list,
+        description="[DEPRECATED] Use changes.files_deleted instead."
+    )
+    
+    tests_run: int = Field(
+        default=0,
+        description="[DEPRECATED] Use execution.tests_run instead."
+    )
+    
+    tests_failed: int = Field(
+        default=0,
+        description="[DEPRECATED] Use execution.tests_failed instead."
+    )
+    
+    failed_test_names: List[str] = Field(
+        default_factory=list,
+        description="[DEPRECATED] Use execution.failed_test_names instead."
+    )
+    
+    command_used: str = Field(
+        default="npm test",
+        description="[DEPRECATED] Use execution.command_used instead."
+    )
+    
+    output_snippet: Optional[str] = Field(
+        default=None,
+        description="[DEPRECATED] Use execution.output_snippet instead."
     )
 
 
@@ -277,6 +381,10 @@ class TestAgentResult(BaseModel):
 # =============================================================================
 
 __all__ = [
+    # Current state and changes models
+    "TestCurrentState",
+    "TestChanges",
+    "TestExecutionResult",
     # Core models
     "TestReport",
     "TestAgentInput",

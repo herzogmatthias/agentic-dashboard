@@ -86,6 +86,16 @@ def sample_dev_report_in_run_dir(temp_dir):
         "artifact_type": "route",
         "status": "success",
         "summary": "Created sales summary API route",
+        "current_state": {
+            "code_path": "src/app/api/sales/route.ts",
+            "dependent_code_paths": [],
+            "exports": ["GET"],
+        },
+        "changes": {
+            "files_created": ["src/app/api/sales/route.ts"],
+            "files_modified": [],
+            "files_deleted": [],
+        },
         "files_changed": [
             {"path": "src/app/api/sales/route.ts", "action": "created", "description": "Main route handler"}
         ],

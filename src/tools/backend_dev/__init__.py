@@ -93,7 +93,8 @@ def get_backend_dev_tools(run_dir: str | None = None) -> list:
     - Validation: run_lint, run_type_check
     
     Note: For MCP filesystem tools (read_file, write_file, etc.), use
-    `get_backend_dev_mcp_toolset(run_dir)` separately.
+    `get_backend_dev_mcp_toolset(run_dir)` separately. The MCP toolset is
+    limited to code/test paths and intentionally cannot reach the data folder.
     
     Args:
         run_dir: Optional run directory (reserved for future use).
@@ -128,7 +129,9 @@ def get_backend_dev_mcp_toolset(run_dir: str | None = None) -> Any:
     - src/app/api/** (API routes)
     - src/models/** (TypeScript types/interfaces)
     - src/lib/** (Helper utilities)
-    - data/** (Data files)
+
+    Note: The data folder is intentionally excluded; use get_sample_rows or
+    inspect_json_preview for controlled data access.
     
     Args:
         run_dir: Optional run directory to add to allowed paths.

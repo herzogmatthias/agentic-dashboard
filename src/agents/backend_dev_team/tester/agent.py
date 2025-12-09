@@ -1,15 +1,13 @@
 """
-Backend Dev Agent - Implements single PlannerArtifactTodo items.
+Testing Agent - Writes and runs tests for backend artifacts.
 
-This agent receives ONE artifact to implement per invocation, creates the
-necessary files (API routes, models, helpers), validates with lint/type-check,
-and returns a structured BackendDevResult with DevReport.
+This agent receives ONE artifact to test per invocation, creates Jest test
+files, runs the tests, and returns a structured TestAgentResult with TestReport.
 
 Uses PlanReActPlanner for structured multi-step reasoning.
 
-Note: State initialization (run_dir, workspace_root, metrics_ref lookup, cleaned_data_files)
-happens at the Loop Agent level in `inject_artifact_context_for_dev` callback.
-The Dev Agent only runs within the Loop Agent's custom control flow.
+Note: State initialization (run_dir, dev_report, etc.) happens at the Loop Agent
+level. The Testing Agent only runs within the Loop Agent's custom control flow.
 """
 
 import json
@@ -23,15 +21,14 @@ from google.adk.models.lite_llm import LiteLlm
 from phoenix.otel import register as register_phoenix
 
 from src.core.logging import get_logger
-from src.models.backend_dev import BackendDevResult, BackendDevInput, PlannerArtifactTodo
-from src.tools.backend_dev import (
-    get_backend_dev_tools,
-    get_backend_dev_mcp_toolset,
+from src.models.testing_agent import TestAgentResult
+from src.tools.tester import (
+    get_tester_tools,
+    get_tester_mcp_toolset,
     SAMPLE_DASHBOARD_ROOT,
+    TESTS_ROOT,
 )
-from src.agents.backend_dev_team.dev.prompts import build_backend_dev_prompt
-
-from src.agents.backend_dev_team.dev.state import (STATE_KEY_DEV_RESULT)
+from src.agents.backend_dev_team.tester.prompts import build_tester_prompt
 
 # Register Phoenix tracing
 tracer_provider = register_phoenix(
@@ -42,37 +39,38 @@ tracer_provider = register_phoenix(
 logger = get_logger(__name__)
 
 # Model configuration
-BACKEND_DEV_MODEL = "xai/grok-code-fast-1"
+TESTER_MODEL = "xai/grok-code-fast-1"
 
 
 # =============================================================================
-# State Keys (set by loop/callbacks.py inject_artifact_context_for_dev)
+# State Keys (set by loop/callbacks.py or loop agent)
 # =============================================================================
 
 STATE_KEY_RUN_ID = "run_id"
 STATE_KEY_RUN_DIR = "run_dir"
 STATE_KEY_WORKSPACE_ROOT = "workspace_root"
 STATE_KEY_CURRENT_ARTIFACT = "current_artifact"
-STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
+STATE_KEY_DEV_RESULT = "dev_result"
+STATE_KEY_DEV_REPORT_PATH = "dev_report_path"
+STATE_KEY_PREVIOUS_TEST_SUMMARY = "previous_test_summary"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
-STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
-
+STATE_KEY_TESTER_RESULT = "tester_result"
 
 
 # =============================================================================
 # Dynamic Instruction Provider
 # =============================================================================
 
-async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
+async def tester_instruction_provider(context: ReadonlyContext) -> str:
     """
     Dynamic instruction provider that builds the prompt with injected state.
     
     Reads from session state:
     - workspace_root: Absolute path to sample-dashboard
-    - current_artifact: The PlannerArtifactTodo to implement
-    - previous_summaries: List of summaries from prior artifacts
+    - current_artifact: The PlannerArtifactTodo to test
+    - dev_result: The DevReport from Backend Dev Agent
+    - previous_test_summary: Summary from previous test iteration (for retries)
     - cleaned_data_files: List of cleaned data file paths
-    - metrics_ref_context: Pre-looked-up metrics reference context
     
     Args:
         context: ReadonlyContext with access to session state
@@ -99,12 +97,26 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     else:
         artifact_json = "{}"
     
-    # Get previous summaries
-    previous_summaries = state.get(STATE_KEY_PREVIOUS_SUMMARIES, [])
-    if previous_summaries:
-        summaries_text = "\n".join(f"- {s}" for s in previous_summaries)
+    # Get DevReport as JSON string
+    dev_result = state.get(STATE_KEY_DEV_RESULT)
+    if dev_result:
+        # Extract the report portion if it's a full DevResult
+        if isinstance(dev_result, dict):
+            report = dev_result.get("report", dev_result)
+            dev_report_json = json.dumps(report, indent=2)
+        elif hasattr(dev_result, "report") and dev_result.report:
+            dev_report_json = json.dumps(dev_result.report.model_dump(), indent=2)
+        elif hasattr(dev_result, "model_dump"):
+            dev_report_json = json.dumps(dev_result.model_dump(), indent=2)
+        else:
+            dev_report_json = str(dev_result)
     else:
-        summaries_text = "(no prior artifacts)"
+        dev_report_json = "{}"
+    
+    # Get previous test summary
+    previous_test_summary = state.get(STATE_KEY_PREVIOUS_TEST_SUMMARY)
+    if not previous_test_summary:
+        previous_test_summary = "(no previous test run)"
     
     # Get cleaned data files
     cleaned_files = state.get(STATE_KEY_CLEANED_DATA_FILES, [])
@@ -113,15 +125,12 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     else:
         cleaned_data_files = "(not yet loaded)"
     
-    # Get metrics_ref context (pre-looked-up in callback)
-    metrics_ref_context = state.get(STATE_KEY_METRICS_REF_CONTEXT, "(no metrics_ref specified)")
-    
-    return build_backend_dev_prompt(
+    return build_tester_prompt(
         workspace_root=workspace_root,
         artifact_json=artifact_json,
-        previous_summaries=summaries_text,
+        dev_report_json=dev_report_json,
+        previous_test_summary=previous_test_summary,
         cleaned_data_files=cleaned_data_files,
-        metrics_ref_context=metrics_ref_context,
     )
 
 
@@ -129,31 +138,34 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
 # Agent Factory
 # =============================================================================
 
-def create_backend_dev_agent(
+def create_tester_agent(
     workspace_root: str | None = None,
 ) -> LlmAgent:
     """
-    Create and configure the Backend Dev Agent.
+    Create and configure the Testing Agent.
     
-    The Backend Dev Agent uses:
+    The Testing Agent uses:
     - PlanReActPlanner for structured multi-step reasoning
-    - Custom tools for file creation (create_api, create_model, create_helper)
-    - MCP filesystem tools for read/write/edit
-    - Data access tools (get_sample_rows, load_data_profile)
-    - Validation tools (run_lint, run_type_check)
-    - output_schema=BackendDevResult for structured output
+    - Custom tools for test creation (create_test)
+    - Test execution tools (run_npm_test)
+    - MCP filesystem tools for read access to source/tests
+    - Context tools (read_dev_report, read_backend_manifest)
+    - output_schema=TestAgentResult for structured output
     
     Args:
         workspace_root: Optional workspace root override (default: SAMPLE_DASHBOARD_ROOT)
+        output_key: Optional state key where result is stored (for loop integration)
         
     Returns:
         Configured LlmAgent instance
     """
-    model = LiteLlm(model=BACKEND_DEV_MODEL)
+    model = LiteLlm(model=TESTER_MODEL)
     
-    # Get tools - separate regular tools and MCP toolset
-    regular_tools = get_backend_dev_tools()
-    filesystem_toolset = get_backend_dev_mcp_toolset()
+    # Get regular tools
+    regular_tools = get_tester_tools()
+    
+    # Get MCP filesystem toolset
+    filesystem_toolset = get_tester_mcp_toolset()
     
     # Combine tools
     tools = [
@@ -161,37 +173,35 @@ def create_backend_dev_agent(
         filesystem_toolset,
     ]
     
-    # Note: before_agent_callback is NOT used here.
-    # State initialization (run_dir, metrics_ref lookup, etc.) happens at the
-    # Loop Agent level in inject_artifact_context_for_dev callback.
-    # The Dev Agent only runs within the Loop Agent's custom control flow.
+    # Create agent
     agent = LlmAgent(
-        name="backend_dev",
+        name="backend_tester",
         model=model,
         #planner=PlanReActPlanner(),
         include_contents='none',
-        instruction=backend_dev_instruction_provider,
+        instruction=tester_instruction_provider,
         tools=tools,
-        output_key=STATE_KEY_DEV_RESULT,
-        output_schema=BackendDevResult,
+        output_key=STATE_KEY_TESTER_RESULT,
+        output_schema=TestAgentResult,
     )
     
     logger.info(
-        "Backend Dev Agent created",
+        "Testing Agent created",
         extra={
-            "agent": "backend_dev",
+            "agent": "backend_tester",
             "phase": "create",
-            "model": BACKEND_DEV_MODEL,
+            "model": TESTER_MODEL,
             "workspace_root": workspace_root or str(SAMPLE_DASHBOARD_ROOT),
+            "tests_root": str(TESTS_ROOT),
         }
     )
     
     return agent
 
 
-def get_backend_dev_agent() -> LlmAgent:
-    """Get a configured Backend Dev Agent instance."""
-    return create_backend_dev_agent()
+def get_tester_agent() -> LlmAgent:
+    """Get a configured Testing Agent instance."""
+    return create_tester_agent()
 
 
 # =============================================================================
@@ -200,18 +210,20 @@ def get_backend_dev_agent() -> LlmAgent:
 
 __all__ = [
     # Main agent
-    "create_backend_dev_agent",
-    "get_backend_dev_agent",
+    "create_tester_agent",
+    "get_tester_agent",
     # Instruction provider
-    "backend_dev_instruction_provider",
+    "tester_instruction_provider",
     # State keys
     "STATE_KEY_RUN_ID",
     "STATE_KEY_RUN_DIR",
     "STATE_KEY_WORKSPACE_ROOT",
     "STATE_KEY_CURRENT_ARTIFACT",
-    "STATE_KEY_PREVIOUS_SUMMARIES",
+    "STATE_KEY_DEV_RESULT",
+    "STATE_KEY_DEV_REPORT_PATH",
+    "STATE_KEY_PREVIOUS_TEST_SUMMARY",
     "STATE_KEY_CLEANED_DATA_FILES",
-    "STATE_KEY_METRICS_REF_CONTEXT",
+    "STATE_KEY_TESTER_RESULT",
     # Constants
-    "BACKEND_DEV_MODEL",
+    "TESTER_MODEL",
 ]

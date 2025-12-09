@@ -2,6 +2,7 @@
 Unit tests for Testing Agent models.
 
 Tests validation, serialization, and default values for:
+- TestCurrentState, TestChanges, TestExecutionResult
 - TestReport
 - TestAgentInput
 - TestAgentResult
@@ -12,6 +13,9 @@ from datetime import datetime
 from pydantic import ValidationError
 
 from src.models.testing_agent import (
+    TestCurrentState,
+    TestChanges,
+    TestExecutionResult,
     TestReport,
     TestAgentInput,
     TestAgentResult,
@@ -52,7 +56,33 @@ def sample_helper_artifact() -> PlannerArtifactTodo:
 
 @pytest.fixture
 def sample_test_report() -> TestReport:
-    """Create a sample test report for testing."""
+    """Create a sample test report for testing with new structure."""
+    return TestReport(
+        artifact_id="route_sales_by_region",
+        timestamp="2025-01-01T12:00:00Z",
+        current_state=TestCurrentState(
+            test_paths=["tests/api/route_sales_by_region.test.ts"]
+        ),
+        changes=TestChanges(
+            files_created=["tests/api/route_sales_by_region.test.ts"],
+            files_modified=[],
+            files_deleted=[],
+        ),
+        execution=TestExecutionResult(
+            tests_run=3,
+            tests_passed=3,
+            tests_failed=0,
+            failed_test_names=[],
+            command_used="npm test -- route_sales_by_region.test.ts",
+            output_snippet="Test Suites: 1 passed, 1 total\nTests: 3 passed, 3 total",
+        ),
+        notes="Covers happy path and missing param validation",
+    )
+
+
+@pytest.fixture
+def sample_test_report_legacy() -> TestReport:
+    """Create a sample test report using legacy fields for backward compatibility."""
     return TestReport(
         artifact_id="route_sales_by_region",
         timestamp="2025-01-01T12:00:00Z",
@@ -70,6 +100,88 @@ def sample_test_report() -> TestReport:
 
 
 # =============================================================================
+# TestCurrentState Tests
+# =============================================================================
+
+class TestTestCurrentState:
+    """Tests for TestCurrentState model."""
+
+    def test_default_values(self):
+        """Test default values for TestCurrentState."""
+        state = TestCurrentState()
+        assert state.test_paths == []
+
+    def test_with_test_paths(self):
+        """Test TestCurrentState with test paths."""
+        state = TestCurrentState(
+            test_paths=["tests/api/route.test.ts", "tests/lib/helper.test.ts"]
+        )
+        assert len(state.test_paths) == 2
+
+    def test_serialization(self):
+        """Test TestCurrentState serialization."""
+        state = TestCurrentState(test_paths=["test.ts"])
+        data = state.model_dump()
+        assert data["test_paths"] == ["test.ts"]
+
+
+# =============================================================================
+# TestChanges Tests
+# =============================================================================
+
+class TestTestChanges:
+    """Tests for TestChanges model."""
+
+    def test_default_values(self):
+        """Test default values for TestChanges."""
+        changes = TestChanges()
+        assert changes.files_created == []
+        assert changes.files_modified == []
+        assert changes.files_deleted == []
+
+    def test_with_changes(self):
+        """Test TestChanges with file changes."""
+        changes = TestChanges(
+            files_created=["new_test.ts"],
+            files_modified=["existing_test.ts"],
+            files_deleted=["old_test.ts"],
+        )
+        assert len(changes.files_created) == 1
+        assert len(changes.files_modified) == 1
+        assert len(changes.files_deleted) == 1
+
+
+# =============================================================================
+# TestExecutionResult Tests
+# =============================================================================
+
+class TestTestExecutionResult:
+    """Tests for TestExecutionResult model."""
+
+    def test_default_values(self):
+        """Test default values for TestExecutionResult."""
+        result = TestExecutionResult()
+        assert result.tests_run == 0
+        assert result.tests_passed == 0
+        assert result.tests_failed == 0
+        assert result.command_used == "npm test"
+
+    def test_with_results(self):
+        """Test TestExecutionResult with execution results."""
+        result = TestExecutionResult(
+            tests_run=10,
+            tests_passed=8,
+            tests_failed=2,
+            failed_test_names=["test1", "test2"],
+            command_used="npm test -- pattern.test.ts",
+            output_snippet="2 failed, 8 passed",
+        )
+        assert result.tests_run == 10
+        assert result.tests_failed == 2
+        assert len(result.failed_test_names) == 2
+
+
+# =============================================================================
 # TestReport Tests
 # =============================================================================
 
@@ -84,58 +196,80 @@ class TestTestReport:
         )
         assert report.artifact_id == "test_artifact"
         assert report.timestamp == "2025-01-01T12:00:00Z"
-        assert report.current_tests == []
-        assert report.tests_run == 0
-        assert report.tests_failed == 0
+        assert report.current_state.test_paths == []
+        assert report.execution.tests_run == 0
 
-    def test_full_report(self, sample_test_report):
-        """Test creating a report with all fields."""
+    def test_full_report_new_structure(self, sample_test_report):
+        """Test creating a report with new nested structure."""
         report = sample_test_report
         assert report.artifact_id == "route_sales_by_region"
-        assert len(report.current_tests) == 1
-        assert report.tests_run == 3
-        assert report.tests_failed == 0
-        assert "npm test" in report.command_used
+        assert len(report.current_state.test_paths) == 1
+        assert report.execution.tests_run == 3
+        assert report.execution.tests_failed == 0
+        assert "npm test" in report.execution.command_used
+
+    def test_full_report_legacy_structure(self, sample_test_report_legacy):
+        """Test backward compatibility with legacy flat structure."""
+        report = sample_test_report_legacy
+        assert report.artifact_id == "route_sales_by_region"
+        assert len(report.current_tests) == 1  # legacy field
+        assert report.tests_run == 3  # legacy field
+        assert report.tests_failed == 0  # legacy field
 
     def test_report_with_failures(self):
-        """Test report with failing tests."""
+        """Test report with failing tests using new structure."""
         report = TestReport(
             artifact_id="failing_artifact",
             timestamp="2025-01-01T12:00:00Z",
-            current_tests=["tests/api/failing.test.ts"],
-            test_files_created=["tests/api/failing.test.ts"],
-            tests_run=5,
-            tests_failed=2,
-            failed_test_names=[
-                "should return 400 for missing param",
-                "should validate enum values",
-            ],
-            command_used="npm test -- failing.test.ts",
-            output_snippet="FAIL tests/api/failing.test.ts\n  ✕ should return 400...",
+            current_state=TestCurrentState(
+                test_paths=["tests/api/failing.test.ts"]
+            ),
+            changes=TestChanges(
+                files_created=["tests/api/failing.test.ts"]
+            ),
+            execution=TestExecutionResult(
+                tests_run=5,
+                tests_passed=3,
+                tests_failed=2,
+                failed_test_names=[
+                    "should return 400 for missing param",
+                    "should validate enum values",
+                ],
+                command_used="npm test -- failing.test.ts",
+                output_snippet="FAIL tests/api/failing.test.ts\n  ✕ should return 400...",
+            ),
         )
-        assert report.tests_failed == 2
-        assert len(report.failed_test_names) == 2
+        assert report.execution.tests_failed == 2
+        assert len(report.execution.failed_test_names) == 2
 
     def test_report_with_deleted_files(self):
         """Test report that includes deleted test files."""
         report = TestReport(
             artifact_id="refactored_artifact",
             timestamp="2025-01-01T12:00:00Z",
-            current_tests=["tests/api/new_test.test.ts"],
-            test_files_created=["tests/api/new_test.test.ts"],
-            test_files_deleted=["tests/api/old_test.test.ts"],
-            tests_run=2,
-            tests_failed=0,
+            current_state=TestCurrentState(
+                test_paths=["tests/api/new_test.test.ts"]
+            ),
+            changes=TestChanges(
+                files_created=["tests/api/new_test.test.ts"],
+                files_deleted=["tests/api/old_test.test.ts"],
+            ),
+            execution=TestExecutionResult(
+                tests_run=2,
+                tests_passed=2,
+                tests_failed=0,
+            ),
         )
-        assert len(report.test_files_deleted) == 1
-        assert "old_test.test.ts" in report.test_files_deleted[0]
+        assert len(report.changes.files_deleted) == 1
+        assert "old_test.test.ts" in report.changes.files_deleted[0]
 
     def test_report_serialization(self, sample_test_report):
         """Test that report serializes to dict correctly."""
         data = sample_test_report.model_dump()
         assert isinstance(data, dict)
         assert data["artifact_id"] == "route_sales_by_region"
-        assert isinstance(data["current_tests"], list)
+        assert isinstance(data["current_state"]["test_paths"], list)
+        assert isinstance(data["execution"]["tests_run"], int)
 
     def test_report_json_serialization(self, sample_test_report):
         """Test that report serializes to JSON correctly."""
@@ -239,17 +373,25 @@ class TestTestAgentResult:
         assert result.needs_spec_clarification is False
         assert result.error_details is None
 
-    def test_failed_result_needs_dev_fix(self, sample_test_report):
+    def test_failed_result_needs_dev_fix(self):
         """Test creating a failed result that needs dev fix."""
-        sample_test_report.tests_failed = 2
-        sample_test_report.failed_test_names = ["test1", "test2"]
+        failing_report = TestReport(
+            artifact_id="route_sales_by_region",
+            timestamp="2025-01-01T12:00:00Z",
+            execution=TestExecutionResult(
+                tests_run=4,
+                tests_passed=2,
+                tests_failed=2,
+                failed_test_names=["test1", "test2"],
+            ),
+        )
         
         result = TestAgentResult(
             run_id="run_123",
             artifact_id="route_sales_by_region",
             status="failed",
             summary="2 tests failed due to incorrect response shape",
-            test_report=sample_test_report,
+            test_report=failing_report,
             needs_dev_fix=True,
         )
         assert result.status == "failed"

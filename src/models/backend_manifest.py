@@ -268,3 +268,136 @@ class ApiError(BaseModel):
         default=None,
         description="Optional additional context"
     )
+
+
+# =============================================================================
+# Backend Manifest Entry Schema (Loop Agent Output Contract)
+# =============================================================================
+
+class BackendManifestEntry(BaseModel):
+    """
+    Single artifact entry for the backend manifest.
+    
+    Created by the Loop Agent's afterAgentCallback after successful
+    completion of Dev → Tester → QA cycle. This entry captures
+    all implementation details for one artifact.
+    
+    The entry is persisted to {run_dir}/dev/backend_manifest.json
+    as an element in the 'entries' array.
+    """
+    
+    # -------------------------------------------------------------------------
+    # Identity
+    # -------------------------------------------------------------------------
+    
+    artifact_id: str = Field(
+        ...,
+        description="Unique identifier from PlannerArtifactTodo.id"
+    )
+    kind: Literal["route", "helper"] = Field(
+        ...,
+        description="Artifact type: 'route' for API endpoints, 'helper' for shared utilities"
+    )
+    
+    # -------------------------------------------------------------------------
+    # Code paths
+    # -------------------------------------------------------------------------
+    
+    code_path: str = Field(
+        ...,
+        description=(
+            "Primary file path relative to workspace_root "
+            "(e.g., 'src/app/api/kpis/overall-attrition/route.ts')"
+        )
+    )
+    dependent_code_paths: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Other files this artifact depends on or imports "
+            "(e.g., helper modules, shared types)"
+        )
+    )
+    
+    # -------------------------------------------------------------------------
+    # HTTP details (for routes only)
+    # -------------------------------------------------------------------------
+    
+    http_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "HTTP path for API route "
+            "(e.g., '/api/kpis/overall-attrition'). None for helpers."
+        )
+    )
+    http_method: Optional[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]] = Field(
+        default=None,
+        description="HTTP method for this route. None for helpers."
+    )
+    
+    # -------------------------------------------------------------------------
+    # Module exports
+    # -------------------------------------------------------------------------
+    
+    handler_export: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the main exported function/handler "
+            "(e.g., 'GET' for routes, function name for helpers)"
+        )
+    )
+    
+    # -------------------------------------------------------------------------
+    # Schema information
+    # -------------------------------------------------------------------------
+    
+    query_params: Optional[List[QueryParam]] = Field(
+        default=None,
+        description="Query parameters accepted by this route (for routes only)"
+    )
+    response_shape: Optional[str] = Field(
+        default=None,
+        description=(
+            "JSON description or TypeScript type reference for the response schema "
+            "(e.g., 'KpiResponse', '{ rate: number, formatted: string }')"
+        )
+    )
+    
+    # -------------------------------------------------------------------------
+    # Testing information
+    # -------------------------------------------------------------------------
+    
+    canonical_query: Optional[str] = Field(
+        default=None,
+        description=(
+            "Representative example query URL or parameters "
+            "(e.g., '/api/kpis/overall-attrition?income=Low')"
+        )
+    )
+    test_paths: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Paths to test files created for this artifact "
+            "(e.g., ['__tests__/api/kpis/overall-attrition.test.ts'])"
+        )
+    )
+    
+    # -------------------------------------------------------------------------
+    # Metadata
+    # -------------------------------------------------------------------------
+    
+    last_modified_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When this entry was last updated"
+    )
+    iteration_count: int = Field(
+        default=1,
+        description="Number of Dev→Tester→QA iterations needed to complete"
+    )
+    status: Literal["success", "partial"] = Field(
+        default="success",
+        description="Final status: 'success' or 'partial' (with issues noted)"
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        description="Additional notes about this implementation"
+    )

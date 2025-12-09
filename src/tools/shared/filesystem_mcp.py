@@ -30,6 +30,10 @@ from pathlib import Path
 from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 
+from src.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 # ============================================================================
 # Constants
@@ -43,7 +47,7 @@ CONNECTION_TIMEOUT = 30
 
 # All available tools from the MCP filesystem server
 ALL_FILESYSTEM_TOOLS = [
-    "read_file",           # Read file contents
+    "read_text_file",           # Read file contents
     "write_file",          # Create new files
     "edit_file",           # Modify existing files (search/replace)
     "list_directory",      # List directory contents
@@ -57,7 +61,7 @@ ALL_FILESYSTEM_TOOLS = [
 
 # Default tools for read-heavy operations
 READ_TOOLS = [
-    "read_file",
+    "read_text_file",
     "read_multiple_files",
     "list_directory",
     "directory_tree",
@@ -68,7 +72,7 @@ READ_TOOLS = [
 
 # Default tools for full file operations
 FULL_ACCESS_TOOLS = [
-    "read_file",
+    "read_text_file",
     "write_file",
     "edit_file",
     "list_directory",
@@ -124,11 +128,41 @@ def create_filesystem_toolset(
             additional_paths=[Path("runs/run_123")],
         )
     """
-    # Build the list of allowed paths as strings
-    path_strings = [str(p) for p in allowed_paths]
+    # Resolve allowed paths and keep only ones that exist
+    resolved_paths: list[Path] = []
+    missing_paths: list[Path] = []
+    for p in allowed_paths:
+        path = Path(p)
+        if path.exists():
+            resolved_paths.append(path)
+        else:
+            missing_paths.append(path)
     
     if additional_paths:
-        path_strings.extend(str(p) for p in additional_paths)
+        for p in additional_paths:
+            path = Path(p)
+            if path.exists():
+                resolved_paths.append(path)
+            else:
+                missing_paths.append(path)
+    
+    if missing_paths:
+        logger.warning(
+            "Some allowed_paths do not exist and were skipped",
+            extra={
+                "missing": [str(p) for p in missing_paths],
+                "used_paths": [str(p) for p in resolved_paths],
+            },
+        )
+    
+    if not resolved_paths:
+        raise ValueError(
+            "No existing allowed paths to mount for filesystem MCP. "
+            "Ensure SAMPLE_DASHBOARD_ROOT is present or pass a valid run_dir."
+        )
+    
+    # Build the list of allowed paths as strings
+    path_strings = [str(p) for p in resolved_paths]
     
     # Build args: npx -y @modelcontextprotocol/server-filesystem <paths...>
     args = ["-y", FILESYSTEM_MCP_PACKAGE] + path_strings
@@ -139,7 +173,6 @@ def create_filesystem_toolset(
                 command="npx",
                 args=args,
             ),
-            timeout=timeout,
         ),
         tool_filter=tool_filter or FULL_ACCESS_TOOLS,
     )

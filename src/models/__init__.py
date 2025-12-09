@@ -1,13 +1,17 @@
 """Data models for the system"""
 
 from src.models.backend_dev import (
-    FileChange,
+    DevCurrentState,
+    DevChanges,
     DevReport,
     BackendDevInput,
     BackendDevResult,
 )
 
 from src.models.testing_agent import (
+    TestCurrentState,
+    TestChanges,
+    TestExecutionResult,
     TestReport,
     TestAgentInput,
     TestAgentResult,
@@ -15,11 +19,15 @@ from src.models.testing_agent import (
 
 __all__ = [
     # Backend Dev models
-    "FileChange",
+    "DevCurrentState",
+    "DevChanges",
     "DevReport",
     "BackendDevInput",
     "BackendDevResult",
     # Testing Agent models
+    "TestCurrentState",
+    "TestChanges",
+    "TestExecutionResult",
     "TestReport",
     "TestAgentInput",
     "TestAgentResult",

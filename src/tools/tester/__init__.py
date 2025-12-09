@@ -114,7 +114,9 @@ def get_tester_mcp_toolset(
     - tests/** (full access - read, write, create)
     - src/app/api/** (read-only - to understand what's being tested)
     - src/lib/** (read-only - to understand helpers)
-    - data/** (read-only - to understand test data)
+
+    Note: The data folder is intentionally excluded; testers should use
+    get_sample_rows or inspect_json_preview for controlled data inspection.
     
     Args:
         run_dir: Optional run directory for run-specific file access.

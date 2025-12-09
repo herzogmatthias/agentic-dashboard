@@ -21,7 +21,6 @@ BACKEND_DEV_ALLOWED_PATHS: list[Path] = [
     SAMPLE_DASHBOARD_ROOT / "src" / "app" / "api",  # API routes
     SAMPLE_DASHBOARD_ROOT / "src" / "models",        # TypeScript models
     SAMPLE_DASHBOARD_ROOT / "src" / "lib",           # Utility functions
-    SAMPLE_DASHBOARD_ROOT / "data",                  # Data directory (read)
 ]
 
 # Allowed paths for Testing Agent
@@ -32,7 +31,6 @@ TESTER_ALLOWED_PATHS: list[Path] = [
     SAMPLE_DASHBOARD_ROOT / "tests",                 # Root tests folder
     SAMPLE_DASHBOARD_ROOT / "src" / "app" / "api",   # Can read API routes (for reference)
     SAMPLE_DASHBOARD_ROOT / "src" / "lib",           # Can read helpers (for reference)
-    SAMPLE_DASHBOARD_ROOT / "data",                  # Can read data (for test assertions)
 ]
 
 # Tests root directory

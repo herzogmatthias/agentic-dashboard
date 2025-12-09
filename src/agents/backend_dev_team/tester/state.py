@@ -1,0 +1,1 @@
+STATE_KEY_TESTER_RESULT = "tester_result"  # Dict with test details  

@@ -3,6 +3,7 @@ Unit tests for Backend Dev Agent schemas and components.
 
 Tests cover:
 - I/O schema validation (FileChange, DevReport, BackendDevInput, BackendDevResult)
+- DevCurrentState, DevChanges models
 - create_helper_tool file creation
 - create_backend_dev_agent factory function
 """
@@ -14,6 +15,8 @@ from unittest.mock import patch, MagicMock
 from pydantic import ValidationError
 
 from src.models.backend_dev import (
+    DevCurrentState,
+    DevChanges,
     FileChange,
     DevReport,
     BackendDevInput,
@@ -77,6 +80,53 @@ class TestFileChange:
 
 
 # =============================================================================
+# DevCurrentState and DevChanges Tests
+# =============================================================================
+
+class TestDevCurrentState:
+    """Tests for DevCurrentState model."""
+
+    def test_minimal_state(self):
+        """Test creating DevCurrentState with only required fields."""
+        state = DevCurrentState(code_path="src/app/api/sales/route.ts")
+        assert state.code_path == "src/app/api/sales/route.ts"
+        assert state.dependent_code_paths == []
+        assert state.exports is None
+
+    def test_full_state(self):
+        """Test creating DevCurrentState with all fields."""
+        state = DevCurrentState(
+            code_path="src/app/api/sales/route.ts",
+            dependent_code_paths=["src/lib/db.ts", "src/models/sales.ts"],
+            exports=["GET", "POST"],
+        )
+        assert len(state.dependent_code_paths) == 2
+        assert len(state.exports) == 2
+
+
+class TestDevChanges:
+    """Tests for DevChanges model."""
+
+    def test_default_values(self):
+        """Test DevChanges default values."""
+        changes = DevChanges()
+        assert changes.files_created == []
+        assert changes.files_modified == []
+        assert changes.files_deleted == []
+
+    def test_with_changes(self):
+        """Test DevChanges with file changes."""
+        changes = DevChanges(
+            files_created=["new_file.ts"],
+            files_modified=["existing.ts"],
+            files_deleted=["old.ts"],
+        )
+        assert len(changes.files_created) == 1
+        assert len(changes.files_modified) == 1
+        assert len(changes.files_deleted) == 1
+
+
+# =============================================================================
 # DevReport Schema Tests
 # =============================================================================
 
@@ -90,25 +140,48 @@ class TestDevReport:
             artifact_type="route",
             status="success",
             summary="Created sales endpoint",
-            lint_passed=True,
-            type_check_passed=True,
+            current_state=DevCurrentState(code_path="src/app/api/sales/route.ts"),
         )
         assert report.artifact_id == "route_sales"
         assert report.status == "success"
-        assert report.files_changed == []
+        assert report.current_state.code_path == "src/app/api/sales/route.ts"
+        assert report.files_changed == []  # legacy field
         assert report.dependencies == []
         assert report.errors is None
         assert isinstance(report.timestamp, datetime)
 
-    def test_dev_report_with_files_changed(self):
-        """Test DevReport with file changes."""
+    def test_dev_report_with_new_structure(self):
+        """Test DevReport with new current_state and changes structure."""
         report = DevReport(
             artifact_id="route_kpis",
             artifact_type="route",
             status="success",
             summary="Created KPIs endpoint",
-            lint_passed=True,
-            type_check_passed=True,
+            current_state=DevCurrentState(
+                code_path="src/app/api/kpis/route.ts",
+                dependent_code_paths=["src/lib/db.ts"],
+                exports=["GET"],
+            ),
+            changes=DevChanges(
+                files_created=["src/app/api/kpis/route.ts"],
+                files_modified=["src/lib/db.ts"],
+            ),
+            action_summary="Created route handler and updated db helper",
+            implementation_notes="Used existing db connection pattern",
+        )
+        assert report.current_state.code_path == "src/app/api/kpis/route.ts"
+        assert len(report.current_state.dependent_code_paths) == 1
+        assert len(report.changes.files_created) == 1
+        assert report.action_summary == "Created route handler and updated db helper"
+
+    def test_dev_report_with_files_changed_legacy(self):
+        """Test DevReport with legacy file changes."""
+        report = DevReport(
+            artifact_id="route_kpis",
+            artifact_type="route",
+            status="success",
+            summary="Created KPIs endpoint",
+            current_state=DevCurrentState(code_path="src/app/api/kpis/route.ts"),
             files_changed=[
                 FileChange(path="src/app/api/kpis/route.ts", action="created", description="KPIs endpoint"),
                 FileChange(path="src/models/KpiResponse.ts", action="created", description="Response type"),
@@ -124,6 +197,7 @@ class TestDevReport:
             artifact_type="route",
             status="failed",
             summary="Failed to create endpoint",
+            current_state=DevCurrentState(code_path="src/app/api/broken/route.ts"),
             lint_passed=False,
             type_check_passed=False,
             errors=["TypeScript error: TS2304", "Missing import for Response"],
@@ -139,6 +213,7 @@ class TestDevReport:
             artifact_type="helper",
             status="partial",
             summary="Created helper but lint failed",
+            current_state=DevCurrentState(code_path="src/lib/utils.ts"),
             lint_passed=False,
             type_check_passed=True,
             errors=["Lint warning: unused variable"],
@@ -153,11 +228,22 @@ class TestDevReport:
             artifact_type="route",
             status="success",
             summary="Created details endpoint",
-            lint_passed=True,
-            type_check_passed=True,
+            current_state=DevCurrentState(code_path="src/app/api/details/route.ts"),
             dependencies=["helper_data_loader", "route_base"],
         )
         assert len(report.dependencies) == 2
+
+    def test_dev_report_with_next_steps(self):
+        """Test DevReport with next_steps field."""
+        report = DevReport(
+            artifact_id="route_partial",
+            artifact_type="route",
+            status="partial",
+            summary="Partially implemented",
+            current_state=DevCurrentState(code_path="src/app/api/partial/route.ts"),
+            next_steps=["Add error handling", "Implement caching"],
+        )
+        assert len(report.next_steps) == 2
 
     def test_dev_report_invalid_status(self):
         """Test DevReport rejects invalid status."""
@@ -167,8 +253,7 @@ class TestDevReport:
                 artifact_type="route",
                 status="unknown",  # Invalid
                 summary="test",
-                lint_passed=True,
-                type_check_passed=True,
+                current_state=DevCurrentState(code_path="test.ts"),
             )
         assert "status" in str(exc_info.value).lower()
 
@@ -180,8 +265,7 @@ class TestDevReport:
                 artifact_type="model",  # Invalid - only route/helper allowed
                 status="success",
                 summary="test",
-                lint_passed=True,
-                type_check_passed=True,
+                current_state=DevCurrentState(code_path="test.ts"),
             )
         assert "artifact_type" in str(exc_info.value).lower()
 
@@ -265,8 +349,10 @@ class TestBackendDevResult:
             artifact_type="route",
             status="success",
             summary="Created sales API endpoint with region filter",
-            lint_passed=True,
-            type_check_passed=True,
+            current_state=DevCurrentState(
+                code_path="src/app/api/sales/route.ts",
+                exports=["GET"],
+            ),
             files_changed=[
                 FileChange(
                     path="src/app/api/sales/route.ts",
@@ -298,6 +384,7 @@ class TestBackendDevResult:
                 artifact_type="route",
                 status="failed",
                 summary="Could not determine endpoint shape",
+                current_state=DevCurrentState(code_path="src/app/api/complex/route.ts"),
                 lint_passed=False,
                 type_check_passed=False,
                 errors=["Unclear requirements: multiple possible interpretations"],
@@ -313,6 +400,7 @@ class TestBackendDevResult:
             artifact_type="route",
             status="partial",
             summary="Created endpoint but lint warnings present",
+            current_state=DevCurrentState(code_path="src/app/api/partial/route.ts"),
             lint_passed=False,
             type_check_passed=True,
         )
@@ -334,8 +422,7 @@ class TestBackendDevResult:
                 artifact_type="route",
                 status="partial",  # But report says partial
                 summary="Some issues",
-                lint_passed=True,
-                type_check_passed=True,
+                current_state=DevCurrentState(code_path="src/app/api/test/route.ts"),
             ),
         )
         assert result.status == "success"

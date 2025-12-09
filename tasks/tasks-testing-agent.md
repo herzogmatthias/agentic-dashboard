@@ -58,35 +58,36 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.7 Update `src/tools/backend_dev/__init__.py` to export tester tools
   - [x] 2.8 Write unit tests for tools in `tests/tools/test_tester_tools.py`
 
-- [ ] 3.0 Implement the Testing Agent core logic
+- [x] 3.0 Implement the Testing Agent core logic
 
-  - [ ] 3.1 Create `src/agents/backend_dev_team/tester/prompts.py` with `build_tester_prompt()` function
-  - [ ] 3.2 Write route testing instructions in prompt (happy path, contract tests, HTTP assertions)
-  - [ ] 3.3 Write helper testing instructions in prompt (unit tests, edge cases, invariants)
-  - [ ] 3.4 Create `src/agents/backend_dev_team/tester/agent.py` with `create_tester_agent()` factory
-  - [ ] 3.5 Implement dynamic instruction provider `tester_instruction_provider(context)` that reads state
-  - [ ] 3.6 Configure agent with `LiteLlm`, `PlanReActPlanner`, tools from `get_tester_tools()`, and `output_schema=TestAgentResult`
-  - [ ] 3.7 Add state key constants for tester state (dev_report_path, previous_test_summary, etc.)
-  - [ ] 3.8 Update `src/agents/backend_dev_team/tester/__init__.py` with exports
+  - [x] 3.1 Create `src/agents/backend_dev_team/tester/prompts.py` with `build_tester_prompt()` function
+  - [x] 3.2 Write route testing instructions in prompt (happy path, contract tests, HTTP assertions)
+  - [x] 3.3 Write helper testing instructions in prompt (unit tests, edge cases, invariants)
+  - [x] 3.4 Create `src/agents/backend_dev_team/tester/agent.py` with `create_tester_agent()` factory
+  - [x] 3.5 Implement dynamic instruction provider `tester_instruction_provider(context)` that reads state
+  - [x] 3.6 Configure agent with `LiteLlm`, `PlanReActPlanner`, tools from `get_tester_tools()`, and `output_schema=TestAgentResult`
+  - [x] 3.7 Add state key constants for tester state (dev_report_path, previous_test_summary, etc.)
+  - [x] 3.8 Update `src/agents/backend_dev_team/tester/__init__.py` with exports
 
-- [ ] 4.0 Integrate Testing Agent into the artifact loop
+- [x] 4.0 Integrate Testing Agent into the artifact loop
 
-  - [ ] 4.1 Update `src/agents/backend_dev_team/loop/tools.py` with new state keys: `STATE_KEY_DEV_REPORT_PATH`, `STATE_KEY_TEST_REPORT_PATH`, `STATE_KEY_RETRY_COUNT`
-  - [ ] 4.2 Replace placeholder `create_tester_agent()` in `loop/agent.py` with import from `tester/agent.py`
-  - [ ] 4.3 Update `_check_tester_success()` to check `TestAgentResult.status` instead of `TesterResult`
-  - [ ] 4.4 Add logic to persist `TestReport` to `artifacts/qa/tests/<artifact_id>.test_report.json` after each iteration
-  - [ ] 4.5 Implement retry counting: increment `STATE_KEY_RETRY_COUNT` on each Dev/Test/QA failure
-  - [ ] 4.6 Add routing logic for `needs_dev_fix` → back to Dev, `needs_spec_clarification` → escalate to Planner
-  - [ ] 4.7 Update `BackendDevLoopAgent._run_async_impl()` to pass `dev_report_path` and `previous_test_summary` to Tester state
+  - [x] 4.1 Update `src/agents/backend_dev_team/loop/tools.py` with new state keys: `STATE_KEY_DEV_REPORT_PATH`, `STATE_KEY_TEST_REPORT_PATH`, `STATE_KEY_RETRY_COUNT`, `STATE_KEY_PREVIOUS_TEST_SUMMARY`, `STATE_KEY_ESCALATION_REASON`, `MAX_TOTAL_RETRIES`
+  - [x] 4.2 Replace placeholder `create_tester_agent()` in `loop/agent.py` with import from `tester/agent.py`
+  - [x] 4.3 Update `_check_tester_success()` to check `TestAgentResult.status` instead of `TesterResult`
+  - [x] 4.4 Add report persistence: `_persist_dev_report()` and `_persist_test_report()` helpers in loop/agent.py write reports to `{run_dir}/dev/{artifact_id}.{dev|test}_report.json`
+  - [x] 4.5 Implement retry counting: increment `STATE_KEY_RETRY_COUNT` on each Dev/Test/QA failure, escalate when >= MAX_TOTAL_RETRIES
+  - [x] 4.6 Add routing logic for `needs_dev_fix` → skip QA, route back to Dev; `needs_spec_clarification` → escalate with reason
+  - [x] 4.7 Update `BackendDevLoopAgent._run_async_impl()` to pass `previous_test_summary` to state for Tester; add `_extract_test_summary()` helper
 
-- [ ] 5.0 Update DevReport model with new fields
+- [x] 5.0 Update DevReport and TestReport models with current_state + changes structure
 
-  - [ ] 5.1 Create `DevCurrentState` model with: `code_path`, `dependent_code_paths`, `exports` (optional)
-  - [ ] 5.2 Create `DevChanges` model with: `files_created`, `files_modified`, `files_deleted`, `dependent_code_paths_added`, `dependent_code_paths_removed`
-  - [ ] 5.3 Update `DevReport` model to include `current_state: DevCurrentState` and `changes: DevChanges`
-  - [ ] 5.4 Add `action_summary`, `implementation_notes`, `next_steps` fields to DevReport
-  - [ ] 5.5 Update Backend Dev Agent prompt to populate new DevReport fields
-  - [ ] 5.6 Ensure backward compatibility with existing DevReport usages
+  - [x] 5.1 Create `DevCurrentState` model with: `code_path`, `dependent_code_paths`, `exports` (optional)
+  - [x] 5.2 Create `DevChanges` model with: `files_created`, `files_modified`, `files_deleted`
+  - [x] 5.3 Update `DevReport` model to include `current_state: DevCurrentState` and `changes: DevChanges`
+  - [x] 5.4 Add `action_summary`, `implementation_notes`, `next_steps` fields to DevReport
+  - [x] 5.5 Create `TestCurrentState` (test_paths), `TestChanges` (files_created/modified/deleted), `TestExecutionResult` (tests_run, tests_failed, etc.)
+  - [x] 5.6 Update `TestReport` to use nested `current_state`, `changes`, `execution` fields (legacy fields kept for backward compatibility)
+  - [x] 5.7 Update tests for new model structures
 
 - [ ] 6.0 Implement escalation handling in orchestrator
 

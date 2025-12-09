@@ -16,28 +16,60 @@ from src.models.backend_planner_todos import PlannerArtifactTodo, BackendArtifac
 
 
 # =============================================================================
-# File Change Tracking
+# Current State and Changes - Structured tracking
 # =============================================================================
 
-class FileChange(BaseModel):
+class DevCurrentState(BaseModel):
     """
-    Record of a file created or modified by the Backend Dev Agent.
+    Current state of the implementation after this iteration.
     
-    Tracks what files were touched during artifact implementation,
-    enabling the Tester and QA agents to understand what to validate.
+    Used by manifest builder and Testing Agent to understand what
+    code exists and should be tested.
     """
     
-    path: str = Field(
+    code_path: str = Field(
         ...,
-        description="Relative path from workspace_root (e.g., 'src/app/api/sales/route.ts')"
+        description="Primary file path for this artifact (e.g., 'src/app/api/sales/route.ts')"
     )
-    action: Literal["created", "modified"] = Field(
-        ...,
-        description="Whether the file was newly created or modified"
+    
+    dependent_code_paths: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Other files this implementation depends on or uses "
+            "(e.g., helper modules, shared types)"
+        )
     )
-    description: str = Field(
-        ...,
-        description="Brief description of what this file does or what changed"
+    
+    exports: Optional[List[str]] = Field(
+        default=None,
+        description=(
+            "Key exports from this artifact (function names, classes). "
+            "Optional - useful for helpers that export reusable functions."
+        )
+    )
+
+
+class DevChanges(BaseModel):
+    """
+    Delta of changes made in this iteration.
+    
+    Tracks what files were created, modified, or deleted during
+    this iteration of artifact implementation.
+    """
+    
+    files_created: List[str] = Field(
+        default_factory=list,
+        description="Files created in this iteration, relative to workspace_root"
+    )
+    
+    files_modified: List[str] = Field(
+        default_factory=list,
+        description="Files modified in this iteration, relative to workspace_root"
+    )
+    
+    files_deleted: List[str] = Field(
+        default_factory=list,
+        description="Files deleted in this iteration (e.g., during refactoring)"
     )
 
 
@@ -51,6 +83,10 @@ class DevReport(BaseModel):
     
     This is the detailed output from the Backend Dev Agent, capturing
     everything needed for Tester/QA agents and manifest aggregation.
+    
+    Structure follows current_state + changes pattern:
+    - current_state: DevCurrentState with code_path, dependent_code_paths, exports
+    - changes: DevChanges with files_created, files_modified, files_deleted
     """
     
     artifact_id: str = Field(
@@ -74,29 +110,42 @@ class DevReport(BaseModel):
         ...,
         description="Human-readable summary of what was done (2-3 sentences)"
     )
-    files_changed: List[FileChange] = Field(
-        default_factory=list,
-        description="List of files created or modified during implementation"
-    )
-    dependencies: List[str] = Field(
-        default_factory=list,
-        description="Other artifact IDs this implementation depends on (discovered during dev)"
-    )
-    lint_passed: bool = Field(
+    
+    # -------------------------------------------------------------------------
+    # Current state (used by manifest builder and Tester)
+    # -------------------------------------------------------------------------
+    
+    current_state: DevCurrentState = Field(
         ...,
-        description="Whether npm lint passed for created/modified files"
+        description="Current state of the implementation after this iteration"
     )
-    type_check_passed: bool = Field(
-        ...,
-        description="Whether TypeScript type-check passed for created/modified files"
+    
+    # -------------------------------------------------------------------------
+    # Delta for this iteration
+    # -------------------------------------------------------------------------
+    
+    changes: DevChanges = Field(
+        default_factory=DevChanges,
+        description="Files created, modified, or deleted in this iteration"
     )
-    errors: Optional[List[str]] = Field(
+    
+    # -------------------------------------------------------------------------
+    # Implementation notes
+    # -------------------------------------------------------------------------
+    
+    action_summary: str = Field(
+        default="",
+        description="Brief description of actions taken (e.g., 'Created route handler')"
+    )
+    
+    implementation_notes: Optional[str] = Field(
         default=None,
-        description="Error messages if status is 'partial' or 'failed'"
+        description="Notes about implementation decisions, trade-offs, or limitations"
     )
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When this report was generated"
+    
+    next_steps: Optional[List[str]] = Field(
+        default=None,
+        description="Suggested next steps if status is 'partial' or for future iterations"
     )
 
 
@@ -172,8 +221,10 @@ class BackendDevResult(BaseModel):
 # =============================================================================
 
 __all__ = [
+    # Current state and changes models
+    "DevCurrentState",
+    "DevChanges",
     # Core models
-    "FileChange",
     "DevReport",
     "BackendDevInput",
     "BackendDevResult",

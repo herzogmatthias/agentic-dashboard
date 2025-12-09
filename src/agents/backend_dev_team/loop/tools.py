@@ -35,13 +35,25 @@ STATE_KEY_LOOP_RESULT = "loop_result"  # "pass" | "fail" | "error"
 STATE_KEY_LOOP_ERROR = "loop_error"  # Error message if result is "error"
 STATE_KEY_LOOP_ITERATION = "loop_iteration"  # Current iteration count (set by loop)
 
-# Dev/Tester/QA result keys (set by each sub-agent)
-STATE_KEY_DEV_RESULT = "dev_result"  # Dict with implementation details
-STATE_KEY_TESTER_RESULT = "tester_result"  # Dict with test details  
+
 STATE_KEY_QA_RESULT = "qa_result"  # Dict with validation result
+
+# Report path keys (for persisting reports after loop)
+STATE_KEY_DEV_REPORT_PATH = "dev_report_path"  # Path to persisted DevReport
+STATE_KEY_TEST_REPORT_PATH = "test_report_path"  # Path to persisted TestReport
+
+# Retry tracking (shared counter across Dev/Test/QA failures)
+STATE_KEY_RETRY_COUNT = "retry_count"  # Total retries in current artifact loop
+
+# Previous test summary (passed from Tester to Dev on retry)
+STATE_KEY_PREVIOUS_TEST_SUMMARY = "previous_test_summary"
+
+# Escalation state
+STATE_KEY_ESCALATION_REASON = "escalation_reason"  # Why we escalated
 
 # Constants
 MAX_ITERATIONS = 5  # Max Dev→Tester→QA cycles before giving up
+MAX_TOTAL_RETRIES = 5  # Total retries before escalation
 
 
 # =============================================================================
@@ -143,9 +155,12 @@ def clear_loop_state(state: dict[str, Any]) -> None:
         STATE_KEY_LOOP_RESULT,
         STATE_KEY_LOOP_ERROR,
         STATE_KEY_LOOP_ITERATION,
-        STATE_KEY_DEV_RESULT,
-        STATE_KEY_TESTER_RESULT,
         STATE_KEY_QA_RESULT,
+        STATE_KEY_DEV_REPORT_PATH,
+        STATE_KEY_TEST_REPORT_PATH,
+        STATE_KEY_RETRY_COUNT,
+        STATE_KEY_PREVIOUS_TEST_SUMMARY,
+        STATE_KEY_ESCALATION_REASON,
     ]
     for key in keys_to_clear:
         if key in state:
@@ -166,3 +181,4 @@ def inject_artifact_to_state(state: dict[str, Any], artifact: dict[str, Any]) ->
     state[STATE_KEY_CURRENT_ARTIFACT] = artifact
     state[STATE_KEY_CURRENT_ARTIFACT_ID] = artifact.get("id")
     state[STATE_KEY_LOOP_ITERATION] = 0
+    state[STATE_KEY_RETRY_COUNT] = 0  # Initialize retry counter

@@ -28,8 +28,8 @@ logger = get_logger(__name__)
 # Default maximum rows to return (can be overridden per-tool)
 DEFAULT_MAX_SAMPLE_ROWS = 5
 
-# Combined allowed paths for data access (union of all agent paths)
-DATA_ALLOWED_PATHS = list(set(BACKEND_DEV_ALLOWED_PATHS + TESTER_ALLOWED_PATHS))
+# Data folder is ONLY for sample_dashboard data reads, completely independent of filesystem_mcp
+DATA_ALLOWED_PATHS = [SAMPLE_DASHBOARD_ROOT / "data"]
 
 
 def _validate_path(

@@ -19,6 +19,7 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
+from src.tools.utils import SAMPLE_DASHBOARD_ROOT, validate_path
 
 logger = get_logger(__name__)
 
@@ -84,19 +85,33 @@ def inspect_json_preview(
         tool_context: Optional tool context with state access
     """
     run_dir = tool_context.state.get("run_dir") if tool_context else None
-    
-    # Resolve path - check multiple locations
-    path = Path(file_path)
-    if not path.is_absolute():
-        # Try relative to run_dir first
-        if run_dir:
-            candidate = Path(run_dir) / file_path
-            if candidate.exists():
-                path = candidate
-    
+
+    # Build allowed locations: current run_dir (if provided) + sample dashboard data folder
+    allowed_paths = [SAMPLE_DASHBOARD_ROOT / "data"]
+    if run_dir:
+        allowed_paths.append(Path(run_dir))
+
+    # Resolve and validate the requested path against allowed locations
+    target_path = (
+        Path(run_dir) / file_path
+        if run_dir and not Path(file_path).is_absolute()
+        else Path(file_path)
+    )
+    is_valid, path, error_msg = validate_path(
+        requested_path=str(target_path),
+        allowed_paths=allowed_paths,
+        run_dir=run_dir,
+        allow_new=False,
+    )
+
+    if not is_valid:
+        if "does not exist" in error_msg.lower():
+            return {"error": f"File not found: {file_path}", "path": str(path)}
+        return {"error": f"Path not in allowed locations: {file_path}. {error_msg}"}
+
     if not path.exists():
         return {"error": f"File not found: {file_path}", "path": str(path)}
-    
+
     if path.suffix.lower() != ".json":
         return {"error": f"Not a JSON file: {path}", "path": str(path)}
     
