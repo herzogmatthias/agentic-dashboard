@@ -54,10 +54,11 @@ Review this context carefully before creating the artifact list.
 
 1. **Analyze the dashboard concept** to identify all KPIs, charts, and data requirements
 2. **Review the data profile** to understand available columns and data types
-3. **Plan the backend artifacts** needed to serve each visualization and KPI
-4. **Define dependencies** between artifacts (e.g., helpers that routes depend on)
-5. **Set priorities** based on logical implementation order
-6. **Call the `create_backend_todo_list` tool** with your planned artifacts
+3. **Group artifacts into logical chunks** (helpers, kpis, visuals, tables, filters)
+4. **Plan concrete artifacts** within each group (routes and helpers)
+5. **Define dependencies** between artifacts (e.g., helpers that routes depend on)
+6. **Set priorities** based on logical implementation order
+7. **Call the `create_backend_todo_list` tool** with your planned groups and artifacts
 
 ---
 
@@ -81,12 +82,45 @@ Shared TypeScript utility functions or data loaders. Examples:
 
 ---
 
-## **Planning Guidelines**
+## **Group-Based Planning**
 
-1. **One artifact per KPI/chart** - Each visualization should have a dedicated route
-2. **Shared logic = helpers** - If multiple routes need the same logic, create a helper
-3. **Dependencies first** - Helpers should have lower priority numbers than routes that depend on them
-4. **Be specific** - Include query parameters, response fields, and descriptions
+Think in **logical groups** first, then define concrete artifacts within each group:
+
+### Group Types
+- **helpers**: Core infrastructure, data loaders, shared utilities (build first)
+- **kpis**: Key performance indicator routes
+- **visuals**: Chart/graph data routes
+- **tables**: Data table routes
+- **filters**: Dynamic filter option routes
+- **other**: Miscellaneous artifacts
+
+### Example Grouping
+```
+Group: helpers_core (priority 1)
+  - helper_csv_loader
+  - helper_filter_parser
+  - helper_aggregations
+
+Group: kpis_overview (priority 2)
+  - route_kpi_overall_attrition
+  - route_kpi_customer_count
+
+Group: visuals_attrition (priority 3)
+  - route_v_attrition_by_income
+  - route_v_attrition_trends
+
+Group: filters_dynamics (priority 4)
+  - route_filter_income_options
+  - route_filter_category_options
+```
+
+### Planning Guidelines
+
+1. **Group by domain** - Keep related artifacts together
+2. **One artifact per KPI/chart** - Each visualization should have a dedicated route
+3. **Shared logic = helpers** - Core utilities go in a helpers group with lowest priority
+4. **Dependencies within groups** - Routes in a group depend on helpers from earlier groups
+5. **Be specific** - Include query parameters, response fields, and descriptions
 
 ---
 
@@ -111,49 +145,65 @@ The `metrics_ref` field MUST reference a valid ID from the dashboard_concept. Va
 
 ## **Output Format**
 
-Use the `create_backend_todo_list` tool with a `todo_list` object:
+Use the `create_backend_todo_list` tool with a `todo_list` object structured into groups:
 
 ```json
 {
   "todo_list": {
     "dashboard_goal": "High-level purpose of the dashboard",
     "audience": "Who this dashboard is for",
-    "artifacts": [
+    "groups": [
       {
-        "id": "helper_load_data",
-        "kind": "helper",
-        "title": "Data Loading Utility",
-        "description": "Load and parse CSV data with type conversion",
-        "http_method": null,
-        "priority": 1,
-        "tags": ["utility", "data-loading"]
+        "id": "helpers_core",
+        "kind": "helpers",
+        "label": "Core Data Infrastructure",
+        "description": "Essential data loading, filtering, and aggregation utilities",
+        "artifacts": [
+          {
+            "id": "helper_load_data",
+            "kind": "helper",
+            "title": "Data Loading Utility",
+            "description": "Load and parse CSV data with type conversion",
+            "http_method": null,
+            "priority": 1,
+            "tags": ["utility", "data-loading"]
+          }
+        ]
       },
       {
-        "id": "route_sales_by_category",
-        "kind": "route",
-        "title": "Sales by Category",
-        "description": "Returns sales data grouped by product category",
-        "http_path": "/api/sales/by-category",
-        "http_method": "GET",
-        "query_params": [
+        "id": "visuals_sales",
+        "kind": "visuals",
+        "label": "Sales Visualizations",
+        "description": "Routes serving sales-related charts and breakdowns",
+        "artifacts": [
           {
-            "name": "startDate",
-            "type": "date",
-            "required": false,
-            "description": "Filter start date"
+            "id": "route_sales_by_category",
+            "kind": "route",
+            "title": "Sales by Category",
+            "description": "Returns sales data grouped by product category",
+            "http_path": "/api/sales/by-category",
+            "http_method": "GET",
+            "query_params": [
+              {
+                "name": "startDate",
+                "type": "date",
+                "required": false,
+                "description": "Filter start date"
+              }
+            ],
+            "expected_shape": {
+              "kind": "array",
+              "fields": [
+                {"name": "category", "type": "string", "description": "Product category"},
+                {"name": "total_sales", "type": "number", "description": "Sum of sales"}
+              ]
+            },
+            "metrics_ref": "v_sales_by_category",
+            "depends_on": ["helper_load_data"],
+            "priority": 2,
+            "tags": ["sales", "aggregation"]
           }
-        ],
-        "expected_shape": {
-          "kind": "array",
-          "fields": [
-            {"name": "category", "type": "string", "description": "Product category"},
-            {"name": "total_sales", "type": "number", "description": "Sum of sales"}
-          ]
-        },
-        "metrics_ref": "sales_by_category",
-        "depends_on": ["helper_load_data"],
-        "priority": 2,
-        "tags": ["sales", "aggregation"]
+        ]
       }
     ]
   }

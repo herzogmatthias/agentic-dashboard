@@ -15,12 +15,6 @@ from src.agents.backend_dev_team.loop.agent import (
     BackendDevLoopAgent,
     create_loop_agent,
     get_loop_agent,
-    # Sub-agent factories
-    create_qa_agent,
-    # Structured output schema (QA only - Dev uses BackendDevResult, Tester uses TestAgentResult)
-    QAResult,
-    # Constants
-    SUB_AGENT_MODEL,
 )
 from src.agents.backend_dev_team.loop.tools import (
     # Tool and FunctionTool wrapper
@@ -64,10 +58,6 @@ __all__ = [
     "BackendDevLoopAgent",
     "create_loop_agent",
     "get_loop_agent",
-    "create_loop_tester_agent",
-    "create_qa_agent",
-    # Structured output schema (QA only)
-    "QAResult",
     # Tool and FunctionTool wrapper
     "exit_loop",
     "exit_loop_tool",
@@ -81,7 +71,6 @@ __all__ = [
     "STATE_KEY_LOOP_RESULT",
     "STATE_KEY_LOOP_ERROR",
     "STATE_KEY_LOOP_ITERATION",
-    "STATE_KEY_TESTER_RESULT",
     "STATE_KEY_QA_RESULT",
     "STATE_KEY_DEV_REPORT_PATH",
     "STATE_KEY_TEST_REPORT_PATH",
@@ -95,7 +84,6 @@ __all__ = [
     # Constants
     "MAX_ITERATIONS",
     "MAX_TOTAL_RETRIES",
-    "SUB_AGENT_MODEL",
     # State helpers
     "get_current_artifact",
     "get_loop_result",

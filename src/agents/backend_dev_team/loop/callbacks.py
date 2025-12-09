@@ -24,6 +24,7 @@ from src.agents.backend_dev_team.tester.state import STATE_KEY_TESTER_RESULT
 from src.core.logging import get_logger
 from src.agents.backend_dev_team.loop.tools import (
     STATE_KEY_RUN_DIR,
+    STATE_KEY_BACKEND_TODO_LIST,
     STATE_KEY_CURRENT_ARTIFACT,
     STATE_KEY_LOOP_RESULT,
     STATE_KEY_LOOP_ITERATION,
@@ -44,11 +45,12 @@ STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
 STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
 
-# Default sample-dashboard root (relative to project)
-SAMPLE_DASHBOARD_ROOT = Path(__file__).parent.parent.parent.parent.parent / "sample-dashboard"
+# Default sample-dashboard root (relative to project structure)
+# From loop/callbacks.py: go up 6 levels to reach Documents/agentic-dashboard/, then into sample-dashboard/
+SAMPLE_DASHBOARD_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent / "sample-dashboard"
 
 # Default run directory for standalone testing (same pattern as planner)
-DEFAULT_TEST_RUN_DIR = Path(__file__).parent.parent.parent.parent.parent / "runs" / "run_20251204_142914"
+DEFAULT_TEST_RUN_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "agentic-dashboard" / "runs" / "run_20251204_142914"
 
 
 # =============================================================================
@@ -63,7 +65,9 @@ def before_loop_callback(callback_context: CallbackContext) -> Optional[types.Co
     
     This callback enables standalone testing by:
     1. Setting run_dir to DEFAULT_TEST_RUN_DIR if not present
-    2. Loading the first pending artifact from backend_todos.json if no artifact in state
+    2. Loading backend_todo_list from backend_todos.json if not present
+    
+    Note: The loop now processes ALL pending artifacts, not just one.
     
     Args:
         callback_context: ADK CallbackContext with access to state
@@ -88,22 +92,23 @@ def before_loop_callback(callback_context: CallbackContext) -> Optional[types.Co
         else:
             run_dir = Path(state[STATE_KEY_RUN_DIR])
         
-        # 2. Load artifact if not present (standalone testing mode)
-        if STATE_KEY_CURRENT_ARTIFACT not in state or state[STATE_KEY_CURRENT_ARTIFACT] is None:
-            artifact = _load_first_pending_artifact(run_dir)
-            if artifact:
-                inject_artifact_to_state(state, artifact)
+        # 2. Load backend_todo_list if not present (standalone testing mode)
+        if STATE_KEY_BACKEND_TODO_LIST not in state or state[STATE_KEY_BACKEND_TODO_LIST] is None:
+            todo_list = _load_backend_todos(run_dir)
+            if todo_list:
+                state[STATE_KEY_BACKEND_TODO_LIST] = todo_list
+                pending_count = len([a for a in todo_list.get("artifacts", []) if a.get("status") == "pending"])
                 logger.info(
-                    f"Injected standalone test artifact: {artifact.get('id')}",
+                    f"Loaded backend_todo_list with {pending_count} pending artifacts",
                     extra={
                         "agent": "loop",
                         "phase": "before_callback",
-                        "artifact_id": artifact.get("id"),
+                        "pending_artifacts": pending_count,
                     }
                 )
             else:
                 logger.warning(
-                    "No pending artifact found in backend_todos.json for standalone testing",
+                    "No backend_todos.json found for standalone testing",
                     extra={"agent": "loop", "phase": "before_callback"}
                 )
         
@@ -113,39 +118,16 @@ def before_loop_callback(callback_context: CallbackContext) -> Optional[types.Co
                 "agent": "loop",
                 "phase": "before_callback",
                 "run_dir": str(run_dir),
-                "has_artifact": STATE_KEY_CURRENT_ARTIFACT in state and state[STATE_KEY_CURRENT_ARTIFACT] is not None,
+                "has_todo_list": STATE_KEY_BACKEND_TODO_LIST in state and state[STATE_KEY_BACKEND_TODO_LIST] is not None,
             }
         )
         
         if STATE_KEY_WORKSPACE_ROOT not in state:
             state[STATE_KEY_WORKSPACE_ROOT] = str(SAMPLE_DASHBOARD_ROOT.resolve())
-    
-        # Look up metrics_ref context from dashboard_concept
-        run_dir = state.get(STATE_KEY_RUN_DIR)
-        metrics_ref = state[STATE_KEY_CURRENT_ARTIFACT].get("metrics_ref") if STATE_KEY_CURRENT_ARTIFACT in state else None
-        
-        if run_dir:
-            dashboard_concept = _load_dashboard_concept(run_dir)
-            state[STATE_KEY_METRICS_REF_CONTEXT] = _lookup_metrics_ref(dashboard_concept, metrics_ref)
-            state[STATE_KEY_CLEANED_DATA_FILES] = _get_cleaned_data_files(run_dir)
-        else:
-            state[STATE_KEY_METRICS_REF_CONTEXT] = "(no run_dir in state)"
-            state[STATE_KEY_CLEANED_DATA_FILES] = []
         
         # Initialize previous_summaries if not present
         if STATE_KEY_PREVIOUS_SUMMARIES not in state:
             state[STATE_KEY_PREVIOUS_SUMMARIES] = []
-        
-        logger.info(
-            f"Dev state initialized for {state.get(STATE_KEY_CURRENT_ARTIFACT, {}).get('id', 'unknown')}",
-            extra={
-                "agent": "loop",
-                "artifact_id": state.get(STATE_KEY_CURRENT_ARTIFACT, {}).get('id', 'unknown'),
-                "metrics_ref": metrics_ref,
-                "workspace_root": state.get(STATE_KEY_WORKSPACE_ROOT),
-                "cleaned_files_count": len(state.get(STATE_KEY_CLEANED_DATA_FILES, [])),
-            }
-        )
         
         return None  # Continue with agent execution
 
@@ -157,15 +139,15 @@ def before_loop_callback(callback_context: CallbackContext) -> Optional[types.Co
         return None  # Continue even if callback fails
 
 
-def _load_first_pending_artifact(run_dir: Path) -> Optional[dict[str, Any]]:
+def _load_backend_todos(run_dir: Path) -> Optional[dict[str, Any]]:
     """
-    Load the first pending artifact from backend_todos.json.
+    Load the full backend_todos.json file.
     
     Args:
         run_dir: Path to the run directory
         
     Returns:
-        First artifact with status='pending', or None if not found
+        Full todo list dict with artifacts array, or None if not found
     """
     todos_path = run_dir / "backend_dev_team" / "backend_todos.json"
     
@@ -176,18 +158,36 @@ def _load_first_pending_artifact(run_dir: Path) -> Optional[dict[str, Any]]:
     try:
         with open(todos_path, "r", encoding="utf-8") as f:
             todos = json.load(f)
-        
-        artifacts = todos.get("artifacts", [])
-        for artifact in artifacts:
-            if artifact.get("status") == "pending":
-                return artifact
-        
-        logger.debug("No pending artifacts in backend_todos.json")
-        return None
+        return todos
         
     except Exception as e:
         logger.warning(f"Failed to load backend_todos.json: {e}")
         return None
+
+
+def _load_first_pending_artifact(run_dir: Path) -> Optional[dict[str, Any]]:
+    """
+    Load the first pending artifact from backend_todos.json.
+    
+    DEPRECATED: Use _load_backend_todos instead, as the loop now processes all artifacts.
+    
+    Args:
+        run_dir: Path to the run directory
+        
+    Returns:
+        First artifact with status='pending', or None if not found
+    """
+    todos = _load_backend_todos(run_dir)
+    if not todos:
+        return None
+    
+    artifacts = todos.get("artifacts", [])
+    for artifact in artifacts:
+        if artifact.get("status") == "pending":
+            return artifact
+    
+    logger.debug("No pending artifacts in backend_todos.json")
+    return None
 
 
 # =============================================================================
@@ -196,16 +196,11 @@ def _load_first_pending_artifact(run_dir: Path) -> Optional[dict[str, Any]]:
 
 def after_loop_callback(callback_context: CallbackContext) -> Optional[types.Content]:
     """
-    Persist BackendManifestEntry after successful loop completion.
+    Called after the loop completes (not after each artifact).
     
-    Uses ADK built-in after_agent_callback pattern.
-    
-    This callback:
-    1. Checks if loop_result is 'pass' (skip if not successful)
-    2. Builds a BackendManifestEntry from dev_result and tester_result
-    3. Loads existing manifest, adds/updates entry, persists to disk
-    
-    The manifest is written to: {run_dir}/dev/backend_manifest.json
+    In the dev-only flow, manifest entries are persisted within the loop via
+    persist_artifact_manifest_entry(). This callback is now primarily for
+    logging and cleanup.
     
     Args:
         callback_context: ADK CallbackContext with access to state
@@ -215,58 +210,13 @@ def after_loop_callback(callback_context: CallbackContext) -> Optional[types.Con
     """
     state = callback_context.state
     try:
-        # Check loop result - only persist on success
         loop_result = state.get(STATE_KEY_LOOP_RESULT)
-        if loop_result != "pass":
-            logger.info(
-                f"Skipping manifest write - loop_result={loop_result}",
-                extra={
-                    "agent": "loop",
-                    "phase": "after_callback",
-                    "loop_result": loop_result,
-                }
-            )
-            return None
-        
-        # Get required state
-        run_dir = state.get(STATE_KEY_RUN_DIR)
-        artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
-        dev_result = state.get(STATE_KEY_DEV_RESULT)
-        tester_result = state.get(STATE_KEY_TESTER_RESULT)
-        iteration_count = state.get(STATE_KEY_LOOP_ITERATION, 1)
-        
-        if not run_dir or not artifact:
-            logger.warning(
-                "Missing run_dir or artifact in state - cannot write manifest",
-                extra={"agent": "loop", "phase": "after_callback"}
-            )
-            return None
-        
-        # Build manifest entry
-        entry = _build_manifest_entry(
-            artifact=artifact,
-            dev_result=dev_result,
-            tester_result=tester_result,
-            iteration_count=iteration_count,
-        )
-        
-        if entry is None:
-            logger.warning(
-                "Failed to build manifest entry",
-                extra={"agent": "loop", "phase": "after_callback"}
-            )
-            return None
-        
-        # Persist to manifest
-        _persist_manifest_entry(run_dir, entry)
-        
         logger.info(
-            f"Persisted manifest entry for artifact: {entry['artifact_id']}",
+            f"Loop completed with result: {loop_result}",
             extra={
                 "agent": "loop",
                 "phase": "after_callback",
-                "artifact_id": entry["artifact_id"],
-                "code_path": entry.get("code_path"),
+                "loop_result": loop_result,
             }
         )
         return None
@@ -276,22 +226,73 @@ def after_loop_callback(callback_context: CallbackContext) -> Optional[types.Con
             f"Error in after_loop_callback: {e}",
             extra={"agent": "loop", "phase": "after_callback"}
         )
-        return None  # Don't fail the loop if callback fails
+        return None
 
 
-def _build_manifest_entry(
+def persist_artifact_manifest_entry(
+    run_dir: str,
     artifact: dict[str, Any],
     dev_result: dict[str, Any] | None,
-    tester_result: dict[str, Any] | None,
+) -> bool:
+    """
+    Persist a manifest entry for a completed artifact.
+    
+    Called from within the loop after each successful artifact.
+    Builds entry from dev_result only (dev-only flow, no tester).
+    
+    Args:
+        run_dir: Path to run directory
+        artifact: The artifact that was processed
+        dev_result: BackendDevResult from Dev Agent
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # Build manifest entry from dev_result
+        entry = _build_manifest_entry_from_dev_report(
+            artifact=artifact,
+            dev_result=dev_result,
+            iteration_count=1,
+        )
+        
+        if entry is None:
+            logger.warning(
+                f"Failed to build manifest entry for {artifact.get('id')}",
+                extra={"artifact_id": artifact.get("id")}
+            )
+            return False
+        
+        # Persist to manifest
+        success = _persist_manifest_entry(run_dir, entry)
+        
+        if success:
+            logger.info(
+                f"Persisted manifest entry for artifact: {entry['artifact_id']}",
+                extra={
+                    "artifact_id": entry["artifact_id"],
+                    "code_path": entry.get("code_path"),
+                }
+            )
+        
+        return success
+        
+    except Exception as e:
+        logger.exception(f"Error persisting manifest entry: {e}")
+        return False
+
+
+def _build_manifest_entry_from_dev_report(
+    artifact: dict[str, Any],
+    dev_result: dict[str, Any] | None,
     iteration_count: int = 1,
 ) -> Optional[dict[str, Any]]:
     """
-    Build a BackendManifestEntry dict from loop results.
+    Build a BackendManifestEntry dict from Dev Agent result ONLY (no tester).
     
     Args:
         artifact: The processed artifact (PlannerArtifactTodo as dict)
         dev_result: BackendDevResult from Dev Agent
-        tester_result: TestAgentResult from Tester Agent
         iteration_count: Number of iterations to complete
         
     Returns:
@@ -304,7 +305,7 @@ def _build_manifest_entry(
         # Extract code paths from dev_result
         code_path = ""
         dependent_code_paths = []
-        handler_export = None
+        all_exports = []
         
         if dev_result:
             report = dev_result.get("report", {})
@@ -316,7 +317,7 @@ def _build_manifest_entry(
                     dependent_code_paths = current_state.get("dependent_code_paths", [])
                     exports = current_state.get("exports", [])
                     if exports:
-                        handler_export = exports[0] if isinstance(exports, list) else exports
+                        all_exports = exports if isinstance(exports, list) else [exports]
                 
                 # Fallback: files_changed (legacy)
                 if not code_path:
@@ -327,22 +328,6 @@ def _build_manifest_entry(
                             code_path = first_file.get("path", "")
                         elif isinstance(first_file, str):
                             code_path = first_file
-        
-        # Extract test paths from tester_result
-        test_paths = []
-        if tester_result:
-            test_report = tester_result.get("test_report", {})
-            if isinstance(test_report, dict):
-                # New structure: current_state.test_paths
-                current_state = test_report.get("current_state", {})
-                if isinstance(current_state, dict):
-                    test_paths = current_state.get("test_paths", [])
-                
-                # Fallback: test_file_path (legacy)
-                if not test_paths:
-                    legacy_path = test_report.get("test_file_path")
-                    if legacy_path:
-                        test_paths = [legacy_path]
         
         # Get HTTP details from artifact
         http_path = artifact.get("http_path")
@@ -373,11 +358,11 @@ def _build_manifest_entry(
             "dependent_code_paths": dependent_code_paths,
             "http_path": http_path,
             "http_method": http_method,
-            "handler_export": handler_export or ("GET" if kind == "route" else None),
+            "exports": all_exports,  # Include ALL exports from the file
             "query_params": query_params,
             "response_shape": response_shape,
             "canonical_query": canonical_query,
-            "test_paths": test_paths,
+            "test_paths": [],  # No tester integration in dev-only flow
             "last_modified_at": datetime.utcnow().isoformat(),
             "iteration_count": iteration_count,
             "status": "success",
@@ -540,7 +525,7 @@ def _get_cleaned_data_files(run_dir: str | Path) -> list[str]:
         return []
     
     files = []
-    for ext in ["*.csv", "*.parquet"]:
+    for ext in ["*.csv", "*.parquet", "*.json", "*.xlsx"]:
         files.extend([f.name for f in cleaned_dir.glob(ext)])
     
     return files

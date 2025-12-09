@@ -53,6 +53,7 @@ STATE_KEY_RUN_ID = "run_id"
 STATE_KEY_RUN_DIR = "run_dir"
 STATE_KEY_WORKSPACE_ROOT = "workspace_root"
 STATE_KEY_CURRENT_ARTIFACT = "current_artifact"
+STATE_KEY_CURRENT_GROUP = "current_group"
 STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
 STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
@@ -69,8 +70,8 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     
     Reads from session state:
     - workspace_root: Absolute path to sample-dashboard
-    - current_artifact: The PlannerArtifactTodo to implement
-    - previous_summaries: List of summaries from prior artifacts
+    - current_group: The BackendTodoGroup to implement (contains multiple artifacts)
+    - previous_summaries: List of summaries from prior groups
     - cleaned_data_files: List of cleaned data file paths
     - metrics_ref_context: Pre-looked-up metrics reference context
     
@@ -87,24 +88,45 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     if not workspace_root:
         workspace_root = str(SAMPLE_DASHBOARD_ROOT.resolve())
     
-    # Get artifact as JSON string
-    artifact = state.get(STATE_KEY_CURRENT_ARTIFACT)
-    if artifact:
-        if isinstance(artifact, dict):
-            artifact_json = json.dumps(artifact, indent=2)
-        elif hasattr(artifact, "model_dump"):
-            artifact_json = json.dumps(artifact.model_dump(), indent=2)
+    # Get group info
+    group = state.get(STATE_KEY_CURRENT_GROUP)
+    if group:
+        if isinstance(group, dict):
+            group_id = group.get("id", "unknown")
+            group_kind = group.get("kind", "other")
+            group_label = group.get("label", group_id)
+            group_description = group.get("description", "")
+            artifacts = group.get("artifacts", [])
+            pending_artifacts = [a for a in artifacts if a.get("status", "pending") == "pending"]
+            artifacts_json = json.dumps(pending_artifacts, separators=(",", ":"))
+        elif hasattr(group, "model_dump"):
+            group_data = group.model_dump()
+            group_id = group_data.get("id", "unknown")
+            group_kind = group_data.get("kind", "other")
+            group_label = group_data.get("label", group_id)
+            group_description = group_data.get("description", "")
+            artifacts = group_data.get("artifacts", [])
+            pending_artifacts = [a for a in artifacts if a.get("status", "pending") == "pending"]
+            artifacts_json = json.dumps(pending_artifacts, separators=(",", ":"))
         else:
-            artifact_json = str(artifact)
+            group_id = "unknown"
+            group_kind = "other"
+            group_label = "Unknown"
+            group_description = ""
+            artifacts_json = str(group)
     else:
-        artifact_json = "{}"
+        group_id = "unknown"
+        group_kind = "other"
+        group_label = "No group assigned"
+        group_description = ""
+        artifacts_json = "[]"
     
     # Get previous summaries
     previous_summaries = state.get(STATE_KEY_PREVIOUS_SUMMARIES, [])
     if previous_summaries:
         summaries_text = "\n".join(f"- {s}" for s in previous_summaries)
     else:
-        summaries_text = "(no prior artifacts)"
+        summaries_text = "(no prior groups completed)"
     
     # Get cleaned data files
     cleaned_files = state.get(STATE_KEY_CLEANED_DATA_FILES, [])
@@ -114,11 +136,19 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
         cleaned_data_files = "(not yet loaded)"
     
     # Get metrics_ref context (pre-looked-up in callback)
-    metrics_ref_context = state.get(STATE_KEY_METRICS_REF_CONTEXT, "(no metrics_ref specified)")
+    metrics_ref_context_raw = state.get(STATE_KEY_METRICS_REF_CONTEXT, "(no metrics_ref specified)")
+    if isinstance(metrics_ref_context_raw, (dict, list)):
+        metrics_ref_context = json.dumps(metrics_ref_context_raw, separators=(",", ":"))
+    else:
+        metrics_ref_context = str(metrics_ref_context_raw)
     
     return build_backend_dev_prompt(
         workspace_root=workspace_root,
-        artifact_json=artifact_json,
+        group_id=group_id,
+        group_kind=group_kind,
+        group_label=group_label,
+        group_description=group_description,
+        artifacts_json=artifacts_json,
         previous_summaries=summaries_text,
         cleaned_data_files=cleaned_data_files,
         metrics_ref_context=metrics_ref_context,
@@ -209,6 +239,7 @@ __all__ = [
     "STATE_KEY_RUN_DIR",
     "STATE_KEY_WORKSPACE_ROOT",
     "STATE_KEY_CURRENT_ARTIFACT",
+    "STATE_KEY_CURRENT_GROUP",
     "STATE_KEY_PREVIOUS_SUMMARIES",
     "STATE_KEY_CLEANED_DATA_FILES",
     "STATE_KEY_METRICS_REF_CONTEXT",

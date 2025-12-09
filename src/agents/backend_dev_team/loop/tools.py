@@ -26,11 +26,13 @@ STATE_KEY_RUN_ID = "run_id"
 STATE_KEY_BACKEND_TODO_LIST = "backend_todo_list"
 STATE_KEY_BACKEND_TODOS_PATH = "backend_todos_path"
 
-# Loop-specific state keys (injected by Planner before handoff)
-STATE_KEY_CURRENT_ARTIFACT = "current_artifact"  # The artifact being processed (full dict)
-STATE_KEY_CURRENT_ARTIFACT_ID = "current_artifact_id"  # Just the ID for quick access
+# Loop-specific state keys (injected by Loop before Dev invocation)
+STATE_KEY_CURRENT_ARTIFACT = "current_artifact"  # The artifact being processed (full dict) - DEPRECATED
+STATE_KEY_CURRENT_ARTIFACT_ID = "current_artifact_id"  # Just the ID for quick access - DEPRECATED
+STATE_KEY_CURRENT_GROUP = "current_group"  # The group being processed (full dict with artifacts)
+STATE_KEY_ACCESSIBLE_FILES = "accessible_files"  # List of file paths accessible to Dev Agent
 
-# Loop result keys (set by QA agent, read by Planner after loop returns)
+# Loop result keys (set by Dev agent, read by Loop after artifact completes)
 STATE_KEY_LOOP_RESULT = "loop_result"  # "pass" | "fail" | "error"
 STATE_KEY_LOOP_ERROR = "loop_error"  # Error message if result is "error"
 STATE_KEY_LOOP_ITERATION = "loop_iteration"  # Current iteration count (set by loop)
@@ -171,7 +173,7 @@ def inject_artifact_to_state(state: dict[str, Any], artifact: dict[str, Any]) ->
     """
     Inject an artifact into state for the loop to process.
     
-    Called by the Planner before handing off to the Loop.
+    Called by the Loop before invoking Dev Agent on each artifact.
     
     Args:
         state: Session state dict
@@ -182,3 +184,84 @@ def inject_artifact_to_state(state: dict[str, Any], artifact: dict[str, Any]) ->
     state[STATE_KEY_CURRENT_ARTIFACT_ID] = artifact.get("id")
     state[STATE_KEY_LOOP_ITERATION] = 0
     state[STATE_KEY_RETRY_COUNT] = 0  # Initialize retry counter
+
+
+def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -> list[str]:
+    """
+    Build list of file paths accessible to Dev Agent for this artifact.
+    
+    Dynamically scans the sample-dashboard project to list existing files in:
+    - src/app/api/** (existing API routes)
+    - src/models/** (existing TypeScript models)
+    - src/lib/** (existing utilities/helpers)
+    - data/** (data files)
+    
+    Also includes run-directory artifacts:
+    - backend_manifest.json (from prior artifacts)
+    - data_profile.json (from data analysis)
+    
+    This helps the Dev Agent understand what's already implemented.
+    
+    Args:
+        artifact: The artifact being processed
+        run_dir: Path to run directory (may be None)
+        
+    Returns:
+        List of accessible file paths (absolute or relative)
+    """
+    from pathlib import Path
+    
+    paths: list[str] = []
+    
+    # Get sample-dashboard root
+    # From tools.py: go up 5 levels to reach Documents/agentic-dashboard/, then into sample-dashboard/
+    sample_dashboard_root = Path(__file__).parent.parent.parent.parent.parent / "sample-dashboard"
+    
+    try:
+        # Scan src/app/api for existing routes
+        api_dir = sample_dashboard_root / "src" / "app" / "api"
+        if api_dir.exists():
+            for route_file in api_dir.rglob("route.ts"):
+                paths.append(str(route_file.relative_to(sample_dashboard_root)))
+            logger.debug(f"Found {len([p for p in paths if 'api' in p])} API routes")
+    except Exception as e:
+        logger.debug(f"Error scanning API directory: {e}")
+    
+    try:
+        # Scan src/models for existing TypeScript models
+        models_dir = sample_dashboard_root / "src" / "models"
+        if models_dir.exists():
+            for model_file in models_dir.glob("*.ts"):
+                paths.append(str(model_file.relative_to(sample_dashboard_root)))
+            logger.debug(f"Found {len([p for p in paths if 'models' in p])} model files")
+    except Exception as e:
+        logger.debug(f"Error scanning models directory: {e}")
+    
+    try:
+        # Scan src/lib for existing utilities
+        lib_dir = sample_dashboard_root / "src" / "lib"
+        if lib_dir.exists():
+            for util_file in lib_dir.rglob("*.ts"):
+                paths.append(str(util_file.relative_to(sample_dashboard_root)))
+            logger.debug(f"Found {len([p for p in paths if 'lib' in p])} utility files")
+    except Exception as e:
+        logger.debug(f"Error scanning lib directory: {e}")
+    
+    try:
+        # Scan data directory for CSV and other data files
+        data_dir = sample_dashboard_root / "data"
+        if data_dir.exists():
+            for data_file in data_dir.glob("*"):
+                if data_file.is_file():
+                    paths.append(str(data_file.relative_to(sample_dashboard_root)))
+            logger.debug(f"Found {len([p for p in paths if 'data' in p])} data files")
+    except Exception as e:
+        logger.debug(f"Error scanning data directory: {e}")
+
+    
+    logger.info(
+        f"Built accessible files list with {len(paths)} files",
+        extra={"accessible_file_count": len(paths), "artifact_id": artifact.get("id")}
+    )
+    
+    return paths

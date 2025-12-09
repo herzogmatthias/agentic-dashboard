@@ -16,7 +16,7 @@ Key responsibilities:
 
 
 def build_tester_prompt(
-    workspace_root: str = "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard",
+    workspace_root: str | None = None,
     artifact_json: str = "{}",
     dev_report_json: str = "{}",
     previous_test_summary: str = "(no previous test run)",
@@ -32,7 +32,8 @@ def build_tester_prompt(
     4. Returning a structured TestAgentResult with TestReport
     
     Args:
-        workspace_root: Absolute path to the sample-dashboard Next.js project
+        workspace_root: Absolute path to the sample-dashboard Next.js project.
+                       If None, defaults to hardcoded path.
         artifact_json: JSON string of the PlannerArtifactTodo being tested
         dev_report_json: JSON string of the DevReport from Backend Dev Agent
         previous_test_summary: Summary from previous test iteration (for retries)
@@ -45,6 +46,10 @@ def build_tester_prompt(
         Curly braces in TypeScript examples are escaped as {{ and }} to avoid
         being interpreted as f-string placeholders.
     """
+    # Default workspace_root if not provided
+    if workspace_root is None:
+        workspace_root = "C:/Users/darks/Documents/agentic-dashboard/sample-dashboard"
+    
     return f'''
 # Role and Objective
 

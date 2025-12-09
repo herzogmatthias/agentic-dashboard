@@ -16,8 +16,10 @@ from src.core.logging import get_logger
 from src.models.backend_planner_todos import (
     PlannerTodoList,
     PlannerArtifactTodo,
+    BackendTodoGroup,
     ArtifactOverallStatus,
     BackendArtifactKind,
+    BackendTodoGroupKind,
     QueryParamSpec,
     ExpectedShape,
     JsonFieldSpec,
@@ -93,14 +95,14 @@ def _load_valid_metrics_refs(run_dir: Path) -> set[str]:
 
 
 def _validate_metrics_refs(
-    artifacts: list,
+    groups: list,
     valid_refs: set[str]
 ) -> list[str]:
     """
-    Validate that all metrics_ref values are valid dashboard_concept IDs.
+    Validate that all metrics_ref values in groups are valid dashboard_concept IDs.
     
     Args:
-        artifacts: List of artifact inputs
+        groups: List of group inputs (dicts with artifacts array)
         valid_refs: Set of valid metrics_ref values
         
     Returns:
@@ -108,12 +110,15 @@ def _validate_metrics_refs(
     """
     errors = []
     
-    for artifact in artifacts:
-        if artifact.metrics_ref and artifact.metrics_ref not in valid_refs:
-            errors.append(
-                f"Artifact '{artifact.id}' has invalid metrics_ref '{artifact.metrics_ref}'. "
-                f"Must be one of: {', '.join(sorted(valid_refs))}"
-            )
+    for group in groups:
+        artifacts = group.get("artifacts", []) if isinstance(group, dict) else group.artifacts
+        for artifact in artifacts:
+            artifact_dict = artifact if isinstance(artifact, dict) else artifact.model_dump()
+            if artifact_dict.get("metrics_ref") and artifact_dict["metrics_ref"] not in valid_refs:
+                errors.append(
+                    f"Artifact '{artifact_dict['id']}' has invalid metrics_ref '{artifact_dict['metrics_ref']}'. "
+                    f"Must be one of: {', '.join(sorted(valid_refs))}"
+                )
     
     return errors
 
@@ -155,7 +160,7 @@ def create_backend_todo_list(
         
         # Validate metrics_ref values against dashboard_concept
         valid_refs = _load_valid_metrics_refs(run_dir)
-        metrics_ref_errors = _validate_metrics_refs(todo_list.artifacts, valid_refs)
+        metrics_ref_errors = _validate_metrics_refs(todo_list.groups, valid_refs)
         if metrics_ref_errors:
             return {
                 "success": False,
@@ -166,76 +171,108 @@ def create_backend_todo_list(
         
         now = datetime.utcnow()
         
-        # Convert barebone artifacts to full PlannerArtifactTodo
-        validated_artifacts = []
-        for i, artifact_input in enumerate(todo_list.artifacts):
-            try:
-                # Convert QueryParamInput to QueryParamSpec if present
-                query_params = None
-                if artifact_input.query_params:
-                    query_params = [
-                        QueryParamSpec(
-                            name=qp.name,
-                            type=qp.type,
-                            required=qp.required,
-                            description=qp.description,
-                            enum_values=qp.enum_values,
-                            default=qp.default,
+        # Convert groups and artifacts to full models
+        validated_groups = []
+        total_artifact_count = 0
+        route_count = 0
+        helper_count = 0
+        
+        for group_input in todo_list.groups:
+            # Handle both dict and GroupInput object
+            group_dict = group_input if isinstance(group_input, dict) else group_input.model_dump()
+            
+            # Convert artifacts in this group
+            group_artifacts = []
+            for i, artifact_input in enumerate(group_dict.get("artifacts", [])):
+                try:
+                    # Handle both dict and ArtifactInput object
+                    artifact_dict = artifact_input if isinstance(artifact_input, dict) else artifact_input.model_dump()
+                    
+                    # Convert QueryParamInput to QueryParamSpec if present
+                    query_params = None
+                    if artifact_dict.get("query_params"):
+                        query_params = [
+                            QueryParamSpec(
+                                name=str(qp.get("name", "")) if isinstance(qp, dict) else qp.name,
+                                type=(qp.get("type", "string") if isinstance(qp, dict) else qp.type),  # type: ignore
+                                required=bool(qp.get("required", False)) if isinstance(qp, dict) else qp.required,
+                                description=qp.get("description") if isinstance(qp, dict) else qp.description,
+                                enum_values=qp.get("enum_values") if isinstance(qp, dict) else qp.enum_values,
+                                default=qp.get("default") if isinstance(qp, dict) else qp.default,
+                            )
+                            for qp in artifact_dict.get("query_params", [])
+                        ]
+                    
+                    # Convert ExpectedShapeInput to ExpectedShape if present
+                    expected_shape = None
+                    if artifact_dict.get("expected_shape"):
+                        es = artifact_dict["expected_shape"]
+                        es_dict = es if isinstance(es, dict) else es.model_dump()
+                        fields = [
+                            JsonFieldSpec(
+                                name=str(f.get("name", "")) if isinstance(f, dict) else f.name,
+                                type=(f.get("type", "string") if isinstance(f, dict) else f.type),  # type: ignore
+                                nullable=bool(f.get("nullable", False)) if isinstance(f, dict) else f.nullable,
+                                description=f.get("description") if isinstance(f, dict) else f.description,
+                            )
+                            for f in es_dict.get("fields", [])
+                        ]
+                        expected_shape = ExpectedShape(
+                            kind=(es_dict.get("kind", "array")),  # type: ignore
+                            fields=fields,
+                            notes=es_dict.get("notes"),
                         )
-                        for qp in artifact_input.query_params
-                    ]
-                
-                # Convert ExpectedShapeInput to ExpectedShape if present
-                expected_shape = None
-                if artifact_input.expected_shape:
-                    fields = [
-                        JsonFieldSpec(
-                            name=f.name,
-                            type=f.type,
-                            nullable=f.nullable,
-                            description=f.description,
-                        )
-                        for f in artifact_input.expected_shape.fields
-                    ]
-                    expected_shape = ExpectedShape(
-                        kind=artifact_input.expected_shape.kind,
-                        fields=fields,
-                        notes=artifact_input.expected_shape.notes,
+                    
+                    artifact = PlannerArtifactTodo(
+                        id=artifact_dict["id"],
+                        kind=BackendArtifactKind(artifact_dict["kind"]),
+                        title=artifact_dict["title"],
+                        description=artifact_dict.get("description"),
+                        http_path=artifact_dict.get("http_path"),
+                        http_method=artifact_dict.get("http_method"),
+                        query_params=query_params,
+                        metrics_ref=artifact_dict.get("metrics_ref"),
+                        expected_shape=expected_shape,
+                        canonical_query=artifact_dict.get("canonical_query"),
+                        depends_on=artifact_dict.get("depends_on", []),
+                        priority=artifact_dict.get("priority", 1),
+                        tags=artifact_dict.get("tags", []),
+                        # System fields
+                        status=ArtifactOverallStatus.pending,
+                        created_at=now,
+                        updated_at=now,
                     )
-                
-                artifact = PlannerArtifactTodo(
-                    id=artifact_input.id,
-                    kind=BackendArtifactKind(artifact_input.kind),
-                    title=artifact_input.title,
-                    description=artifact_input.description,
-                    http_path=artifact_input.http_path,
-                    http_method=artifact_input.http_method,
-                    query_params=query_params,
-                    metrics_ref=artifact_input.metrics_ref,
-                    expected_shape=expected_shape,
-                    canonical_query=artifact_input.canonical_query,
-                    depends_on=artifact_input.depends_on,
-                    priority=artifact_input.priority,
-                    tags=artifact_input.tags,
-                    # System fields
-                    status=ArtifactOverallStatus.pending,
-                    created_at=now,
-                    updated_at=now,
-                )
-                validated_artifacts.append(artifact)
-                
-            except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"Invalid artifact at index {i} (id={artifact_input.id}): {str(e)}",
-                }
+                    group_artifacts.append(artifact)
+                    
+                    # Count artifact types
+                    if artifact.kind == BackendArtifactKind.route:
+                        route_count += 1
+                    else:
+                        helper_count += 1
+                    total_artifact_count += 1
+                    
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"Invalid artifact in group '{group_dict['id']}' at index {i}: {str(e)}",
+                    }
+            
+            # Create the group
+            group = BackendTodoGroup(
+                id=group_dict["id"],
+                kind=BackendTodoGroupKind(group_dict["kind"]),
+                label=group_dict["label"],
+                description=group_dict.get("description"),
+                artifacts=group_artifacts,
+            )
+            validated_groups.append(group)
         
         # Create the full todo list
         full_todo_list = PlannerTodoList(
             run_id=run_id,
             dashboard_goal=todo_list.dashboard_goal,
             audience=todo_list.audience,
-            artifacts=validated_artifacts,
+            groups=validated_groups,
             created_at=now,
             updated_at=now,
         )
@@ -257,16 +294,14 @@ def create_backend_todo_list(
         state[STATE_KEY_BACKEND_TODO_LIST] = todo_dict
         state[STATE_KEY_BACKEND_TODOS_PATH] = str(output_path)
         
-        # Count artifact types
-        route_count = sum(1 for a in validated_artifacts if a.kind == BackendArtifactKind.route)
-        helper_count = sum(1 for a in validated_artifacts if a.kind == BackendArtifactKind.helper)
-        
+        # Count artifact types and log
         logger.info(
-            f"Backend todo list created with {len(validated_artifacts)} artifacts",
+            f"Backend todo list created with {total_artifact_count} artifacts in {len(validated_groups)} groups",
             extra={
                 "agent": "backend_planner",
                 "run_id": run_id,
-                "artifact_count": len(validated_artifacts),
+                "group_count": len(validated_groups),
+                "artifact_count": total_artifact_count,
                 "route_count": route_count,
                 "helper_count": helper_count,
                 "output_path": str(output_path),
@@ -275,9 +310,10 @@ def create_backend_todo_list(
         
         return {
             "success": True,
-            "message": f"Created backend todo list with {len(validated_artifacts)} artifacts",
+            "message": f"Created backend todo list with {total_artifact_count} artifacts in {len(validated_groups)} groups",
             "file_path": str(output_path),
-            "artifact_count": len(validated_artifacts),
+            "artifact_count": total_artifact_count,
+            "group_count": len(validated_groups),
             "route_count": route_count,
             "helper_count": helper_count,
             "run_id": run_id,

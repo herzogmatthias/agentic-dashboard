@@ -203,7 +203,44 @@ class PlannerArtifactTodo(BaseModel):
         description="Timestamp when this artifact entry was last updated. System-filled."
     )
 
+class BackendTodoGroupKind(str, Enum):
+    helpers = "helpers"
+    kpis = "kpis"
+    visuals = "visuals"
+    tables = "tables"
+    filters = "filters"
+    other = "other"
+    
 
+class BackendTodoGroup(BaseModel):
+    """
+    A higher-level chunk of work for the backend dev/agent.
+    The planner should think in these groups FIRST and then list
+    the concrete artifacts inside each group.
+    """
+
+    id: str = Field(
+        description="Stable identifier for the group, e.g. 'helpers_core' or 'visuals_attrition'."
+    )
+
+    kind: BackendTodoGroupKind = Field(
+        description="Logical type of this group (helpers, kpis, visuals, tables, filters, other)."
+    )
+
+    label: str = Field(
+        description="Human-readable label, e.g. 'Core Helpers & Infrastructure'."
+    )
+
+    description: Optional[str] = Field(
+        default=None,
+        description="Short explanation of what this group covers."
+    )
+
+    # The *actual* work items inside this group
+    artifacts: List[PlannerArtifactTodo] = Field(
+        default_factory=list,
+        description="Artifacts belonging logically to this group."
+    )
 # ============================================================
 # PlannerTodoList (LLM SHOULD fill conceptual fields only)
 # ============================================================
@@ -247,9 +284,13 @@ class PlannerTodoList(BaseModel):
     )
 
     # Artifacts to build (LLM MUST fill)
-    artifacts: List[PlannerArtifactTodo] = Field(
+    groups: List[BackendTodoGroup] = Field(
         default_factory=list,
-        description="List of conceptual backend artifacts required to implement the dashboard."
+        description=(
+            "High-level chunks of backend work, grouped logically into helpers, kpis, "
+            "visuals, tables, filters, etc. The planner SHOULD think in terms of a few "
+            "coarse groups instead of many tiny artifacts."
+        )
     )
 
     created_at: datetime = Field(

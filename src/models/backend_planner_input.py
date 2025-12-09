@@ -3,7 +3,7 @@ Barebone input models for Backend Planner Agent tool.
 
 These models exclude system fields (datetime, status) that ADK's automatic
 function calling cannot parse. They are converted to the full models
-(PlannerTodoList, PlannerArtifactTodo) in the tool function.
+(PlannerTodoList, BackendTodoGroup, PlannerArtifactTodo) in the tool function.
 """
 
 from typing import Any, Optional, Literal
@@ -71,12 +71,28 @@ class ArtifactInput(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Domain keywords")
 
 
+class GroupInput(BaseModel):
+    """
+    Barebone group input - represents a logical chunk of backend work.
+    
+    Mirrors BackendTodoGroup but excludes system fields.
+    """
+    id: str = Field(description="Stable identifier for the group, e.g. 'helpers_core' or 'visuals_attrition'")
+    kind: Literal["helpers", "kpis", "visuals", "tables", "filters", "other"] = Field(
+        description="Logical type of this group"
+    )
+    label: str = Field(description="Human-readable label, e.g. 'Core Helpers & Infrastructure'")
+    description: Optional[str] = Field(default=None, description="Short explanation of what this group covers")
+    artifacts: list[ArtifactInput] = Field(description="Artifacts belonging logically to this group")
+
+
 class TodoListInput(BaseModel):
     """
     Barebone todo list input - no system fields (run_id, created_at, updated_at).
     
     Mirrors PlannerTodoList but excludes fields that ADK cannot parse.
+    Now structured with groups instead of a flat artifacts list.
     """
     dashboard_goal: str = Field(description="High-level purpose of the dashboard")
     audience: str = Field(description="Who the dashboard is designed for")
-    artifacts: list[ArtifactInput] = Field(description="List of artifacts to build")
+    groups: list[GroupInput] = Field(description="Logical groups of artifacts to build")
