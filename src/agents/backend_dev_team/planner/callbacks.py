@@ -25,7 +25,7 @@ STATE_KEY_BACKEND_TODO_LIST = "backend_todo_list"
 STATE_KEY_BACKEND_TODOS_PATH = "backend_todos_path"
 
 # Default run directory for standalone testing
-DEFAULT_TEST_RUN_DIR = Path("runs/run_20251204_142914")
+DEFAULT_TEST_RUN_DIR = Path("runs/run_20251210_162522")
 
 
 def inject_planner_context_callback(
@@ -85,6 +85,17 @@ def inject_planner_context_callback(
         elif "metrics_summary_error" in context:
             parts.append(f"=== METRICS SUMMARY ERROR ===\n{context['metrics_summary_error']}")
         
+        # Add cleaned data files list
+        if "cleaned_data_files" in context:
+            files = context["cleaned_data_files"]
+            if files:
+                files_list = "\n".join(f"  - {f}" for f in files)
+                parts.append(f"=== CLEANED DATA FILES ===\n{files_list}")
+            else:
+                parts.append("=== CLEANED DATA FILES ===\n(none found)")
+        elif "cleaned_data_files_error" in context:
+            parts.append(f"=== CLEANED DATA FILES ERROR ===\n{context['cleaned_data_files_error']}")
+        
         if not parts:
             return None
         
@@ -116,6 +127,8 @@ def inject_planner_context_callback(
                 "has_dashboard": "dashboard_concept" in context,
                 "has_profile": "data_profile" in context,
                 "has_metrics": "metrics_summary" in context,
+                "has_cleaned_files": "cleaned_data_files" in context,
+                "cleaned_files_count": len(context.get("cleaned_data_files", [])),
                 "insert_position": insert_pos,
             }
         )

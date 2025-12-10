@@ -50,7 +50,7 @@ STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
 SAMPLE_DASHBOARD_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent / "sample-dashboard"
 
 # Default run directory for standalone testing (same pattern as planner)
-DEFAULT_TEST_RUN_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "agentic-dashboard" / "runs" / "run_20251204_142914"
+DEFAULT_TEST_RUN_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "agentic-dashboard" / "runs" / "run_20251210_162522"
 
 
 # =============================================================================

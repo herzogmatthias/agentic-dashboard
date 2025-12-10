@@ -6,6 +6,7 @@ from phoenix.otel import register as register_phoenix
 from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 import json
+from src.agents.manager.state import STATE_KEY_DATA_ANALYSIS_OUTPUT
 from src.core.daytona_client import DaytonaSandboxSingleton
 from src.core.logging import get_logger
 from src.models.data_analysis_agent_output import DataAnalysisOutput
@@ -19,9 +20,11 @@ from src.tools.data_analyst.artifacts import (
     write_data_profile_tool,
     write_metrics_summary_tool,
 )
+from src.tools.data_analyst.additional_info import (
+    check_for_additional_info_tool,
+    read_additional_information_tool,
+)
 from src.tools.delegation import summarize_actions_tool
-
-OUTPUT_KEY = "data_analysis_output"
 
 tracer_provider = register_phoenix(
     project_name="default",
@@ -44,11 +47,13 @@ def create_data_analysis_agent() -> LlmAgent:
             write_data_profile_tool,
             write_cleaning_summary_tool,
             write_metrics_summary_tool,
+            check_for_additional_info_tool,
+            read_additional_information_tool,
             summarize_actions_tool,
         ],
         include_contents='none',
         after_agent_callback=copy_data_analysis_artifacts_after_agent,
-        output_key=OUTPUT_KEY,
+        output_key=STATE_KEY_DATA_ANALYSIS_OUTPUT,
         output_schema=DataAnalysisOutput,
         description="Profiles, cleans, and exports dataset artifacts using a Daytona sandbox.",
     )

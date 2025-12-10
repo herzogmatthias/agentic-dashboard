@@ -6,6 +6,7 @@ from google.genai import types
 from phoenix.otel import register as register_phoenix
 from pydantic import ValidationError
 
+from src.agents.manager.state import STATE_KEY_PLANNER_OUTPUT
 from src.core.logging import get_logger
 from src.models.planner_output import PlannerOutput
 from .prompts import build_planner_agent_prompt
@@ -18,8 +19,6 @@ from src.tools.planner_tools import (
     inspect_json_preview_tool,
 )
 from src.tools.delegation import summarize_actions_tool
-
-OUTPUT_KEY = "planner_output"
 
 
 tracer_provider = register_phoenix(
@@ -74,8 +73,8 @@ def handle_planner_output_validation(
             )
         
         # Check if planner_output exists and validate it
-        if OUTPUT_KEY in state:
-            output = state[OUTPUT_KEY]
+        if STATE_KEY_PLANNER_OUTPUT in state:
+            output = state[STATE_KEY_PLANNER_OUTPUT]
             
             # If it's a dict, validate against schema
             if isinstance(output, dict):
@@ -155,7 +154,7 @@ def create_planner_agent() -> LlmAgent:
             summarize_actions_tool,
         ],
         include_contents='none',
-        output_key=OUTPUT_KEY,
+        output_key=STATE_KEY_PLANNER_OUTPUT,
         output_schema=PlannerOutput,
         after_agent_callback=handle_planner_output_validation,
         description="Designs dashboard concepts based on data analysis artifacts.",

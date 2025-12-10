@@ -12,6 +12,7 @@ from typing import Any
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
+from src.agents.manager.state import STATE_KEY_RUN_DIR
 from src.core.logging import get_logger
 from src.tools.shared import inspect_json_preview_tool  # Re-export from shared
 
@@ -30,7 +31,7 @@ def read_data_profile(
         return {"error": "Tool context not provided"}
     
     data_profile_path = tool_context.state.get("data_profile_path")
-    run_dir = tool_context.state.get("run_dir")
+    run_dir = tool_context.state.get(STATE_KEY_RUN_DIR)
     
     if data_profile_path:
         profile_path = Path(data_profile_path)
@@ -76,7 +77,7 @@ def read_cleaning_summary(
         return {"error": "Tool context not provided"}
     
     cleaning_summary_path = tool_context.state.get("cleaning_summary_path")
-    run_dir = tool_context.state.get("run_dir")
+    run_dir = tool_context.state.get(STATE_KEY_RUN_DIR)
     
     if cleaning_summary_path:
         summary_path = Path(cleaning_summary_path)
@@ -123,7 +124,7 @@ def read_metrics_summary(
         return {"error": "Tool context not provided"}
     
     metrics_summary_path = tool_context.state.get("metrics_summary_path")
-    run_dir = tool_context.state.get("run_dir")
+    run_dir = tool_context.state.get(STATE_KEY_RUN_DIR)
     
     if metrics_summary_path:
         summary_path = Path(metrics_summary_path)
@@ -173,7 +174,7 @@ def get_sample_rows(
     if tool_context is None:
         return {"error": "Tool context not provided"}
     
-    run_dir = tool_context.state.get("run_dir")
+    run_dir = tool_context.state.get(STATE_KEY_RUN_DIR)
     if not run_dir:
         return {"error": "'run_dir' not found in session state"}
     

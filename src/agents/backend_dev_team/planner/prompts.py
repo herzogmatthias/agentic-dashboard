@@ -45,6 +45,10 @@ The following context is automatically provided in your conversation:
 - **Dashboard Concept**: JSON with KPIs, charts, filters, and data requirements
 - **Data Profile**: Dataset structure, columns, types, cardinality
 - **Metrics Summary**: Key figures and computed statistics (if available)
+- **Cleaned Data Files**: List of available CSV/Parquet/JSON files that your backend can consume
+  - These are the cleaned datasets produced by the Data Analysis Agent
+  - Typically includes `cleaned.csv` plus any derived features or aggregations
+  - Your API routes should load and process these files
 
 Review this context carefully before creating the artifact list.
 

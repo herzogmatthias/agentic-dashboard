@@ -19,6 +19,7 @@ Callbacks (uses ADK built-in before_agent_callback / after_agent_callback):
 """
 
 import json
+import subprocess
 from pathlib import Path
 from typing import AsyncGenerator, Optional, Any
 from datetime import datetime
@@ -56,13 +57,69 @@ from src.agents.backend_dev_team.loop.callbacks import (
 )
 from src.agents.backend_dev_team.dev import create_backend_dev_agent
 from src.agents.backend_dev_team.dev.state import STATE_KEY_DEV_RESULT
+from src.agents.backend_dev_team.dev.agent import STATE_KEY_ERROR_RUN, STATE_KEY_VALIDATION_ERRORS
 from src.models.backend_dev import BackendDevResult
 
 logger = get_logger(__name__)
 
 # =============================================================================
-# Report Persistence Helpers
+# Validation Helpers
 # =============================================================================
+
+def _run_validation(workspace_root: str) -> tuple[bool, str]:
+    """
+    Run npm run lint and npm run type-check in the sample-dashboard workspace.
+    
+    Returns:
+        (success: bool, error_message: str)
+        - success=True if both pass
+        - success=False and error_message contains lint/type-check output if either fails
+    """
+    if not workspace_root or not Path(workspace_root).exists():
+        return False, f"Invalid workspace root: {workspace_root}"
+    
+    errors = []
+    
+    # Run lint (shell=True required on Windows for npm to be found)
+    try:
+        result = subprocess.run(
+            "npm run lint",
+            cwd=workspace_root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            shell=True,
+        )
+        if result.returncode != 0:
+            errors.append(f"LINT ERRORS:\n{result.stdout}\n{result.stderr}")
+    except subprocess.TimeoutExpired:
+        errors.append("LINT TIMEOUT (120s)")
+    except Exception as e:
+        errors.append(f"LINT ERROR: {e}")
+    
+    # Run type-check (shell=True required on Windows for npm to be found)
+    try:
+        result = subprocess.run(
+            "npm run type-check",
+            cwd=workspace_root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            shell=True,
+        )
+        if result.returncode != 0:
+            errors.append(f"TYPE-CHECK ERRORS:\n{result.stdout}\n{result.stderr}")
+    except subprocess.TimeoutExpired:
+        errors.append("TYPE-CHECK TIMEOUT (120s)")
+    except Exception as e:
+        errors.append(f"TYPE-CHECK ERROR: {e}")
+    
+    if errors:
+        return False, "\n---\n".join(errors)
+    return True, ""
+
+
+
 
 def _persist_dev_report(
     state: dict,
@@ -154,7 +211,7 @@ class BackendDevLoopAgent(BaseAgent):
         """Initialize the Backend Dev Loop Agent."""
         super().__init__(
             name=name,
-            dev_agent=dev_agent, #ignore lint error
+            dev_agent=dev_agent, #Ignore Lint Error - false positive
             sub_agents=[dev_agent],
             before_agent_callback=before_agent_callback,
             after_agent_callback=after_agent_callback,
@@ -258,46 +315,111 @@ class BackendDevLoopAgent(BaseAgent):
                 }
             )
             
-            # Run Dev Agent for the entire group
-            logger.info(f"[{group_label}] Running Dev Agent for group...")
-            try:
-                async for event in self.dev_agent.run_async(ctx):
-                    yield event
-            except Exception as e:
-                logger.exception(f"[{group_label}] Dev Agent raised exception: {e}")
-                # Mark all pending artifacts as failed
+            # Run Dev Agent for the entire group (with retry on validation failure)
+            dev_attempt = 1
+            dev_success = False
+            dev_result = None
+            max_dev_attempts = 3
+            
+            while dev_attempt <= max_dev_attempts and not dev_success:
+                logger.info(f"[{group_label}] Dev Agent attempt {dev_attempt}/{max_dev_attempts}...")
+                try:
+                    async for event in self.dev_agent.run_async(ctx):
+                        yield event
+                except Exception as e:
+                    logger.exception(f"[{group_label}] Dev Agent raised exception on attempt {dev_attempt}: {e}")
+                    # Mark all pending artifacts as failed
+                    for artifact in pending_artifacts:
+                        artifact["status"] = "failed"
+                    state[STATE_KEY_LOOP_RESULT] = "fail"
+                    state[STATE_KEY_LOOP_ERROR] = f"Dev Agent failed for group {group_label} (attempt {dev_attempt}/{max_dev_attempts}): {e}"
+                    yield self._create_status_event(f"ERROR: Dev Agent exception for group {group_label}")
+                    return
+                
+                # Get Dev Result
+                dev_result = state.get(STATE_KEY_DEV_RESULT)
+                dev_report_path = _persist_dev_report(state, dev_result, group_id)
+                if dev_report_path:
+                    state[STATE_KEY_DEV_REPORT_PATH] = dev_report_path
+                
+                # Check if Dev succeeded (status='success')
+                if not self._check_dev_success(dev_result):
+                    logger.warning(f"[{group_label}] Dev Agent failed on attempt {dev_attempt} - escalating")
+                    # Mark all pending artifacts as failed
+                    for artifact in pending_artifacts:
+                        artifact["status"] = "failed"
+                    state[STATE_KEY_LOOP_RESULT] = "fail"
+                    
+                    # Extract error from dev_result
+                    error_msg = "Dev Agent failed to implement group"
+                    if dev_result:
+                        if isinstance(dev_result, dict):
+                            error_msg = dev_result.get("summary", error_msg)
+                        elif hasattr(dev_result, "summary"):
+                            error_msg = dev_result.summary
+                    
+                    state[STATE_KEY_LOOP_ERROR] = f"Group {group_label} failed (attempt {dev_attempt}): {error_msg}"
+                    yield self._create_status_event(f"ESCALATION: Group {group_label} failed - {error_msg}")
+                    return
+                
+                # Dev Agent succeeded - now validate with lint/type-check
+                workspace_root = state.get(STATE_KEY_WORKSPACE_ROOT)
+                if not workspace_root:
+                    workspace_root = str(Path(__file__).parents[4] / "sample-dashboard")
+                
+                logger.info(f"[{group_label}] Running validation (lint + type-check) on attempt {dev_attempt}...")
+                validation_passed, validation_errors = _run_validation(workspace_root)
+                
+                if validation_passed:
+                    logger.info(f"[{group_label}] Validation PASSED ✓")
+                    dev_success = True
+                else:
+                    logger.warning(f"[{group_label}] Validation FAILED on attempt {dev_attempt}/{max_dev_attempts}")
+                    
+                    if dev_attempt >= max_dev_attempts:
+                        # Max retries exhausted
+                        logger.error(f"[{group_label}] Max validation attempts ({max_dev_attempts}) exhausted - escalating")
+                        for artifact in pending_artifacts:
+                            artifact["status"] = "failed"
+                        state[STATE_KEY_LOOP_RESULT] = "fail"
+                        state[STATE_KEY_LOOP_ERROR] = f"Group {group_label} validation failed after {max_dev_attempts} attempts:\n{validation_errors}"
+                        yield self._create_status_event(
+                            f"ESCALATION: Group {group_label} failed validation {max_dev_attempts} times\n\n{validation_errors}"
+                        )
+                        return
+                    else:
+                        # Retry: Set error flags and inject validation errors for next dev attempt
+                        logger.info(f"[{group_label}] Retrying dev agent with error recovery mode (attempt {dev_attempt + 1}/{max_dev_attempts})")
+                        
+                        # Set error recovery flags (triggers repair prompt in dev agent)
+                        state[STATE_KEY_ERROR_RUN] = True
+                        state[STATE_KEY_VALIDATION_ERRORS] = validation_errors
+                        
+                        # Also append to previous summaries for context
+                        if STATE_KEY_PREVIOUS_SUMMARIES not in state:
+                            state[STATE_KEY_PREVIOUS_SUMMARIES] = []
+                        
+                        state[STATE_KEY_PREVIOUS_SUMMARIES].append(
+                            f"[REPAIR ATTEMPT {dev_attempt}] Previous attempt failed validation. Files created but need fixes."
+                        )
+                        yield self._create_status_event(
+                            f"Validation failed on attempt {dev_attempt} - switching to REPAIR MODE (attempt {dev_attempt + 1}/{max_dev_attempts})"
+                        )
+                        dev_attempt += 1
+            
+            if not dev_success:
+                # Should not reach here, but safety check
+                logger.error(f"[{group_label}] Dev Agent did not succeed after all attempts")
                 for artifact in pending_artifacts:
                     artifact["status"] = "failed"
                 state[STATE_KEY_LOOP_RESULT] = "fail"
-                state[STATE_KEY_LOOP_ERROR] = f"Dev Agent failed for group {group_label}: {e}"
-                yield self._create_status_event(f"ERROR: Dev Agent exception for group {group_label}")
+                state[STATE_KEY_LOOP_ERROR] = f"Group {group_label} failed - dev agent did not complete successfully"
+                yield self._create_status_event(f"ERROR: Group {group_label} failed after all attempts")
                 return
             
-            # Get Dev Result
-            dev_result = state.get(STATE_KEY_DEV_RESULT)
-            dev_report_path = _persist_dev_report(state, dev_result, group_id)
-            if dev_report_path:
-                state[STATE_KEY_DEV_REPORT_PATH] = dev_report_path
-            
-            # Check if Dev succeeded
-            if not self._check_dev_success(dev_result):
-                logger.warning(f"[{group_label}] Dev Agent failed - escalating")
-                # Mark all pending artifacts as failed
-                for artifact in pending_artifacts:
-                    artifact["status"] = "failed"
-                state[STATE_KEY_LOOP_RESULT] = "fail"
-                
-                # Extract error from dev_result
-                error_msg = "Dev Agent failed to implement group"
-                if dev_result:
-                    if isinstance(dev_result, dict):
-                        error_msg = dev_result.get("summary", error_msg)
-                    elif hasattr(dev_result, "summary"):
-                        error_msg = dev_result.summary
-                
-                state[STATE_KEY_LOOP_ERROR] = f"Group {group_label} failed: {error_msg}"
-                yield self._create_status_event(f"ESCALATION: Group {group_label} failed - {error_msg}")
-                return
+            # Clear error recovery flags after successful validation
+            state[STATE_KEY_ERROR_RUN] = False
+            state[STATE_KEY_VALIDATION_ERRORS] = None
             
             # Update all artifacts in group to success
             for artifact in pending_artifacts:

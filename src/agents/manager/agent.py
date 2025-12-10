@@ -11,6 +11,7 @@ This agent implements the streaming sub-agent pattern where:
 
 import logging
 from pathlib import Path
+import shutil
 from typing import AsyncGenerator, Optional, Any, List
 
 from google.adk.agents import BaseAgent, LlmAgent
@@ -20,6 +21,7 @@ from google.adk.events import Event, EventActions
 from google.genai import types as gt
 
 from src.agents.data_analysis.agent import create_data_analysis_agent
+from src.agents.manager.state import STATE_KEY_CLEANED_DATASET_PATH, STATE_KEY_DATASET_PATH, STATE_KEY_ORIGINAL_DATASET_PATH, STATE_KEY_RUN_DIR, STATE_KEY_RUN_ID, STATE_KEY_USER_GOALS
 from src.agents.orchestrator.agent import create_orchestrator_agent
 from src.agents.planner.agent import create_planner_agent
 from src.core.config import SANDBOX_CLEANED_CSV_PATH, SANDBOX_CSV_PATH
@@ -28,19 +30,7 @@ from src.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# State keys
-STATE_KEY_RUN_ID = "run_id"
-STATE_KEY_RUN_DIR = "run_dir"
-STATE_KEY_USER_GOALS = "user_goals"
-STATE_KEY_DATASET_PATH = "dataset_path"
-STATE_KEY_CLEANED_DATASET_PATH = "cleaned_dataset_path"
-STATE_KEY_ORIGINAL_DATASET_PATH = "original_dataset_path"
-STATE_KEY_DATA_ANALYSIS_OUTPUT = "data_analysis_output"
-STATE_KEY_PLANNER_OUTPUT = "planner_output"
 
-# Summary state keys for tracking agent actions across turns
-STATE_KEY_DATA_ANALYSIS_SUMMARIES = "data_analysis_summaries"
-STATE_KEY_PLANNER_SUMMARIES = "planner_summaries"
 
 
 def initialize_state_callback(callback_context: CallbackContext) -> Optional[gt.Content]:
@@ -79,6 +69,11 @@ def initialize_state_callback(callback_context: CallbackContext) -> Optional[gt.
                 "constraints": []
             }
         
+        shutil.copytree("C:\\Users\\darks\\Documents\\agentic-dashboard\\agentic-dashboard\\data\\additional_info", state[STATE_KEY_RUN_DIR] + "\\additional_info", dirs_exist_ok=True) 
+        logger.info(
+            "Copied additional_info to run directory",
+            extra={"agent": "manager", "phase": "init"}
+        )
         # Initialize dataset paths
         if STATE_KEY_DATASET_PATH not in state:
             state[STATE_KEY_DATASET_PATH] = None

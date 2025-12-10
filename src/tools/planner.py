@@ -4,6 +4,7 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 from pydantic import ValidationError
 
+from src.agents.manager.state import STATE_KEY_RUN_DIR
 from src.models.dashboard_concept_lite import DashboardConceptLite
 from src.core.logging import get_logger
 
@@ -45,7 +46,7 @@ def create_dashboard(
                 f"Details: {exc}"
             )
 
-    run_dir_str = tool_context.state.get("run_dir")
+    run_dir_str = tool_context.state.get(STATE_KEY_RUN_DIR)
     if not run_dir_str:
         # This is a real infrastructural error; better to raise
         raise RuntimeError("Session state missing 'run_dir'; cannot write dashboard concept.")

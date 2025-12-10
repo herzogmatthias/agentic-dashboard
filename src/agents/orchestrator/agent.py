@@ -32,6 +32,8 @@ from google.adk.models.llm_response import LlmResponse
 from google.genai import types
 from phoenix.otel import register as register_phoenix
 
+from src.agents.manager.state import STATE_KEY_DATA_ANALYSIS_OUTPUT, STATE_KEY_PLANNER_OUTPUT, STATE_KEY_RUN_ID
+
 from .prompts import build_orchestrator_agent_prompt
 from src.core.logging import get_logger
 from src.tools.orchestrator import (
@@ -122,11 +124,6 @@ def create_orchestrator_agent() -> LlmAgent:
 
     return agent
 
-
-# State keys used for logging and validation
-STATE_KEY_RUN_ID = "run_id"
-STATE_KEY_DATA_ANALYSIS_OUTPUT = "data_analysis_output"
-STATE_KEY_PLANNER_OUTPUT = "planner_output"
 
 
 def finalize_orchestrator_response(

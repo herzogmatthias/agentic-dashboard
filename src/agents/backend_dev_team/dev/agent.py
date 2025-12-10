@@ -29,7 +29,10 @@ from src.tools.backend_dev import (
     get_backend_dev_mcp_toolset,
     SAMPLE_DASHBOARD_ROOT,
 )
-from src.agents.backend_dev_team.dev.prompts import build_backend_dev_prompt
+from src.agents.backend_dev_team.dev.prompts import (
+    build_backend_dev_prompt,
+    build_backend_dev_repair_prompt,
+)
 
 from src.agents.backend_dev_team.dev.state import (STATE_KEY_DEV_RESULT)
 
@@ -57,6 +60,8 @@ STATE_KEY_CURRENT_GROUP = "current_group"
 STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
 STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
+STATE_KEY_VALIDATION_ERRORS = "validation_errors"
+STATE_KEY_ERROR_RUN = "error_run"
 
 
 
@@ -142,17 +147,34 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     else:
         metrics_ref_context = str(metrics_ref_context_raw)
     
-    return build_backend_dev_prompt(
-        workspace_root=workspace_root,
-        group_id=group_id,
-        group_kind=group_kind,
-        group_label=group_label,
-        group_description=group_description,
-        artifacts_json=artifacts_json,
-        previous_summaries=summaries_text,
-        cleaned_data_files=cleaned_data_files,
-        metrics_ref_context=metrics_ref_context,
-    )
+    # Check if this is an error recovery run (validation failed, retrying)
+    error_run = state.get(STATE_KEY_ERROR_RUN, False)
+    
+    if error_run:
+        # REPAIR MODE: Use repair prompt instead of normal prompt
+        validation_errors = state.get(STATE_KEY_VALIDATION_ERRORS, "(no errors provided)")
+        return build_backend_dev_repair_prompt(
+            workspace_root=workspace_root,
+            group_id=group_id,
+            group_kind=group_kind,
+            group_label=group_label,
+            validation_errors=validation_errors,
+            previous_summaries=summaries_text,
+            cleaned_data_files=cleaned_data_files,
+        )
+    else:
+        # NORMAL MODE: Use standard implementation prompt
+        return build_backend_dev_prompt(
+            workspace_root=workspace_root,
+            group_id=group_id,
+            group_kind=group_kind,
+            group_label=group_label,
+            group_description=group_description,
+            artifacts_json=artifacts_json,
+            previous_summaries=summaries_text,
+            cleaned_data_files=cleaned_data_files,
+            metrics_ref_context=metrics_ref_context,
+        )
 
 
 # =============================================================================
@@ -243,6 +265,8 @@ __all__ = [
     "STATE_KEY_PREVIOUS_SUMMARIES",
     "STATE_KEY_CLEANED_DATA_FILES",
     "STATE_KEY_METRICS_REF_CONTEXT",
+    "STATE_KEY_ERROR_RUN",
+    "STATE_KEY_VALIDATION_ERRORS",
     # Constants
     "BACKEND_DEV_MODEL",
 ]

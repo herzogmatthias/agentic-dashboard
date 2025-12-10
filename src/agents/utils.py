@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 
 def load_context_for_backend(run_dir: str | Path) -> dict[str, Any]:
     """
-    Load dashboard_concept, data_profile, and optionally metrics_summary for context injection.
+    Load dashboard_concept, data_profile, optionally metrics_summary, and cleaned_data_files for context injection.
     
     Returns minified JSON strings (no truncation - full content preserved).
     This is used by the before_model_callback to inject context into the prompt.
@@ -25,7 +25,7 @@ def load_context_for_backend(run_dir: str | Path) -> dict[str, Any]:
         run_dir: Path to the run directory
         
     Returns:
-        Dictionary with dashboard_concept, data_profile, and optionally metrics_summary
+        Dictionary with dashboard_concept, data_profile, optionally metrics_summary, and cleaned_data_files list
     """
     run_dir = Path(run_dir)
     context: dict[str, Any] = {}
@@ -59,5 +59,18 @@ def load_context_for_backend(run_dir: str | Path) -> dict[str, Any]:
             context["metrics_summary"] = minified
         except Exception as e:
             context["metrics_summary_error"] = str(e)
+    
+    # Load cleaned data files list
+    cleaned_dir = run_dir / "cleaned"
+    if cleaned_dir.exists():
+        try:
+            files = []
+            for ext in ["*.csv", "*.parquet", "*.json", "*.xlsx"]:
+                files.extend([f.name for f in cleaned_dir.glob(ext)])
+            context["cleaned_data_files"] = sorted(files)
+        except Exception as e:
+            context["cleaned_data_files_error"] = str(e)
+    else:
+        context["cleaned_data_files"] = []
     
     return context

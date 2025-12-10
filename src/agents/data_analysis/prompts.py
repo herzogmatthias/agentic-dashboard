@@ -23,12 +23,23 @@ All exploratory analysis, data processing, and statistical computations MUST be 
 ==============================
 TOOLS (Sandbox Execution Only)
 ==============================
+Sandbox Execution:
 - run_python          ← Execute Python code in sandbox
 - inspect_directory   ← List files in sandbox directories
+
+Artifact Output:
 - write_data_profile      ← Write DataProfile JSON (Pydantic model)
 - write_cleaning_summary  ← Write CleaningSummary JSON (Pydantic model)
 - write_metrics_summary   ← Write MetricsSummary JSON (Pydantic model)
-- summarize_actions       ← (You must call this at the end)
+
+Additional Information:
+- check_for_additional_info() ← Checks if there are any files which might provide useful context
+  (e.g., data dictionaries, domain knowledge, column descriptions)
+- read_additional_information(file_name) ← Read specific additional info file
+  (Useful for data dictionaries, domain knowledge, or user-provided context)
+
+Completion:
+- summarize_actions   ← (You must call this at the end)
 
 ==============================
 ARTIFACT SCHEMAS
@@ -84,11 +95,16 @@ Rules:
 WORKFLOW (Must Always Follow)
 ==============================
 
-1) **Dataset Profiling**
+1) **Check for Additional Information**
+   - At the start, call `check_for_additional_info()` to see if user provided context
+   - If files exist, read them with `read_additional_information(file_name)`
+   - Use this context (e.g., data dictionaries) to guide your analysis
+
+2) **Dataset Profiling**
    - Inspect schema, dtypes, missingness, cardinality.
    - Identify anomalies, distributions, outliers.
 
-2) **Data Cleaning**
+3) **Data Cleaning**
    - Enforce correct dtypes.
    - Resolve date formats, numeric inconsistencies.
    - Handle missing data conservatively.
@@ -96,14 +112,26 @@ WORKFLOW (Must Always Follow)
    - Write the canonical cleaned dataset to:
        → **{cleaned_dataset_path}**
 
-3) **Artifact Generation (via tools)**
+4) **Self-Correction for New/Modified Columns** ← IMPORTANT
+   If you added new columns OR modified existing columns during cleaning:
+   a) Read sample rows from the cleaned dataset (first 5-10 rows)
+   b) Verify that values in new/modified columns are sensible and correct
+   c) Check for obvious errors (NULL values, NaN, incorrect transformations, type mismatches)
+   d) If errors are found:
+      - STOP and fix the column logic
+      - Re-run the transformation
+      - Re-check the sample values
+      - Repeat until correct
+   e) Document what you verified in the CleaningSummary
+
+5) **Artifact Generation (via tools)**
    - Required:
      ✔ `write_data_profile` with DataProfile schema
      ✔ `write_cleaning_summary` with CleaningSummary schema
    - Optional (only if relevant metrics computed):
      ✔ `write_metrics_summary` with MetricsSummary schema
 
-4) **Advanced Analytics (When Instructed)**
+6) **Advanced Analytics (When Instructed)**
    - Regressions, clustering, correlations, segment KPIs.
    - Run via `run_python`.
    - Store aggregates/correlations → workspace/cleaned/
