@@ -68,55 +68,56 @@ def _minify_json(obj: Any, max_depth: int = 3, current_depth: int = 0) -> Any:
 
 
 def inspect_json_preview(
-    file_path: str,
+    filename: str,
     max_depth: int = 3,
     tool_context: ToolContext | None = None,
 ) -> dict[str, Any]:
     """
-    Preview a JSON file, returning full minified content if under 1000 tokens,
-    otherwise a truncated structure preview.
+    Preview a JSON file in the cleaned/ folder.
     
-    - If total tokens <= 1000: returns full minified JSON
-    - If total tokens > 1000: returns truncated preview (arrays limited to first element, depth limited)
+    Always resolves to: {run_dir}/cleaned/{filename}
+    Returns full minified content if under 1000 tokens,
+    otherwise returns truncated structure preview.
     
     Args:
-        file_path: Path to the JSON file (can be relative to run_dir or absolute)
+        filename: Simple filename (e.g., "metrics.json", "aggregates.json")
+                  Will be resolved to {run_dir}/cleaned/{filename}
         max_depth: Maximum nesting depth for truncated preview (default 3)
-        tool_context: Optional tool context with state access
+        tool_context: Tool context with state access (required for run_dir)
+    
+    Returns:
+        Dictionary with:
+        - content: Full or truncated JSON string
+        - path: Full resolved path that was read
+        - tokens: Number of tokens (if truncated, original full count)
+        - truncated: Boolean indicating if content was truncated
+        - max_depth: Depth limit applied (if truncated)
+        - error: Error message if reading failed
     """
-    run_dir = tool_context.state.get("run_dir") if tool_context else None
-
-    # Build allowed locations: current run_dir (if provided) + sample dashboard data folder
-    allowed_paths = [SAMPLE_DASHBOARD_ROOT / "data"]
-    if run_dir:
-        allowed_paths.append(Path(run_dir))
-
-    # Resolve and validate the requested path against allowed locations
-    target_path = (
-        Path(run_dir) / file_path
-        if run_dir and not Path(file_path).is_absolute()
-        else Path(file_path)
-    )
-    is_valid, path, error_msg = validate_path(
-        requested_path=str(target_path),
-        allowed_paths=allowed_paths,
-        run_dir=run_dir,
-        allow_new=False,
-    )
-
-    if not is_valid:
-        if "does not exist" in error_msg.lower():
-            return {"error": f"File not found: {file_path}", "path": str(path)}
-        return {"error": f"Path not in allowed locations: {file_path}. {error_msg}"}
-
-    if not path.exists():
-        return {"error": f"File not found: {file_path}", "path": str(path)}
-
-    if path.suffix.lower() != ".json":
-        return {"error": f"Not a JSON file: {path}", "path": str(path)}
+    if not tool_context:
+        return {"error": "Tool context required for run_dir resolution"}
+    
+    run_dir = tool_context.state.get("run_dir")
+    if not run_dir:
+        return {"error": "run_dir not found in session state"}
+    
+    # Resolve to cleaned/ folder
+    target_path = Path(run_dir) / "cleaned" / filename
+    
+    if not target_path.exists():
+        return {
+            "error": f"File not found: {filename}",
+            "expected_location": str(target_path),
+        }
+    
+    if target_path.suffix.lower() != ".json":
+        return {
+            "error": f"Not a JSON file: {filename} (expected .json extension)",
+            "path": str(target_path),
+        }
     
     try:
-        content = json.loads(path.read_text(encoding="utf-8"))
+        content = json.loads(target_path.read_text(encoding="utf-8"))
         
         # First, try full minified version
         full_minified = json.dumps(content, separators=(",", ":"))
@@ -126,11 +127,11 @@ def inspect_json_preview(
             # Under threshold - return full content
             logger.info(
                 "inspect_json_preview success (full)",
-                extra={"path": str(path), "tokens": token_count},
+                extra={"data_filename": filename, "tokens": token_count},
             )
             return {
                 "content": full_minified,
-                "path": str(path),
+                "path": str(target_path),
                 "tokens": token_count,
                 "truncated": False,
             }
@@ -142,23 +143,29 @@ def inspect_json_preview(
             
             logger.info(
                 "inspect_json_preview success (truncated)",
-                extra={"path": str(path), "tokens": token_count, "depth": max_depth},
+                extra={"data_filename": filename, "tokens": token_count, "max_depth": max_depth},
             )
             
             return {
                 "content": preview_str,
-                "path": str(path),
+                "path": str(target_path),
                 "tokens": token_count,
                 "truncated": True,
                 "max_depth": max_depth,
             }
         
     except json.JSONDecodeError as exc:
-        logger.error("inspect_json_preview JSON error", extra={"path": str(path), "error": str(exc)})
-        return {"error": f"Invalid JSON: {exc}", "path": str(path)}
+        logger.error("inspect_json_preview JSON error", extra={"filename": filename, "error": str(exc)})
+        return {
+            "error": f"Invalid JSON: {exc}",
+            "path": str(target_path),
+        }
     except Exception as exc:
-        logger.error("inspect_json_preview failed", extra={"path": str(path), "error": str(exc)})
-        return {"error": f"Failed to read JSON: {exc}", "path": str(path)}
+        logger.error("inspect_json_preview failed", extra={"data_filename": filename, "error": str(exc)})
+        return {
+            "error": f"Failed to read JSON: {exc}",
+            "path": str(target_path),
+        }
 
 
 # Tool export

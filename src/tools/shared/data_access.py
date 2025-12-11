@@ -54,42 +54,60 @@ def _validate_path(
 
 
 def get_sample_rows(
-    csv_path: str,
+    filename: str,
     num_rows: int = 5,
     max_rows: int = DEFAULT_MAX_SAMPLE_ROWS,
     tool_context: ToolContext | None = None,
 ) -> dict[str, Any]:
     """
-    Read sample rows from a CSV file to understand data structure.
+    Read sample rows from a CSV file in the cleaned/ folder.
+    
+    Always resolves to: {run_dir}/cleaned/{filename}
     
     Uses polars lazy loading for efficiency.
     
     Args:
-        csv_path: Path to the CSV file (absolute or relative).
+        filename: Simple filename (e.g., "cleaned.csv", "features.csv")
+                  Will be resolved to {run_dir}/cleaned/{filename}
         num_rows: Number of rows to return (default 5).
         max_rows: Maximum allowed rows (enforced limit, default 5).
+        tool_context: Tool context with state access (required for run_dir).
     
     Returns:
         Dictionary with:
         - columns: List of column names
         - rows: List of row dictionaries
         - total_rows_sampled: Number of rows returned
+        - path: Full resolved path that was read
         - error: Error message if reading failed
     """
-    # Resolve and validate path
-    is_valid, resolved_path, error_msg = _validate_path(csv_path, allow_new=False)
+    if not tool_context:
+        return {"error": "Tool context required for run_dir resolution"}
     
-    if not is_valid:
-        return {"error": f"Path not in allowed locations: {csv_path}. {error_msg}"}
+    run_dir = tool_context.state.get("run_dir")
+    if not run_dir:
+        return {"error": "run_dir not found in session state"}
+    
+    # Resolve to cleaned/ folder
+    resolved_path = Path(run_dir) / "cleaned" / filename
     
     if not resolved_path.exists():
-        return {"error": f"File not found: {csv_path}", "path": str(resolved_path)}
+        return {
+            "error": f"File not found: {filename}",
+            "expected_location": str(resolved_path),
+        }
     
     if not resolved_path.is_file():
-        return {"error": f"Not a file: {resolved_path}", "path": str(resolved_path)}
+        return {
+            "error": f"Not a file: {filename}",
+            "path": str(resolved_path),
+        }
     
     if resolved_path.suffix.lower() != ".csv":
-        return {"error": f"Not a CSV file: {resolved_path}", "path": str(resolved_path)}
+        return {
+            "error": f"Not a CSV file: {filename} (expected .csv extension)",
+            "path": str(resolved_path),
+        }
     
     # Cap num_rows at max_rows
     num_rows = min(num_rows, max_rows)
@@ -105,7 +123,7 @@ def get_sample_rows(
         
         logger.info(
             "get_sample_rows success",
-            extra={"path": str(resolved_path), "rows": len(rows)},
+            extra={"data_filename": filename, "rows": len(rows)},
         )
         
         return {
@@ -116,8 +134,11 @@ def get_sample_rows(
         }
         
     except Exception as exc:
-        logger.error("get_sample_rows failed", extra={"path": csv_path, "error": str(exc)})
-        return {"error": f"Failed to read CSV: {exc}", "path": str(resolved_path)}
+        logger.error("get_sample_rows failed", extra={"data_filename": filename, "error": str(exc)})
+        return {
+            "error": f"Failed to read CSV: {exc}",
+            "path": str(resolved_path),
+        }
 
 
 # Tool exports

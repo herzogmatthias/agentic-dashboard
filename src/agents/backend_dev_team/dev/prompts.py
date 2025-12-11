@@ -179,10 +179,18 @@ import {{ Customer }} from '@/models/types';  // ✓ YES
 ## **Available Tools**
 
 ### **Data Exploration**
-- `get_sample_rows(csv_path, 1)` - Sample 1 row from CSV to understand structure (max 1 row)
-- `inspect_json_preview(path, max_depth)` - Preview JSON file structure (auto-truncates if >1000 tokens)
-- `load_data_profile()` - Load the minified data profile JSON (column names, types, cardinality, etc.)
-  - Use this if you need detailed information about the dataset structure
+- `get_sample_rows(filename)` - Sample rows from CSV file in cleaned/ folder
+  - Usage: `get_sample_rows("cleaned.csv")`
+  - Returns: Column names and 1 sample row
+  - Use to understand data structure before creating APIs
+
+- `inspect_json_preview(filename)` - Preview JSON file structure
+  - Usage: `inspect_json_preview("metrics.json")`
+  - Returns: Full JSON if <1000 tokens, else truncated structure
+  - Use to explore aggregated metrics or derived datasets
+
+- `load_data_profile()` - Load the minified data profile JSON
+  - Use this if you need detailed column metadata (types, cardinality, missing %, etc.)
   - Returns minified JSON to save tokens
 
 ### **File Creation**
@@ -199,8 +207,6 @@ import {{ Customer }} from '@/models/types';  // ✓ YES
 
 ### **MCP Filesystem Tools**
 
-**⚠️ CRITICAL: ALL MCP filesystem tools require ABSOLUTE paths. Relative paths will NOT work!**
-
 Use these exact absolute paths:
 
 | Location | Absolute Path |
@@ -208,21 +214,52 @@ Use these exact absolute paths:
 | API Routes | `{workspace_root}/src/app/api` |
 | Models | `{workspace_root}/src/models` |
 | Lib/Utils | `{workspace_root}/src/lib` |
-| Data Files | `{workspace_root}/data` |
 
-**MCP Tools (all require absolute paths):**
-- `read_file(path)` - Read file contents
-- `read_multiple_files(paths)` - Read multiple files
-- `write_file(path, content)` - Write new file
-- `edit_file(path, edits)` - Modify existing files
+**⚠️ CRITICAL RULES:**
+1. ALL MCP filesystem tools require **ABSOLUTE paths**
+2. For edits, use `edit_file` with proper edit specifications
+
+**Common MCP Tools:**
+- `read_file(path)` - Read file contents (absolute path required)
+- `read_multiple_files(paths)` - Read multiple files efficiently
+- `write_file(path, content)` - Write new file (NOT for existing files)
+- `edit_file(path, edits)` - **MODIFY existing files** (see examples below)
 - `list_directory(path)` - List directory contents
 - `directory_tree(path)` - Get directory structure
 
-**Example - CORRECT:**
+**Absolute Path Examples:**
 ```
 read_file("{workspace_root}/src/lib/data_utils.ts")
+write_file("{workspace_root}/src/models/User.ts", content)
 list_directory("{workspace_root}/src/app/api")
 ```
+
+**Editing Files Example**:
+```typescript
+// DO use edit_file with specific edits:
+edit_file(
+  path="{workspace_root}/src/lib/helpers.ts",
+  edits=[{{
+    "old": "export function parseCSV(file: File): Promise<any> {{",
+    "new": "export function parseCSV(file: File): Promise<CSVData[]> {{"  // Type the return
+  }}]
+)
+
+// Or to add new content after a line:
+edit_file(
+  path="{workspace_root}/src/models/types.ts",
+  edits=[{{
+    "old": "export interface User {{\n  id: string;\n}}",
+    "new": "export interface User {{\n  id: string;\n  name: string;\n  email: string;\n}}"  // Added fields
+  }}]
+)
+```
+
+**Key Points:**
+- `old`: The exact text to replace (must match exactly including whitespace)
+- `new`: The replacement text
+- Use `edit_file` for ANY modification to existing files
+- If multiple edits needed, provide them all in one `edit_file` call
 
 ### **Content Search**
 
