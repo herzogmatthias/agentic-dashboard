@@ -13,17 +13,14 @@ The Dev Agent only runs within the Loop Agent's custom control flow.
 """
 
 import json
-from pathlib import Path
-from typing import Any
 
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
-from google.adk.planners import PlanReActPlanner
 from google.adk.models.lite_llm import LiteLlm
 from phoenix.otel import register as register_phoenix
 
 from src.core.logging import get_logger
-from src.models.backend_dev import BackendDevResult, BackendDevInput, PlannerArtifactTodo
+from src.models.backend_dev import BackendDevResult
 from src.tools.backend_dev import (
     get_backend_dev_tools,
     get_backend_dev_mcp_toolset,
@@ -57,7 +54,7 @@ STATE_KEY_RUN_DIR = "run_dir"
 STATE_KEY_WORKSPACE_ROOT = "workspace_root"
 STATE_KEY_CURRENT_ARTIFACT = "current_artifact"
 STATE_KEY_CURRENT_GROUP = "current_group"
-STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
+STATE_KEY_ACCESSIBLE_FILES = "accessible_files"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
 STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
 STATE_KEY_VALIDATION_ERRORS = "validation_errors"
@@ -76,7 +73,7 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
     Reads from session state:
     - workspace_root: Absolute path to sample-dashboard
     - current_group: The BackendTodoGroup to implement (contains multiple artifacts)
-    - previous_summaries: List of summaries from prior groups
+    - accessible_files: List of file paths in api/*, models/*, lib/*
     - cleaned_data_files: List of cleaned data file paths
     - metrics_ref_context: Pre-looked-up metrics reference context
     
@@ -126,12 +123,12 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
         group_description = ""
         artifacts_json = "[]"
     
-    # Get previous summaries
-    previous_summaries = state.get(STATE_KEY_PREVIOUS_SUMMARIES, [])
-    if previous_summaries:
-        summaries_text = "\n".join(f"- {s}" for s in previous_summaries)
+    # Get accessible files (workspace files in api/*, models/*, lib/*)
+    accessible_files = state.get(STATE_KEY_ACCESSIBLE_FILES, [])
+    if accessible_files:
+        accessible_files_text = "\n".join(f"- {f}" for f in sorted(accessible_files))
     else:
-        summaries_text = "(no prior groups completed)"
+        accessible_files_text = "(no files found)"
     
     # Get cleaned data files
     cleaned_files = state.get(STATE_KEY_CLEANED_DATA_FILES, [])
@@ -159,7 +156,7 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
             group_kind=group_kind,
             group_label=group_label,
             validation_errors=validation_errors,
-            previous_summaries=summaries_text,
+            accessible_files=accessible_files_text,
             cleaned_data_files=cleaned_data_files,
         )
     else:
@@ -171,7 +168,7 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
             group_label=group_label,
             group_description=group_description,
             artifacts_json=artifacts_json,
-            previous_summaries=summaries_text,
+            accessible_files=accessible_files_text,
             cleaned_data_files=cleaned_data_files,
             metrics_ref_context=metrics_ref_context,
         )
@@ -262,7 +259,7 @@ __all__ = [
     "STATE_KEY_WORKSPACE_ROOT",
     "STATE_KEY_CURRENT_ARTIFACT",
     "STATE_KEY_CURRENT_GROUP",
-    "STATE_KEY_PREVIOUS_SUMMARIES",
+    "STATE_KEY_ACCESSIBLE_FILES",
     "STATE_KEY_CLEANED_DATA_FILES",
     "STATE_KEY_METRICS_REF_CONTEXT",
     "STATE_KEY_ERROR_RUN",

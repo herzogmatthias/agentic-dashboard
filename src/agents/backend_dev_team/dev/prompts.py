@@ -25,7 +25,7 @@ def build_backend_dev_prompt(
     group_label: str = "Unknown Group",
     group_description: str = "",
     artifacts_json: str = "[]",
-    previous_summaries: str = "(no prior groups completed)",
+    accessible_files: str = "(no files found)",
     cleaned_data_files: str = "(not yet loaded)",
   metrics_ref_context: str = "(no metrics_ref specified)",
 ) -> str:
@@ -40,7 +40,7 @@ def build_backend_dev_prompt(
     Key principles:
     1. Group-based focus - process ALL pending artifacts in the group
     2. Order matters - helpers first, then routes that depend on them
-    3. Context awareness - use previous_summaries to avoid duplication
+    3. Context awareness - review accessible_files to understand existing structure
     4. Structured output - return BackendDevResult with DevReport
     5. Validation - run lint/type-check after completing all artifacts
     
@@ -54,12 +54,11 @@ def build_backend_dev_prompt(
         group_label: Human-readable label for the group
         group_description: Description of what this group of artifacts does
         artifacts_json: JSON array of PlannerArtifactTodo items to implement
-        previous_summaries: Condensed summaries from prior groups in this run
+        accessible_files: Newline-separated list of existing files in api/*, models/*, lib/*
+                         that the agent can reference or reuse
         cleaned_data_files: Comma-separated list of cleaned data file paths
         metrics_ref_context: JSON of the specific KPIs/visuals from dashboard_concept
                             that these artifacts serve (extracted via metrics_ref)
-        accessible_files: Newline-separated list of existing files (relative to src/)
-                         that the agent can reference or reuse
     
     Returns:
         System prompt string with state values injected.
@@ -118,14 +117,14 @@ Based on the group kind `{group_kind}`:
 
 ---
 
-## **Previous Group Summaries**
+## **Already implemented files**
 
-These summaries describe what was already created in prior groups. Use them to:
+These files are already existing in the project. Use them to:
 - Avoid duplicating existing code
 - Reuse helpers and models already created
 - Understand the current state of the codebase
 
-{previous_summaries}
+{accessible_files}
 
 ---
 
@@ -412,7 +411,7 @@ def build_backend_dev_repair_prompt(
     group_kind: str = "other",
     group_label: str = "Unknown Group",
     validation_errors: str = "(no errors provided)",
-    previous_summaries: str = "(no prior context)",
+    accessible_files: str = "(no files found)",
     cleaned_data_files: str = "(not yet loaded)",
 ) -> str:
     """
@@ -427,7 +426,7 @@ def build_backend_dev_repair_prompt(
         group_kind: Type of group
         group_label: Human-readable label
         validation_errors: The lint/type-check errors from previous attempt
-        previous_summaries: Context from prior attempts
+        accessible_files: Newline-separated list of existing files in api/*, models/*, lib/*
         cleaned_data_files: Available data files
     """
     if workspace_root is None:
@@ -449,7 +448,7 @@ You are the **Backend Dev Agent in REPAIR MODE**, a senior Next.js developer fix
 **Group:** {group_label} (ID: `{group_id}`, Kind: `{group_kind}`)
 
 **Files already created in previous attempt:**
-{previous_summaries if previous_summaries and not previous_summaries.startswith("(no") else "(Check workspace for existing files)"}
+{accessible_files}
 
 **Validation errors you must fix:**
 ```

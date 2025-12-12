@@ -9,7 +9,7 @@ through Dev → Tester → QA sub-agents. This module provides:
 
 from typing import Any
 
-from google.adk.tools import FunctionTool
+from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
@@ -194,7 +194,6 @@ def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -
     - src/app/api/** (existing API routes)
     - src/models/** (existing TypeScript models)
     - src/lib/** (existing utilities/helpers)
-    - data/** (data files)
     
     Also includes run-directory artifacts:
     - backend_manifest.json (from prior artifacts)
@@ -215,7 +214,7 @@ def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -
     
     # Get sample-dashboard root
     # From tools.py: go up 5 levels to reach Documents/agentic-dashboard/, then into sample-dashboard/
-    sample_dashboard_root = Path(__file__).parent.parent.parent.parent.parent / "sample-dashboard"
+    sample_dashboard_root = Path("C:/Users/darks/Documents/agentic-dashboard/sample-dashboard")
     
     try:
         # Scan src/app/api for existing routes
@@ -247,16 +246,7 @@ def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -
     except Exception as e:
         logger.debug(f"Error scanning lib directory: {e}")
     
-    try:
-        # Scan data directory for CSV and other data files
-        data_dir = sample_dashboard_root / "data"
-        if data_dir.exists():
-            for data_file in data_dir.glob("*"):
-                if data_file.is_file():
-                    paths.append(str(data_file.relative_to(sample_dashboard_root)))
-            logger.debug(f"Found {len([p for p in paths if 'data' in p])} data files")
-    except Exception as e:
-        logger.debug(f"Error scanning data directory: {e}")
+    # NOTE: Do not include data/ directory in accessible files list to avoid confusion
 
     
     logger.info(

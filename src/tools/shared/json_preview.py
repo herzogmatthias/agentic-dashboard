@@ -129,9 +129,10 @@ def inspect_json_preview(
                 "inspect_json_preview success (full)",
                 extra={"data_filename": filename, "tokens": token_count},
             )
+            relative_path = f"data/{filename}"
             return {
                 "content": full_minified,
-                "path": str(target_path),
+                "path": relative_path,
                 "tokens": token_count,
                 "truncated": False,
             }
@@ -146,9 +147,10 @@ def inspect_json_preview(
                 extra={"data_filename": filename, "tokens": token_count, "max_depth": max_depth},
             )
             
+            relative_path = f"data/{filename}"
             return {
                 "content": preview_str,
-                "path": str(target_path),
+                "path": relative_path,
                 "tokens": token_count,
                 "truncated": True,
                 "max_depth": max_depth,
@@ -156,15 +158,17 @@ def inspect_json_preview(
         
     except json.JSONDecodeError as exc:
         logger.error("inspect_json_preview JSON error", extra={"filename": filename, "error": str(exc)})
+        relative_path = f"data/{filename}"
         return {
             "error": f"Invalid JSON: {exc}",
-            "path": str(target_path),
+            "path": relative_path,
         }
     except Exception as exc:
         logger.error("inspect_json_preview failed", extra={"data_filename": filename, "error": str(exc)})
+        relative_path = f"data/{filename}"
         return {
             "error": f"Failed to read JSON: {exc}",
-            "path": str(target_path),
+            "path": relative_path,
         }
 
 

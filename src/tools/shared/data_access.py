@@ -126,11 +126,13 @@ def get_sample_rows(
             extra={"data_filename": filename, "rows": len(rows)},
         )
         
+        # Return path relative to workspace root for agent consumption
+        relative_path = f"data/{filename}"
         return {
             "columns": columns,
             "rows": rows,
             "total_rows_sampled": len(rows),
-            "path": str(resolved_path),
+            "path": relative_path,
         }
         
     except Exception as exc:

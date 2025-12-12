@@ -253,7 +253,7 @@ class BackendDevLoopAgent(BaseAgent):
         
         groups_processed = 0
         artifacts_processed = 0
-        
+        groups = groups[5:]
         # Iterate through groups - Dev Agent processes one group at a time
         for group_idx, group in enumerate(groups, 1):
             group_id = group.get("id", "unknown")
@@ -280,9 +280,8 @@ class BackendDevLoopAgent(BaseAgent):
             state[STATE_KEY_CURRENT_ARTIFACT] = group  # For backward compat
             state[STATE_KEY_LOOP_ITERATION] = groups_processed + 1
             
-            # Inject accessible files list into state
+            # Inject accessible files list into state using shared helper (excludes data/)
             run_dir = state.get(STATE_KEY_RUN_DIR)
-            # Pass first artifact for context (all in same group share context)
             accessible_files = build_accessible_files_list(pending_artifacts[0], run_dir)
             state[STATE_KEY_ACCESSIBLE_FILES] = accessible_files
             
@@ -396,12 +395,7 @@ class BackendDevLoopAgent(BaseAgent):
                         state[STATE_KEY_VALIDATION_ERRORS] = validation_errors
                         
                         # Also append to previous summaries for context
-                        if STATE_KEY_PREVIOUS_SUMMARIES not in state:
-                            state[STATE_KEY_PREVIOUS_SUMMARIES] = []
-                        
-                        state[STATE_KEY_PREVIOUS_SUMMARIES].append(
-                            f"[REPAIR ATTEMPT {dev_attempt}] Previous attempt failed validation. Files created but need fixes."
-                        )
+                        # Summaries disabled; just notify via status event
                         yield self._create_status_event(
                             f"Validation failed on attempt {dev_attempt} - switching to REPAIR MODE (attempt {dev_attempt + 1}/{max_dev_attempts})"
                         )
@@ -430,8 +424,7 @@ class BackendDevLoopAgent(BaseAgent):
                 if run_dir:
                     persist_artifact_manifest_entry(run_dir, artifact, dev_result)
             
-            # Append group summary to previous_summaries
-            self._append_group_summary_to_state(state, dev_result, group_id, group_label, len(pending_artifacts))
+            # Do not append summaries; user requested to remove summary usage
             
             groups_processed += 1
             artifacts_processed += len(pending_artifacts)
@@ -457,46 +450,8 @@ class BackendDevLoopAgent(BaseAgent):
         dev_result: dict | BackendDevResult | None,
         artifact_id: str,
     ) -> None:
-        """Extract summary, exports, and code_path from DevReport and append to previous_summaries."""
-        if dev_result is None:
-            return
-        
-        summary = None
-        exports = []
-        code_path = None
-        
-        if isinstance(dev_result, dict):
-            report = dev_result.get("report", {})
-            if isinstance(report, dict):
-                summary = report.get("summary")
-                # Extract exports and code_path from current_state
-                current_state = report.get("current_state", {})
-                if isinstance(current_state, dict):
-                    exports = current_state.get("exports", [])
-                    code_path = current_state.get("code_path")
-            if not summary:
-                summary = dev_result.get("summary")
-        elif hasattr(dev_result, "report") and dev_result.report:
-            summary = dev_result.report.summary
-            if hasattr(dev_result.report, "current_state") and dev_result.report.current_state:
-                exports = getattr(dev_result.report.current_state, "exports", [])
-                code_path = getattr(dev_result.report.current_state, "code_path", None)
-        
-        if not summary:
-            summary = f"Completed {artifact_id}"
-        
-        # Format summary with exports if available
-        summary_line = f"[{artifact_id}] {summary}"
-        if code_path:
-            summary_line += f" (file: {code_path})"
-        if exports:
-            exports_str = ", ".join(exports) if isinstance(exports, list) else str(exports)
-            summary_line += f" [exports: {exports_str}]"
-        
-        if STATE_KEY_PREVIOUS_SUMMARIES not in state:
-            state[STATE_KEY_PREVIOUS_SUMMARIES] = []
-        
-        state[STATE_KEY_PREVIOUS_SUMMARIES].append(summary_line)
+        """Summaries disabled: no-op."""
+        return
     
     def _append_group_summary_to_state(
         self,
@@ -506,40 +461,8 @@ class BackendDevLoopAgent(BaseAgent):
         group_label: str,
         artifact_count: int,
     ) -> None:
-        """Extract summary from DevReport for a group and append to previous_summaries."""
-        if dev_result is None:
-            return
-        
-        summary = None
-        exports = []
-        
-        if isinstance(dev_result, dict):
-            report = dev_result.get("report", {})
-            if isinstance(report, dict):
-                summary = report.get("summary")
-                current_state = report.get("current_state", {})
-                if isinstance(current_state, dict):
-                    exports = current_state.get("exports", [])
-            if not summary:
-                summary = dev_result.get("summary")
-        elif hasattr(dev_result, "report") and dev_result.report:
-            summary = dev_result.report.summary
-            if hasattr(dev_result.report, "current_state") and dev_result.report.current_state:
-                exports = getattr(dev_result.report.current_state, "exports", [])
-        
-        if not summary:
-            summary = f"Completed group {group_label} ({artifact_count} artifacts)"
-        
-        # Format summary with group info
-        summary_line = f"[Group: {group_label}] {summary}"
-        if exports:
-            exports_str = ", ".join(exports) if isinstance(exports, list) else str(exports)
-            summary_line += f" [exports: {exports_str}]"
-        
-        if STATE_KEY_PREVIOUS_SUMMARIES not in state:
-            state[STATE_KEY_PREVIOUS_SUMMARIES] = []
-        
-        state[STATE_KEY_PREVIOUS_SUMMARIES].append(summary_line)
+        """Summaries disabled: no-op."""
+        return
     
     
     def _create_status_event(self, message: str) -> Event:
