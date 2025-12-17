@@ -1,0 +1,25 @@
+{
+  "artifact_id": "route_viz_spend_txn_distribution",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created API route /api/visuals/spend-txn-distribution that loads cleaned data, parses optional filters (incomeCategories, cardCategories, spendQuintiles, tenureMin, tenureMax), applies filters, and generates histograms for monthly_spend and Total_Trans_Amt with configurable bin count.",
+  "current_state": {
+    "code_path": "src/app/api/visuals/spend-txn-distribution/route.ts",
+    "dependent_code_paths": [],
+    "exports": [
+      "GET"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/visuals/spend-txn-distribution/route.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented the route using existing helpers for data loading, filtering, and histogram generation.",
+  "implementation_notes": "The route returns an object with monthly_spend and Total_Trans_Amt arrays of histogram bins (bin_start, bin_end, count). Bin count defaults to 10 if not specified.",
+  "next_steps": [
+    ""
+  ]
+}

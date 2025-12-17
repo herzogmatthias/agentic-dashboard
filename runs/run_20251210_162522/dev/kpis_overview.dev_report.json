@@ -1,0 +1,38 @@
+{
+  "artifact_id": "kpis_overview",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created 4 API routes under /api/kpis/ for serving high-level KPIs with global filter support. Modified filter_parser.ts to parse comma-separated query parameters matching artifact specs. Routes compute attrition metrics using existing helpers and median spend via sorting. All validation passed.",
+  "current_state": {
+    "code_path": "src/app/api/kpis/overview/route.ts",
+    "dependent_code_paths": [
+      "src/lib/load_cleaned_data.ts",
+      "src/lib/filter_parser.ts",
+      "src/lib/apply_filters.ts",
+      "src/lib/attrition_aggregations.ts"
+    ],
+    "exports": [
+      "GET handler for /api/kpis/overview",
+      "GET handler for /api/kpis/attrition-rate",
+      "GET handler for /api/kpis/attrited-count",
+      "GET handler for /api/kpis/median-monthly-spend"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/kpis/overview/route.ts",
+      "src/app/api/kpis/attrition-rate/route.ts",
+      "src/app/api/kpis/attrited-count/route.ts",
+      "src/app/api/kpis/median-monthly-spend/route.ts"
+    ],
+    "files_modified": [
+      "src/lib/filter_parser.ts"
+    ],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented KPI endpoints with filter support",
+  "implementation_notes": "Used existing helpers for data loading, filtering, and attrition computations. Added median calculation directly in routes. Updated parser for camelCase comma-separated params.",
+  "next_steps": [
+    "Test endpoints with sample requests to verify filter application and response formats."
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "dataset_name": "data.csv",
+  "overall_metrics": [
+    {
+      "name": "overall_attrition_rate",
+      "value": 0.1606596227905599,
+      "description": "Proportion of customers labeled as Attrited Customer"
+    },
+    {
+      "name": "row_count",
+      "value": 10127.0,
+      "description": "Number of customer records in dataset"
+    }
+  ],
+  "segment_metrics": [
+    {
+      "segment_name": "attrition_by_income",
+      "segment_value": "Income_Category groups",
+      "metrics": {},
+      "sample_size": 10127,
+      "artifact_name": "metrics_summary.json"
+    },
+    {
+      "segment_name": "attrition_by_card",
+      "segment_value": "Card_Category groups",
+      "metrics": {},
+      "sample_size": 10127,
+      "artifact_name": "metrics_summary.json"
+    },
+    {
+      "segment_name": "attrition_by_spend_quartile",
+      "segment_value": "spend quartiles",
+      "metrics": {},
+      "sample_size": 10127,
+      "artifact_name": "metrics_summary.json"
+    }
+  ],
+  "correlations": [
+    {
+      "feature": "Total_Trans_Ct",
+      "target": "churn_flag",
+      "coefficient": 0.37140270118892665,
+      "magnitude_rank": 1
+    },
+    {
+      "feature": "Total_Ct_Chng_Q4_Q1",
+      "target": "churn_flag",
+      "coefficient": 0.2900540068808916,
+      "magnitude_rank": 2
+    },
+    {
+      "feature": "Total_Revolving_Bal",
+      "target": "churn_flag",
+      "coefficient": 0.2630528831292026,
+      "magnitude_rank": 3
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_name": "metrics_summary.json",
+      "description": "Attrition segments and feature importances",
+      "format": "json"
+    }
+  ],
+  "recommended_next_steps": [
+    "Validate that Attrition_Flag mapping is correct and stable over time.",
+    "Consider masking CLIENTNUM for sharing.",
+    "Build time-based cohort analysis if transaction dates are available."
+  ],
+  "notes": [
+    "Feature importances computed via RandomForest on numeric and top categorical dummies; run on samples with no-missing target."
+  ]
+}

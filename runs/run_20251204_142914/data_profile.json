@@ -1,0 +1,171 @@
+{
+  "dataset_overview": {
+    "row_count": 10127,
+    "column_count_raw": 23,
+    "column_count_clean": 31,
+    "new_columns": [
+      "Months_on_book_parsed",
+      "Months_Inactive_12_mon_parsed",
+      "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1_parsed",
+      "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2_parsed",
+      "churn_flag_explicit",
+      "spend_quartile",
+      "Income_Category_grouped",
+      "Card_Category_clean"
+    ],
+    "notes": [
+      "Bank credit-card customer churn dataset; conservative cleaning applied"
+    ]
+  },
+  "key_columns": [
+    {
+      "name": "CLIENTNUM",
+      "role": "identifier",
+      "semantic_type": "identifier",
+      "dtype_raw": "int64",
+      "dtype_clean": "int64",
+      "missing_pct": 0.0,
+      "unique_count": 10127,
+      "example_values": [
+        "768805383",
+        "818770008",
+        "713982108"
+      ],
+      "numeric_summary": null,
+      "selection_reason": "customer id",
+      "origin": null
+    },
+    {
+      "name": "Attrition_Flag",
+      "role": "target",
+      "semantic_type": "categorical",
+      "dtype_raw": "object",
+      "dtype_clean": "object",
+      "missing_pct": 0.0,
+      "unique_count": 2,
+      "example_values": [
+        "Existing Customer",
+        "Attrited Customer"
+      ],
+      "numeric_summary": null,
+      "selection_reason": "explicit churn flag",
+      "origin": null
+    },
+    {
+      "name": "Income_Category",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "dtype_raw": "object",
+      "dtype_clean": "object",
+      "missing_pct": 0.0,
+      "unique_count": 6,
+      "example_values": [
+        "$60K - $80K",
+        "Less than $40K",
+        "$80K - $120K",
+        "$40K - $60K",
+        "$120K +"
+      ],
+      "numeric_summary": null,
+      "selection_reason": "income segment for analysis",
+      "origin": null
+    },
+    {
+      "name": "Card_Category",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "dtype_raw": "object",
+      "dtype_clean": "object",
+      "missing_pct": 0.0,
+      "unique_count": 4,
+      "example_values": [
+        "Blue",
+        "Gold",
+        "Silver",
+        "Platinum"
+      ],
+      "numeric_summary": null,
+      "selection_reason": "card type/category",
+      "origin": null
+    },
+    {
+      "name": "Total_Trans_Amt",
+      "role": "feature",
+      "semantic_type": "numeric",
+      "dtype_raw": "int64",
+      "dtype_clean": "int64",
+      "missing_pct": 0.0,
+      "unique_count": null,
+      "example_values": [
+        "1140",
+        "18834",
+        "2092"
+      ],
+      "numeric_summary": null,
+      "selection_reason": "proxy for spending behavior",
+      "origin": null
+    }
+  ],
+  "all_column_names": [
+    "CLIENTNUM",
+    "Attrition_Flag",
+    "Customer_Age",
+    "Gender",
+    "Dependent_count",
+    "Education_Level",
+    "Marital_Status",
+    "Income_Category",
+    "Card_Category",
+    "Months_on_book",
+    "Total_Relationship_Count",
+    "Months_Inactive_12_mon",
+    "Contacts_Count_12_mon",
+    "Credit_Limit",
+    "Total_Revolving_Bal",
+    "Avg_Open_To_Buy",
+    "Total_Amt_Chng_Q4_Q1",
+    "Total_Trans_Amt",
+    "Total_Trans_Ct",
+    "Total_Ct_Chng_Q4_Q1",
+    "Avg_Utilization_Ratio",
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1",
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2",
+    "Months_on_book_parsed",
+    "Months_Inactive_12_mon_parsed",
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1_parsed",
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2_parsed",
+    "churn_flag_explicit",
+    "spend_quartile",
+    "Income_Category_grouped",
+    "Card_Category_clean"
+  ],
+  "missingness": {
+    "overall_missing_pct": 0.0,
+    "columns_with_missing": 0,
+    "high_missing_columns": []
+  },
+  "domain_signals": {
+    "label_columns": [
+      "Attrition_Flag",
+      "churn_flag"
+    ],
+    "primary_label": "churn_flag",
+    "date_columns": [],
+    "identifier_columns": [
+      "CLIENTNUM"
+    ],
+    "has_time_series": false,
+    "has_geolocation": false,
+    "pii_detected": true,
+    "extra_tags": [
+      "banking",
+      "credit_card",
+      "churn"
+    ]
+  },
+  "warnings": [
+    "No explicit date columns detected; time-based churn inference not possible.",
+    "PII detected: CLIENTNUM is an identifier."
+  ],
+  "extra": {}
+}

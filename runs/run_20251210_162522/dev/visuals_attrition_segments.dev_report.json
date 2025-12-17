@@ -1,0 +1,35 @@
+{
+  "artifact_id": "visuals_attrition_segments",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created three API routes: /api/visuals/attrition-by-income, /api/visuals/attrition-by-card-category, and /api/visuals/attrition-by-spend-quintile. Each route loads cleaned data, applies optional filters, computes grouped attrition metrics, and returns the data in the expected array format.",
+  "current_state": {
+    "code_path": "src/app/api/visuals/",
+    "dependent_code_paths": [],
+    "exports": [
+      "GET (attrition-by-income)",
+      "GET (attrition-by-card-category)",
+      "GET (attrition-by-spend-quintile)"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/visuals/attrition-by-income/route.ts",
+      "src/app/api/visuals/attrition-by-card-category/route.ts",
+      "src/app/api/visuals/attrition-by-spend-quintile/route.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Created three new API routes for bar chart visuals showing attrition rates by different customer segments.",
+  "implementation_notes": "Reused existing helpers for data loading, filtering, and aggregation. Each route follows the standard pattern: load data, parse and apply filters, group by segment field, compute metrics, and return as array.",
+  "next_steps": [
+    "],",
+    "files_changed",
+    "dependencies",
+    "lint_passed",
+    "type_check_passed",
+    "errors",
+    "timestamp"
+  ]
+}

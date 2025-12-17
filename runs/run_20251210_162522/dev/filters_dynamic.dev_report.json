@@ -1,0 +1,27 @@
+{
+  "artifact_id": "route_filters_global_options",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created API route /api/filters/options that loads cleaned.csv data and returns distinct options for income categories, card categories, spend quintiles (labeled as Quintile 1-5), and tenure range (min/max).",
+  "current_state": {
+    "code_path": "src/app/api/filters/options/route.ts",
+    "dependent_code_paths": [],
+    "exports": [
+      "GET"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/models/filter_options.ts",
+      "src/app/api/filters/options/route.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented the route using the existing load_cleaned_data helper, with proper TypeScript types and response format.",
+  "implementation_notes": "Used Array.from(new Set()) to get distinct values, mapped spend_quintile to labeled options, and computed min/max for tenure.",
+  "next_steps": [
+    "],",
+    "files_changed"
+  ]
+}

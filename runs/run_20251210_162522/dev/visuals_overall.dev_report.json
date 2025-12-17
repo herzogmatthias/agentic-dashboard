@@ -1,0 +1,23 @@
+{
+  "artifact_id": "visuals_overall",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created API route for overall attrition card providing attrition rate, formatted percentage, attrited count, and total customers with global filter support.",
+  "current_state": {
+    "code_path": "src/app/api/visuals/overall-attrition-card/route.ts",
+    "dependent_code_paths": [],
+    "exports": [
+      "GET"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/visuals/overall-attrition-card/route.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented the single artifact in the visuals_overall group: a GET route at /api/visuals/overall-attrition-card that uses existing helpers to compute and return attrition metrics after applying global filters.",
+  "implementation_notes": "Reused existing helpers for data loading, filter parsing, applying filters, and attrition aggregations. Response matches expected shape with attrition_rate (0-1), formatted percentage, attrited count, and total customers.",
+  "next_steps": []
+}

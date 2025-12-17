@@ -1,0 +1,50 @@
+{
+  "artifact_id": "helpers_core",
+  "artifact_type": "helper",
+  "status": "success",
+  "summary": "Created all required helpers: customer_dataset_loader, global_filters, churn_metrics, pivot_2d, boxplot_stats, actionable_segments, metrics_summary_loader. Also created supporting models for Customer and MetricsSummary.",
+  "current_state": {
+    "code_path": "src/lib",
+    "dependent_code_paths": [],
+    "exports": [
+      "loadCustomerDataset",
+      "applyGlobalFilters",
+      "GlobalFilters",
+      "computeChurnRate",
+      "computeRetentionRate",
+      "computeChurnCounts",
+      "computeChurnByGroup",
+      "ChurnGroupStat",
+      "pivot2D",
+      "PivotCell",
+      "PivotRow",
+      "computeBoxplotStats",
+      "BoxplotStats",
+      "evaluateSegments",
+      "SegmentMetrics",
+      "predefinedSegmentRules",
+      "SegmentRule",
+      "loadMetricsSummary"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/models/customer.ts",
+      "src/models/metrics_summary.ts",
+      "src/lib/customer_dataset_loader.ts",
+      "src/lib/global_filters.ts",
+      "src/lib/churn_metrics.ts",
+      "src/lib/pivot_2d.ts",
+      "src/lib/boxplot_stats.ts",
+      "src/lib/actionable_segments.ts",
+      "src/lib/metrics_summary_loader.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented all helpers with proper TypeScript types, no any usage, and @/ aliases. Validation passed.",
+  "implementation_notes": "Used papaparse for CSV parsing in data loader. Defined interfaces for all data structures. Helpers are reusable and typed.",
+  "next_steps": [
+    "Proceed to implement routes that depend on these helpers."
+  ]
+}

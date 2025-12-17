@@ -1,0 +1,56 @@
+{
+  "dataset_name": "data.csv",
+  "original_shape": {
+    "rows": 10127,
+    "columns": 23
+  },
+  "cleaned_shape": {
+    "rows": 10127,
+    "columns": 31
+  },
+  "dropped_columns": [],
+  "transformed_columns": {
+    "Attrition_Flag": [
+      "mapped to churn_flag binary"
+    ],
+    "churn_flag": [
+      "new binary target 1=Attrited Customer,0=Existing Customer"
+    ],
+    "spend_quartile": [
+      "quartiles from Total_Trans_Amt"
+    ]
+  },
+  "label_definition": {
+    "label_column": "churn_flag",
+    "source_column": "Attrition_Flag",
+    "positive_class": "Attrited Customer",
+    "negative_class": "Existing Customer",
+    "description": "Binary flag indicating customer attrition"
+  },
+  "imputation_summary": "No aggressive imputation performed. Missing categorical grouped as Missing. Numeric NA left as-is and flagged where created.",
+  "pii_notes": [
+    {
+      "column": "CLIENTNUM",
+      "action": "retained",
+      "note": "Customer identifier retained; consider masking for public reports."
+    }
+  ],
+  "files_produced": [
+    {
+      "path": "workspace/cleaned/cleaned.csv",
+      "purpose": "Canonical cleaned dataset",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/metrics_summary.json",
+      "purpose": "Attrition metrics and feature importances",
+      "format": "json"
+    }
+  ],
+  "key_decisions": [
+    "Used explicit Attrition_Flag as primary target; mapped labels to binary. Created spend quartiles for Total_Trans_Amt. Conservative cleaning: no row drops except duplicates (none)."
+  ],
+  "assumptions": [
+    "Attrition_Flag values map to Attrited Customer=1 and Existing Customer=0. No date columns present to infer time-based churn. CLIENTNUM is PII identifier."
+  ]
+}

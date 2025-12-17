@@ -1,0 +1,721 @@
+{
+  "created_at": "2025-12-11T16:39:37.780170",
+  "run_id": "run_20251210_162522",
+  "entries": [
+    {
+      "artifact_id": "helper_load_cleaned_data",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.779801",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_load_segment_data",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.781400",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_load_metrics_files",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.793995",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_filter_parser",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.808494",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_apply_filters",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.824514",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_attrition_aggregations",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.841805",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_histogram_utils",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.857819",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_feature_importance_loader",
+      "kind": "helper",
+      "code_path": "src/lib/load_cleaned_data.ts",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCleanedData"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:39:37.876395",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpis_overview_summary",
+      "kind": "route",
+      "code_path": "src/app/api/kpis/overview/route.ts",
+      "dependent_code_paths": [
+        "src/lib/load_cleaned_data.ts",
+        "src/lib/filter_parser.ts",
+        "src/lib/apply_filters.ts",
+        "src/lib/attrition_aggregations.ts"
+      ],
+      "http_path": "/api/kpis/overview",
+      "http_method": "GET",
+      "exports": [
+        "GET handler for /api/kpis/overview",
+        "GET handler for /api/kpis/attrition-rate",
+        "GET handler for /api/kpis/attrited-count",
+        "GET handler for /api/kpis/median-monthly-spend"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values matching global filter f_income.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values matching global filter f_card.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values matching global filter f_spend_quintile.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months for range filter f_tenure.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months for range filter f_tenure.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:41:54.528600",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_attrition_rate",
+      "kind": "route",
+      "code_path": "src/app/api/kpis/overview/route.ts",
+      "dependent_code_paths": [
+        "src/lib/load_cleaned_data.ts",
+        "src/lib/filter_parser.ts",
+        "src/lib/apply_filters.ts",
+        "src/lib/attrition_aggregations.ts"
+      ],
+      "http_path": "/api/kpis/attrition-rate",
+      "http_method": "GET",
+      "exports": [
+        "GET handler for /api/kpis/overview",
+        "GET handler for /api/kpis/attrition-rate",
+        "GET handler for /api/kpis/attrited-count",
+        "GET handler for /api/kpis/median-monthly-spend"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:41:54.547844",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_attrited_count",
+      "kind": "route",
+      "code_path": "src/app/api/kpis/overview/route.ts",
+      "dependent_code_paths": [
+        "src/lib/load_cleaned_data.ts",
+        "src/lib/filter_parser.ts",
+        "src/lib/apply_filters.ts",
+        "src/lib/attrition_aggregations.ts"
+      ],
+      "http_path": "/api/kpis/attrited-count",
+      "http_method": "GET",
+      "exports": [
+        "GET handler for /api/kpis/overview",
+        "GET handler for /api/kpis/attrition-rate",
+        "GET handler for /api/kpis/attrited-count",
+        "GET handler for /api/kpis/median-monthly-spend"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:41:54.565345",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_median_monthly_spend",
+      "kind": "route",
+      "code_path": "src/app/api/kpis/overview/route.ts",
+      "dependent_code_paths": [
+        "src/lib/load_cleaned_data.ts",
+        "src/lib/filter_parser.ts",
+        "src/lib/apply_filters.ts",
+        "src/lib/attrition_aggregations.ts"
+      ],
+      "http_path": "/api/kpis/median-monthly-spend",
+      "http_method": "GET",
+      "exports": [
+        "GET handler for /api/kpis/overview",
+        "GET handler for /api/kpis/attrition-rate",
+        "GET handler for /api/kpis/attrited-count",
+        "GET handler for /api/kpis/median-monthly-spend"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:41:54.584544",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_viz_card_attrition",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/overall-attrition-card/route.ts",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/overall-attrition-card",
+      "http_method": "GET",
+      "exports": [
+        "GET"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-11T16:42:51.037951",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_viz_attrition_by_income",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-income",
+      "http_method": "GET",
+      "exports": [
+        "GET (attrition-by-income)",
+        "GET (attrition-by-card-category)",
+        "GET (attrition-by-spend-quintile)"
+      ],
+      "query_params": [
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-12T00:04:45.718366",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_viz_attrition_by_card_category",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-card-category",
+      "http_method": "GET",
+      "exports": [
+        "GET (attrition-by-income)",
+        "GET (attrition-by-card-category)",
+        "GET (attrition-by-spend-quintile)"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-12T00:04:45.721396",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_viz_attrition_by_spend_quintile",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-spend-quintile",
+      "http_method": "GET",
+      "exports": [
+        "GET (attrition-by-income)",
+        "GET (attrition-by-card-category)",
+        "GET (attrition-by-spend-quintile)"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-12T00:04:45.738910",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_viz_spend_txn_distribution",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/spend-txn-distribution/route.ts",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/spend-txn-distribution",
+      "http_method": "GET",
+      "exports": [
+        "GET"
+      ],
+      "query_params": [
+        {
+          "name": "incomeCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Income_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "cardCategories",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated Card_Category values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuintiles",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated spend_quintile values.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMin",
+          "type": "number",
+          "required": false,
+          "description": "Minimum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "tenureMax",
+          "type": "number",
+          "required": false,
+          "description": "Maximum tenure_months filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "bins",
+          "type": "number",
+          "required": false,
+          "description": "Desired number of histogram bins; default determined by helper.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-12T00:17:59.313138",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filters_global_options",
+      "kind": "route",
+      "code_path": "src/app/api/filters/options/route.ts",
+      "dependent_code_paths": [],
+      "http_path": "/api/filters/options",
+      "http_method": "GET",
+      "exports": [
+        "GET"
+      ],
+      "query_params": null,
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-12T00:19:41.847371",
+      "iteration_count": 1,
+      "status": "success"
+    }
+  ]
+}

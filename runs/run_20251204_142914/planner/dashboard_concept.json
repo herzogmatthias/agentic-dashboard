@@ -1,0 +1,314 @@
+{
+  "title": "Attrition Monitoring & Drivers — Retention Manager Dashboard",
+  "description": "Single-page dashboard to monitor overall attrition and identify key behavioral and demographic drivers to inform retention actions. Intended for retention managers to quickly spot high-risk segments (by income, card type, spend quartile) and investigate behavioral signals linked to churn.",
+  "audience": "Retention managers, CRM/retention analysts",
+  "primary_use_case": "Monitor attrition distribution, prioritize high-risk cohorts, and surface behavioral drivers to guide targeted interventions.",
+  "layout_description": "One-page layout with a KPI header, two columns below: left column focuses on segments (income, card, spend), right column focuses on behavioral drivers and cohort diagnostics. Bottom row contains a cohort cross-tab table and an actionable segments table for targeted outreach.",
+  "kpis": [
+    {
+      "id": "kpi_overall_attrition",
+      "title": "Overall Attrition Rate",
+      "description": "Percent of customers labeled as Attrited Customer (churn_flag = 1).",
+      "formula": "COUNT_IF(churn_flag = 1) / COUNT(*)",
+      "time_context": "static snapshot (no time series available)",
+      "format": "percent (1 decimal)"
+    },
+    {
+      "id": "kpi_attrited_count",
+      "title": "# Attrited Customers",
+      "description": "Count of customers with churn_flag = 1.",
+      "formula": "COUNT_IF(churn_flag = 1)",
+      "time_context": "static snapshot",
+      "format": "integer"
+    },
+    {
+      "id": "kpi_retention_rate",
+      "title": "Retention Rate",
+      "description": "Percent of customers retained (churn_flag = 0).",
+      "formula": "COUNT_IF(churn_flag = 0) / COUNT(*)",
+      "time_context": "static snapshot",
+      "format": "percent (1 decimal)"
+    },
+    {
+      "id": "kpi_avg_trans_ct_churn_vs_retained",
+      "title": "Avg Trans Count — Churn vs Retained",
+      "description": "Average Total_Trans_Ct for churners and non-churners (side-by-side to highlight behaviour).",
+      "formula": "AVG(Total_Trans_Ct) by churn_flag",
+      "time_context": "static snapshot",
+      "format": "integer"
+    }
+  ],
+  "visuals": [
+    {
+      "id": "v_overview_pie",
+      "title": "Attrition Mix",
+      "purpose": "Quick visual of overall churn vs retained counts to give immediate sense of scale",
+      "type": "donut",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "count"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "churn_flag",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": []
+    },
+    {
+      "id": "v_attrition_by_income",
+      "title": "Attrition Rate by Income Bracket",
+      "purpose": "Show which income groups have higher-than-average churn; sort by churn rate descending",
+      "type": "bar",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "rate"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Income_Category_grouped",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": []
+    },
+    {
+      "id": "v_attrition_by_card",
+      "title": "Attrition Rate by Card Category",
+      "purpose": "Compare churn across card products (identify product-specific retention issues)",
+      "type": "bar",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "rate"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Card_Category_clean",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "medium",
+      "table_columns": []
+    },
+    {
+      "id": "v_attrition_by_spend_quartile",
+      "title": "Attrition Rate by Spend Quartile",
+      "purpose": "Test relationship between spending levels and churn; highlight low-spend risk",
+      "type": "bar",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "rate"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "spend_quartile",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": []
+    },
+    {
+      "id": "v_top_numeric_correlates",
+      "title": "Top Numeric Correlates with Churn",
+      "purpose": "Surface strongest numeric predictors (from metrics_summary) so retention managers know which behaviours to monitor",
+      "type": "horizontal_bar",
+      "measures": [
+        {
+          "column_or_kpi": "Total_Trans_Ct",
+          "aggregation": "corr_with_churn"
+        },
+        {
+          "column_or_kpi": "Total_Ct_Chng_Q4_Q1",
+          "aggregation": "corr_with_churn"
+        },
+        {
+          "column_or_kpi": "Total_Revolving_Bal",
+          "aggregation": "corr_with_churn"
+        }
+      ],
+      "dimensions": [],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": [
+        "feature",
+        "correlation_coefficient"
+      ]
+    },
+    {
+      "id": "v_dist_total_trans_ct",
+      "title": "Distribution: Total_Trans_Ct by Churn",
+      "purpose": "Show distribution differences in transaction counts between churners and retained (boxplot)",
+      "type": "boxplot",
+      "measures": [
+        {
+          "column_or_kpi": "Total_Trans_Ct",
+          "aggregation": "none"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "churn_flag",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "medium",
+      "table_columns": []
+    },
+    {
+      "id": "v_cohort_matrix",
+      "title": "Cohort Matrix — Attrition Rate (Income x Card)",
+      "purpose": "Cross-tab to find specific income+card cohorts with elevated churn; supports drill-down to list of customers",
+      "type": "pivot_table",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "rate"
+        },
+        {
+          "column_or_kpi": "CLIENTNUM",
+          "aggregation": "count"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Income_Category_grouped",
+          "time_granularity": ""
+        },
+        {
+          "column": "Card_Category_clean",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "medium",
+      "table_columns": [
+        "Income_Category_grouped",
+        "Card_Category_clean",
+        "churn_rate",
+        "count"
+      ]
+    },
+    {
+      "id": "v_actionable_segments_table",
+      "title": "Top Actionable Segments",
+      "purpose": "Ranked table of segments (pre-defined segments: low-income low-spend, high-income high-churn, low Months_on_book, high Revolving Balance) showing size and churn rate to prioritize outreach",
+      "type": "table",
+      "measures": [
+        {
+          "column_or_kpi": "churn_flag",
+          "aggregation": "rate"
+        },
+        {
+          "column_or_kpi": "CLIENTNUM",
+          "aggregation": "count"
+        },
+        {
+          "column_or_kpi": "Total_Trans_Amt",
+          "aggregation": "avg"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Income_Category_grouped",
+          "time_granularity": ""
+        },
+        {
+          "column": "spend_quartile",
+          "time_granularity": ""
+        },
+        {
+          "column": "Card_Category_clean",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": [
+        "segment_definition",
+        "count",
+        "churn_rate",
+        "avg_Total_Trans_Amt"
+      ]
+    }
+  ],
+  "global_filters": [
+    {
+      "id": "f_income",
+      "title": "Income Category",
+      "column": "Income_Category_grouped",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_card",
+      "title": "Card Category",
+      "column": "Card_Category_clean",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_gender",
+      "title": "Gender",
+      "column": "Gender",
+      "control_type": "single-select",
+      "multi": false,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_spend_quartile",
+      "title": "Spend Quartile",
+      "column": "spend_quartile",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_months_on_book",
+      "title": "Months on Book (min-max)",
+      "column": "Months_on_book_parsed",
+      "control_type": "range",
+      "multi": false,
+      "default": "",
+      "applies_to": [
+        "*"
+      ]
+    }
+  ],
+  "limitations": [
+    "No date/time columns in dataset — time-series or cohort lifetime visualizations are not possible from this cleaned dataset.",
+    "CLIENTNUM is retained (PII) — mask before sharing; cleaned dataset notes recommend masking.",
+    "Churn label is a static snapshot (Attrition_Flag) — cannot compute time-to-churn or survival without transaction date/time data.",
+    "Correlations and feature importances are observational; do not imply causation. Validate with experiments before action."
+  ]
+}

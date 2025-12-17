@@ -1,0 +1,5 @@
+Card_Category,total,churns,attrition_rate
+Blue,9436,1519,0.1609792284866469
+Gold,116,21,0.1810344827586207
+Platinum,20,5,0.25
+Silver,555,82,0.14774774774774774

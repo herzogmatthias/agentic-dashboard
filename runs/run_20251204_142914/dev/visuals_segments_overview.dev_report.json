@@ -1,0 +1,26 @@
+{
+  "artifact_id": "visuals_segments_overview",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created four GET API endpoints under /api/visuals/ for attrition-related charts. The attrition-mix route returns overall churn counts and rates for attrited vs retained customers. The other three routes return churn rates and customer counts grouped by income category, card category, and spend quartile respectively, with optional filtering by other global dimensions. All routes reuse existing helpers for data loading, filtering, and metrics computation.",
+  "current_state": {
+    "code_path": "src/app/api/visuals",
+    "dependent_code_paths": [],
+    "exports": []
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/visuals/attrition-mix/route.ts",
+      "src/app/api/visuals/attrition-by-income/route.ts",
+      "src/app/api/visuals/attrition-by-card/route.ts",
+      "src/app/api/visuals/attrition-by-spend-quartile/route.ts"
+    ],
+    "files_modified": [],
+    "files_deleted": []
+  },
+  "action_summary": "Created 4 new API route files in the visuals directory, each implementing GET handlers that load data, parse filters, compute metrics, and return chart data.",
+  "implementation_notes": "Used existing helper functions from previous groups (loadCustomerDataset, applyGlobalFilters, parseGlobalFilters, computeChurnCounts, computeChurnByGroup). Defined local interfaces for response shapes. Sorted attrition-by-income results by churn rate descending as per metrics reference. Fixed lint warnings by removing unused error parameters in catch blocks.",
+  "next_steps": [
+    "Frontend can now integrate these endpoints to render attrition donut and bar charts with dynamic filtering."
+  ]
+}

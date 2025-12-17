@@ -1,0 +1,44 @@
+{
+  "artifact_id": "filters_global",
+  "artifact_type": "route",
+  "status": "success",
+  "summary": "Created 5 API endpoints for dynamic global filter options: /api/filters/income-options, /api/filters/card-options, /api/filters/gender-options, /api/filters/spend-quartile-options, and /api/filters/months-on-book-range. Each route parses query parameters, applies relevant global filters, and returns filter options or ranges. Supporting helpers include global_filters_parser for parameter parsing, filter_options for categorical options with counts, and range_options for numeric ranges. Updated global_filters.ts to support array-based categorical filters and min/max numeric ranges.",
+  "current_state": {
+    "code_path": "src/app/api/filters/",
+    "dependent_code_paths": [
+      "src/lib/global_filters.ts",
+      "src/lib/global_filters_parser.ts",
+      "src/lib/filter_options.ts",
+      "src/lib/range_options.ts"
+    ],
+    "exports": [
+      "parseGlobalFilters",
+      "getFilterOptions",
+      "getRangeOptions",
+      "FilterOption",
+      "RangeOptions"
+    ]
+  },
+  "changes": {
+    "files_created": [
+      "src/app/api/filters/income-options/route.ts",
+      "src/app/api/filters/card-options/route.ts",
+      "src/app/api/filters/gender-options/route.ts",
+      "src/app/api/filters/spend-quartile-options/route.ts",
+      "src/app/api/filters/months-on-book-range/route.ts",
+      "src/lib/global_filters_parser.ts",
+      "src/lib/filter_options.ts",
+      "src/lib/range_options.ts"
+    ],
+    "files_modified": [
+      "src/lib/global_filters.ts"
+    ],
+    "files_deleted": []
+  },
+  "action_summary": "Implemented complete set of global filter option endpoints with proper filter application and response formatting.",
+  "implementation_notes": "Routes exclude the target filter dimension when applying global filters to compute available options. Updated GlobalFilters interface to use arrays for categorical filters and separate min/max for numeric ranges. Helpers provide reusable logic for parsing URL params and computing options.",
+  "next_steps": [
+    "Test endpoints with sample queries to verify correct filtering and response shapes.",
+    "Integrate with frontend filter components."
+  ]
+}

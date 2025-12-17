@@ -1,0 +1,62 @@
+[
+  {
+    "feature": "Total_Trans_Ct",
+    "target": "churn",
+    "coefficient": -0.3714027011889267,
+    "magnitude_rank": 1
+  },
+  {
+    "feature": "Total_Ct_Chng_Q4_Q1",
+    "target": "churn",
+    "coefficient": -0.2900540068808904,
+    "magnitude_rank": 2
+  },
+  {
+    "feature": "Total_Revolving_Bal",
+    "target": "churn",
+    "coefficient": -0.26305288312920305,
+    "magnitude_rank": 3
+  },
+  {
+    "feature": "spend_quintile",
+    "target": "churn",
+    "coefficient": -0.21737694135058921,
+    "magnitude_rank": 4
+  },
+  {
+    "feature": "Contacts_Count_12_mon",
+    "target": "churn",
+    "coefficient": 0.2044905099816042,
+    "magnitude_rank": 5
+  },
+  {
+    "feature": "Avg_Utilization_Ratio",
+    "target": "churn",
+    "coefficient": -0.17841033156174638,
+    "magnitude_rank": 6
+  },
+  {
+    "feature": "monthly_spend",
+    "target": "churn",
+    "coefficient": -0.16859838141007868,
+    "magnitude_rank": 7
+  },
+  {
+    "feature": "Total_Trans_Amt",
+    "target": "churn",
+    "coefficient": -0.1685983814100786,
+    "magnitude_rank": 8
+  },
+  {
+    "feature": "Months_Inactive_12_mon",
+    "target": "churn",
+    "coefficient": 0.15244880632692454,
+    "magnitude_rank": 9
+  },
+  {
+    "feature": "Total_Relationship_Count",
+    "target": "churn",
+    "coefficient": -0.15000522801913702,
+    "magnitude_rank": 10
+  }
+]

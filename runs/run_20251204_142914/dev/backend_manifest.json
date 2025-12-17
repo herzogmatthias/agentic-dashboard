@@ -1,0 +1,1346 @@
+{
+  "created_at": "2025-12-10T13:44:17.227366",
+  "run_id": "run_20251204_142914",
+  "entries": [
+    {
+      "artifact_id": "helper_load_customer_dataset",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.226967",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_apply_global_filters",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.228544",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_compute_churn_metrics",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.243296",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_pivot_2d",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.259073",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_boxplot_stats",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.277942",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_actionable_segment_rules",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.298847",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "helper_load_metrics_summary",
+      "kind": "helper",
+      "code_path": "src/lib",
+      "dependent_code_paths": [],
+      "http_path": null,
+      "http_method": null,
+      "exports": [
+        "loadCustomerDataset",
+        "applyGlobalFilters",
+        "GlobalFilters",
+        "computeChurnRate",
+        "computeRetentionRate",
+        "computeChurnCounts",
+        "computeChurnByGroup",
+        "ChurnGroupStat",
+        "pivot2D",
+        "PivotCell",
+        "PivotRow",
+        "computeBoxplotStats",
+        "BoxplotStats",
+        "evaluateSegments",
+        "SegmentMetrics",
+        "predefinedSegmentRules",
+        "SegmentRule",
+        "loadMetricsSummary"
+      ],
+      "query_params": null,
+      "response_shape": null,
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:44:17.318972",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filter_income_options",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/filters/income-options",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:20.102200",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filter_card_options",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/filters/card-options",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:20.122621",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filter_gender_options",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/filters/gender-options",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:20.142756",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filter_spend_quartile_options",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/filters/spend-quartile-options",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:20.159929",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_filter_months_on_book_range",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/filters/months-on-book-range",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:20.178616",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_overall_attrition",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/kpis/overall-attrition-rate",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:46.035500",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_attrited_count",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/kpis/attrited-count",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:46.051807",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_retention_rate",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/kpis/retention-rate",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:46.068763",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_kpi_avg_trans_ct_churn_vs_retained",
+      "kind": "route",
+      "code_path": "src/app/api/filters/",
+      "dependent_code_paths": [
+        "src/lib/global_filters.ts",
+        "src/lib/global_filters_parser.ts",
+        "src/lib/filter_options.ts",
+        "src/lib/range_options.ts"
+      ],
+      "http_path": "/api/kpis/avg-trans-ct-churn-vs-retained",
+      "http_method": "GET",
+      "exports": [
+        "parseGlobalFilters",
+        "getFilterOptions",
+        "getRangeOptions",
+        "FilterOption",
+        "RangeOptions"
+      ],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "object response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:46:46.091300",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_overview_pie",
+      "kind": "route",
+      "code_path": "src/app/api/visuals",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-mix",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:48:27.937375",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_attrition_by_income",
+      "kind": "route",
+      "code_path": "src/app/api/visuals",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-income",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": [
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:48:27.953818",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_attrition_by_card",
+      "kind": "route",
+      "code_path": "src/app/api/visuals",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-card",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:48:27.990730",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_attrition_by_spend_quartile",
+      "kind": "route",
+      "code_path": "src/app/api/visuals",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/attrition-by-spend-quartile",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:48:28.022164",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_top_numeric_correlates",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/dist-total-trans-ct/route.ts",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/top-numeric-correlates",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": null,
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:52:34.936084",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_dist_total_trans_ct",
+      "kind": "route",
+      "code_path": "src/app/api/visuals/dist-total-trans-ct/route.ts",
+      "dependent_code_paths": [],
+      "http_path": "/api/visuals/dist-total-trans-ct",
+      "http_method": "GET",
+      "exports": [],
+      "query_params": [
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive).",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:52:34.953430",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_cohort_matrix",
+      "kind": "route",
+      "code_path": "src/app/api/tables/actionable-segments/route.ts",
+      "dependent_code_paths": [
+        "src/app/api/filters/card-options/route.ts",
+        "src/app/api/filters/gender-options/route.ts",
+        "src/app/api/filters/income-options/route.ts",
+        "src/app/api/filters/months-on-book-range/route.ts",
+        "src/app/api/filters/spend-quartile-options/route.ts",
+        "src/app/api/visuals/dist-total-trans-ct/route.ts",
+        "src/app/api/visuals/top-numeric-correlates/route.ts"
+      ],
+      "http_path": "/api/tables/cohort-matrix-income-card",
+      "http_method": "GET",
+      "exports": [
+        "GET function for actionable-segments table data"
+      ],
+      "query_params": [
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to filter by before building the matrix.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to filter by before building the matrix.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive) before building the matrix.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive) before building the matrix.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:56:12.052109",
+      "iteration_count": 1,
+      "status": "success"
+    },
+    {
+      "artifact_id": "route_v_actionable_segments_table",
+      "kind": "route",
+      "code_path": "src/app/api/tables/actionable-segments/route.ts",
+      "dependent_code_paths": [
+        "src/app/api/filters/card-options/route.ts",
+        "src/app/api/filters/gender-options/route.ts",
+        "src/app/api/filters/income-options/route.ts",
+        "src/app/api/filters/months-on-book-range/route.ts",
+        "src/app/api/filters/spend-quartile-options/route.ts",
+        "src/app/api/visuals/dist-total-trans-ct/route.ts",
+        "src/app/api/visuals/top-numeric-correlates/route.ts"
+      ],
+      "http_path": "/api/tables/actionable-segments",
+      "http_method": "GET",
+      "exports": [
+        "GET function for actionable-segments table data"
+      ],
+      "query_params": [
+        {
+          "name": "topN",
+          "type": "number",
+          "required": false,
+          "description": "Optional number of top segments to return, ranked by churn rate or strategic priority.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "income",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Income_Category_grouped values to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "card",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Card_Category_clean values to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated Gender values to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "spendQuartile",
+          "type": "string",
+          "required": false,
+          "description": "Optional comma-separated spend_quartile values to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMin",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum Months_on_book_parsed (inclusive) to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        },
+        {
+          "name": "monthsOnBookMax",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum Months_on_book_parsed (inclusive) to constrain segment evaluation.",
+          "enum_values": null,
+          "default": null
+        }
+      ],
+      "response_shape": "array response - see artifact spec",
+      "canonical_query": null,
+      "test_paths": [],
+      "last_modified_at": "2025-12-10T13:56:12.071272",
+      "iteration_count": 1,
+      "status": "success"
+    }
+  ]
+}

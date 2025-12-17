@@ -444,26 +444,6 @@ class BackendDevLoopAgent(BaseAgent):
             return dev_result.get("status") == "success"
         return dev_result.status == "success"
     
-    def _append_dev_summary_to_state(
-        self,
-        state: dict,
-        dev_result: dict | BackendDevResult | None,
-        artifact_id: str,
-    ) -> None:
-        """Summaries disabled: no-op."""
-        return
-    
-    def _append_group_summary_to_state(
-        self,
-        state: dict,
-        dev_result: dict | BackendDevResult | None,
-        group_id: str,
-        group_label: str,
-        artifact_count: int,
-    ) -> None:
-        """Summaries disabled: no-op."""
-        return
-    
     
     def _create_status_event(self, message: str) -> Event:
         """Create a status event from this agent."""

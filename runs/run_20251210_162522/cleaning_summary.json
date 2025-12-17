@@ -1,0 +1,71 @@
+{
+  "dataset_name": "data.csv",
+  "original_shape": {
+    "rows": 10127,
+    "columns": 21
+  },
+  "cleaned_shape": {
+    "rows": 10127,
+    "columns": 26
+  },
+  "dropped_columns": [],
+  "transformed_columns": {},
+  "label_definition": null,
+  "imputation_summary": null,
+  "pii_notes": [
+    {
+      "column": "CLIENTNUM",
+      "action": "retained",
+      "note": "Primary identifier; retained but flagged as PII."
+    }
+  ],
+  "files_produced": [
+    {
+      "path": "workspace/cleaned/cleaned.csv",
+      "purpose": "Canonical cleaned dataset",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/segment_attrition_income.csv",
+      "purpose": "Attrition rates by income category",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/segment_attrition_card.csv",
+      "purpose": "Attrition rates by card category",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/segment_attrition_spend_quintile.csv",
+      "purpose": "Attrition rates by spending quintile",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/correlations_with_churn.json",
+      "purpose": "Feature correlations with churn",
+      "format": "json"
+    },
+    {
+      "path": "workspace/cleaned/logistic_feature_coefs.csv",
+      "purpose": "Logistic regression coefficients",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/dt_feature_importances.csv",
+      "purpose": "Decision tree feature importances",
+      "format": "csv"
+    },
+    {
+      "path": "workspace/cleaned/summary_metrics.json",
+      "purpose": "Summary metrics",
+      "format": "json"
+    }
+  ],
+  "key_decisions": [
+    "Used provided Attrition_Flag as primary churn source and created binary churn column (churn=1 for 'Attrited Customer').",
+    "Derived monthly_spend, avg_txn_value, tenure_months, and spend_quintile for segmentation and analysis."
+  ],
+  "assumptions": [
+    "No date/last_active fields present; therefore churn is taken from Attrition_Flag as authoritative. If a time-based churn definition is required, transaction timestamps or last_active_date must be provided. Retained all rows except those missing CLIENTNUM (none). Conservatively imputed modeling features with median for logistic/DT training only; no imputation applied to canonical cleaned.csv."
+  ]
+}

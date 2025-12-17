@@ -1,0 +1,1201 @@
+{
+  "run_id": "run_20251210_162522",
+  "dataset_id": null,
+  "dashboard_id": null,
+  "dashboard_goal": "Operational monitoring of customer attrition and identification of high-risk segments by income, card category, and spend behavior for monthly refreshed retention analysis.",
+  "audience": "Retention managers and retention analysts",
+  "groups": [
+    {
+      "id": "helpers_core",
+      "kind": "helpers",
+      "label": "Core Data Infrastructure",
+      "description": "Utilities for loading cleaned datasets, parsing filters, and computing common aggregations used across KPIs and visuals.",
+      "artifacts": [
+        {
+          "id": "helper_load_cleaned_data",
+          "kind": "helper",
+          "title": "Cleaned Dataset Loader",
+          "description": "Load and cache workspace/cleaned.csv with proper typing for churn, monthly_spend, tenure_months, and spend_quintile columns.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "data-loading",
+            "csv",
+            "core"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_load_segment_data",
+          "kind": "helper",
+          "title": "Pre-Aggregated Segment Data Loader",
+          "description": "Load segment_attrition_income.csv, segment_attrition_card.csv, and segment_attrition_spend_quintile.csv for potential use in segment-level visuals when global filters are not applied.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "data-loading",
+            "segments",
+            "optimization"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_load_metrics_files",
+          "kind": "helper",
+          "title": "Summary Metrics Loader",
+          "description": "Load key_metrics.json and summary_metrics.json for fast retrieval of unfiltered headline metrics and to validate on-the-fly computations.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "data-loading",
+            "metrics",
+            "json"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_filter_parser",
+          "kind": "helper",
+          "title": "Global Filter Query Parser",
+          "description": "Parse and validate query parameters for Income_Category, Card_Category, spend_quintile, and tenure_months into a standard filter object.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "filters",
+            "parsing"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_apply_filters",
+          "kind": "helper",
+          "title": "Row-Level Filter Applicator",
+          "description": "Apply parsed global filters to in-memory data frames or arrays from cleaned.csv, handling multi-select and tenure range logic.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "filters",
+            "transformation"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_attrition_aggregations",
+          "kind": "helper",
+          "title": "Attrition Aggregation Utilities",
+          "description": "Compute attrition_rate, attrited_count, total_customers, and related metrics overall or grouped by a dimension column.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "aggregation",
+            "attrition",
+            "metrics"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_histogram_utils",
+          "kind": "helper",
+          "title": "Histogram & Distribution Utilities",
+          "description": "Generate histogram bin edges and counts for numeric measures like monthly_spend and Total_Trans_Amt, configurable by bin count or bin width.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "distribution",
+            "histogram"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "helper_feature_importance_loader",
+          "kind": "helper",
+          "title": "Feature Importance & Correlation Loader",
+          "description": "Load dt_feature_importances.csv, logistic_feature_coefs.csv, correlations_with_churn.json, and top_correlations.json into a unified structure keyed by model_source.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "feature-importance",
+            "correlations",
+            "ml"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "kpis_overview",
+      "kind": "kpis",
+      "label": "KPI Endpoints",
+      "description": "Routes serving high-level KPIs for the header section and overall attrition card, with support for global filters.",
+      "artifacts": [
+        {
+          "id": "route_kpis_overview_summary",
+          "kind": "route",
+          "title": "All KPIs Overview",
+          "description": "Return all header KPIs (attrition rate, attrited count, median monthly spend) in a single payload, respecting global filters.",
+          "http_path": "/api/kpis/overview",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values matching global filter f_income.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values matching global filter f_card.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values matching global filter f_spend_quintile.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months for range filter f_tenure.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months for range filter f_tenure.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpis",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "kpi_attrition_rate",
+                "type": "object",
+                "nullable": false,
+                "description": "Overall attrition rate KPI with metadata."
+              },
+              {
+                "name": "kpi_attrited_count",
+                "type": "object",
+                "nullable": false,
+                "description": "Attrited customers count KPI with metadata."
+              },
+              {
+                "name": "kpi_median_monthly_spend",
+                "type": "object",
+                "nullable": false,
+                "description": "Median monthly spend KPI with metadata."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations"
+          ],
+          "priority": 2,
+          "tags": [
+            "kpi",
+            "overview",
+            "attrition"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "route_kpi_attrition_rate",
+          "kind": "route",
+          "title": "Attrition Rate KPI",
+          "description": "Return the overall attrition rate as a single KPI value, with optional global filters applied.",
+          "http_path": "/api/kpis/attrition-rate",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_attrition_rate",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Attrition rate as a fraction between 0 and 1."
+              },
+              {
+                "name": "formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Attrition rate formatted as percentage (1 decimal)."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers after filters."
+              },
+              {
+                "name": "attrited_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers with churn=1 after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations"
+          ],
+          "priority": 2,
+          "tags": [
+            "kpi",
+            "attrition",
+            "rate"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "route_kpi_attrited_count",
+          "kind": "route",
+          "title": "Attrited Customers Count KPI",
+          "description": "Return the number of attrited customers (churn=1), with optional global filters.",
+          "http_path": "/api/kpis/attrited-count",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_attrited_count",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers with churn=1."
+              },
+              {
+                "name": "formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Formatted integer string for display."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations"
+          ],
+          "priority": 2,
+          "tags": [
+            "kpi",
+            "attrition",
+            "count"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "route_kpi_median_monthly_spend",
+          "kind": "route",
+          "title": "Median Monthly Spend KPI",
+          "description": "Return the median of monthly_spend, with optional global filters applied.",
+          "http_path": "/api/kpis/median-monthly-spend",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_median_monthly_spend",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Median monthly_spend value."
+              },
+              {
+                "name": "formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Value formatted as USD currency."
+              },
+              {
+                "name": "customer_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers contributing to the median after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "kpi",
+            "spend",
+            "median"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "visuals_overall",
+      "kind": "visuals",
+      "label": "Overall Attrition Card",
+      "description": "Route for the primary overall attrition visualization card.",
+      "artifacts": [
+        {
+          "id": "route_viz_card_attrition",
+          "kind": "route",
+          "title": "Overall Attrition Card Data",
+          "description": "Provide metrics for the overall attrition card, including attrition rate, attrited count, and total customers, respecting global filters.",
+          "http_path": "/api/visuals/overall-attrition-card",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_card_attrition",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "attrition_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Overall attrition rate (0-1)."
+              },
+              {
+                "name": "attrition_rate_formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Attrition rate formatted as percentage."
+              },
+              {
+                "name": "attrited_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of attrited customers after filters."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations"
+          ],
+          "priority": 3,
+          "tags": [
+            "visual",
+            "card",
+            "attrition"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "visuals_attrition_segments",
+      "kind": "visuals",
+      "label": "Attrition by Segment Visuals",
+      "description": "Bar chart routes for attrition by income bracket, card category, and spend quintile.",
+      "artifacts": [
+        {
+          "id": "route_viz_attrition_by_income",
+          "kind": "route",
+          "title": "Attrition by Income Bracket",
+          "description": "Return attrition metrics grouped by Income_Category, including counts and rates, with optional global filters.",
+          "http_path": "/api/visuals/attrition-by-income",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_attrition_income",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "Income_Category",
+                "type": "string",
+                "nullable": false,
+                "description": "Income bracket label."
+              },
+              {
+                "name": "attrited_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Count of churn=1 in this income bracket."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers in this income bracket."
+              },
+              {
+                "name": "attrition_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Attrited_count / total_customers for this bracket."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations",
+            "helper_load_segment_data"
+          ],
+          "priority": 3,
+          "tags": [
+            "visual",
+            "bar",
+            "income",
+            "attrition"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "route_viz_attrition_by_card_category",
+          "kind": "route",
+          "title": "Attrition by Card Category",
+          "description": "Return attrition metrics grouped by Card_Category, including counts and rates, with optional global filters.",
+          "http_path": "/api/visuals/attrition-by-card-category",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_attrition_card",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "Card_Category",
+                "type": "string",
+                "nullable": false,
+                "description": "Card category label."
+              },
+              {
+                "name": "attrited_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Count of churn=1 in this card category."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers in this card category."
+              },
+              {
+                "name": "attrition_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Attrited_count / total_customers for this category."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations",
+            "helper_load_segment_data"
+          ],
+          "priority": 3,
+          "tags": [
+            "visual",
+            "bar",
+            "card-category",
+            "attrition"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        },
+        {
+          "id": "route_viz_attrition_by_spend_quintile",
+          "kind": "route",
+          "title": "Attrition by Spend Quintile",
+          "description": "Return attrition metrics grouped by spend_quintile, including counts and rates, with optional global filters.",
+          "http_path": "/api/visuals/attrition-by-spend-quintile",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_attrition_spend_quintile",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "spend_quintile",
+                "type": "string",
+                "nullable": false,
+                "description": "Spend quintile label or numeric bucket."
+              },
+              {
+                "name": "attrited_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Count of churn=1 in this quintile."
+              },
+              {
+                "name": "total_customers",
+                "type": "number",
+                "nullable": false,
+                "description": "Total customers in this quintile."
+              },
+              {
+                "name": "attrition_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Attrited_count / total_customers for this quintile."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_attrition_aggregations",
+            "helper_load_segment_data"
+          ],
+          "priority": 3,
+          "tags": [
+            "visual",
+            "bar",
+            "spend-quintile",
+            "attrition"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "visuals_top_drivers",
+      "kind": "visuals",
+      "label": "Top Drivers of Attrition",
+      "description": "Horizontal bar chart route for model-derived feature importances explaining churn.",
+      "artifacts": [
+        {
+          "id": "route_viz_top_drivers",
+          "kind": "route",
+          "title": "Top Drivers of Attrition",
+          "description": "Return ranked feature importance scores for churn, supporting multiple model sources (default dt_feature_importances).",
+          "http_path": "/api/visuals/top-drivers",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "modelSource",
+              "type": "enum",
+              "required": false,
+              "description": "Model source identifier; defaults to dt_feature_importances.",
+              "enum_values": [
+                "dt_feature_importances",
+                "logistic_feature_coefs",
+                "correlations_with_churn"
+              ],
+              "default": null
+            },
+            {
+              "name": "topN",
+              "type": "number",
+              "required": false,
+              "description": "Optional limit on number of top features to return.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_top_drivers",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "feature_name",
+                "type": "string",
+                "nullable": false,
+                "description": "Name of the feature."
+              },
+              {
+                "name": "importance_score",
+                "type": "number",
+                "nullable": false,
+                "description": "Importance or effect size for the feature."
+              },
+              {
+                "name": "model_source",
+                "type": "string",
+                "nullable": false,
+                "description": "Source model or method for this importance score."
+              },
+              {
+                "name": "rank",
+                "type": "number",
+                "nullable": false,
+                "description": "Rank order of the feature by importance (1 = most important)."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_feature_importance_loader"
+          ],
+          "priority": 3,
+          "tags": [
+            "visual",
+            "feature-importance",
+            "ml",
+            "bar-horizontal"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "visuals_distributions",
+      "kind": "visuals",
+      "label": "Spending & Transaction Distributions",
+      "description": "Histogram-based routes for spending and transaction count distributions.",
+      "artifacts": [
+        {
+          "id": "route_viz_spend_txn_distribution",
+          "kind": "route",
+          "title": "Spending & Transaction Distributions",
+          "description": "Return histogram bin counts for monthly_spend and Total_Trans_Amt measures, optionally filtered by global filters.",
+          "http_path": "/api/visuals/spend-txn-distribution",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "incomeCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Income_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "cardCategories",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated Card_Category values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuintiles",
+              "type": "string",
+              "required": false,
+              "description": "Comma-separated spend_quintile values.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMin",
+              "type": "number",
+              "required": false,
+              "description": "Minimum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "tenureMax",
+              "type": "number",
+              "required": false,
+              "description": "Maximum tenure_months filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "bins",
+              "type": "number",
+              "required": false,
+              "description": "Desired number of histogram bins; default determined by helper.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "viz_spend_txn_distribution",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "monthly_spend",
+                "type": "array",
+                "nullable": false,
+                "description": "Histogram for monthly_spend with bin ranges and counts."
+              },
+              {
+                "name": "Total_Trans_Amt",
+                "type": "array",
+                "nullable": false,
+                "description": "Histogram for Total_Trans_Amt with bin ranges and counts."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data",
+            "helper_filter_parser",
+            "helper_apply_filters",
+            "helper_histogram_utils"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "histogram",
+            "spend",
+            "transactions"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    },
+    {
+      "id": "filters_dynamic",
+      "kind": "filters",
+      "label": "Dynamic Filter Option Routes",
+      "description": "Routes providing distinct values and ranges for global filters.",
+      "artifacts": [
+        {
+          "id": "route_filters_global_options",
+          "kind": "route",
+          "title": "Global Filter Options",
+          "description": "Return available options for income, card category, spend quintile, and tenure range based on cleaned.csv.",
+          "http_path": "/api/filters/options",
+          "http_method": "GET",
+          "query_params": null,
+          "metrics_ref": "global_filters",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "f_income",
+                "type": "object",
+                "nullable": false,
+                "description": "Options for Income_Category filter, including labels and value keys."
+              },
+              {
+                "name": "f_card",
+                "type": "object",
+                "nullable": false,
+                "description": "Options for Card_Category filter."
+              },
+              {
+                "name": "f_spend_quintile",
+                "type": "object",
+                "nullable": false,
+                "description": "Options for spend_quintile filter."
+              },
+              {
+                "name": "f_tenure",
+                "type": "object",
+                "nullable": false,
+                "description": "Range (min, max) for tenure_months plus optional suggested steps."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_cleaned_data"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "options",
+            "metadata"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-10T15:57:32.884059",
+          "updated_at": "2025-12-10T15:57:32.884059"
+        }
+      ]
+    }
+  ],
+  "created_at": "2025-12-10T15:57:32.884059",
+  "updated_at": "2025-12-10T15:57:32.884059"
+}

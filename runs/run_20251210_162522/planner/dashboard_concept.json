@@ -1,0 +1,244 @@
+{
+  "title": "Attrition Monitoring — Retention Overview",
+  "description": "Single-page operational dashboard for retention managers to monitor overall attrition and understand primary behavioral and demographic drivers. Focus on income segments, card categories, spending behavior and model-derived top drivers. Designed for monthly refresh.",
+  "audience": "Retention managers and retention analysts",
+  "primary_use_case": "Monitor attrition distribution and identify high-risk segments to prioritize retention actions",
+  "layout_description": "One-page layout: header with 3 KPIs; left-side vertical filter rail; main canvas with a 2x3 visual grid (six visuals). Top row: Overall Attrition KPI card (large), Attrition by Income (bar), Attrition by Card Category (bar). Bottom row: Attrition by Spend Quintile (bar), Top Drivers (feature importance, horizontal bar), Spending & Transaction Distributions (small-multiples histograms). Filters are always visible on left and affect all visuals by default.",
+  "kpis": [
+    {
+      "id": "kpi_attrition_rate",
+      "title": "Attrition Rate",
+      "description": "Percent of customers who have churned (churn=1) in the current dataset.",
+      "formula": "SUM(churn) / COUNT(*)",
+      "time_context": "static - dataset snapshot",
+      "format": "percentage (1 decimal)"
+    },
+    {
+      "id": "kpi_attrited_count",
+      "title": "Attrited Customers (count)",
+      "description": "Number of customers with churn=1.",
+      "formula": "SUM(churn)",
+      "time_context": "static - dataset snapshot",
+      "format": "integer (0)"
+    },
+    {
+      "id": "kpi_median_monthly_spend",
+      "title": "Median Monthly Spend",
+      "description": "Median of derived monthly_spend to show central spend among customers.",
+      "formula": "MEDIAN(monthly_spend)",
+      "time_context": "static - dataset snapshot",
+      "format": "currency (USD)"
+    }
+  ],
+  "visuals": [
+    {
+      "id": "viz_card_attrition",
+      "title": "Overall Attrition (card)",
+      "purpose": "Quick, primary status indicator for retention.",
+      "type": "kpi_card",
+      "measures": [
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "rate"
+        }
+      ],
+      "dimensions": [],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": []
+    },
+    {
+      "id": "viz_attrition_income",
+      "title": "Attrition Rate by Income Bracket",
+      "purpose": "Identify income segments with elevated attrition.",
+      "type": "bar_chart",
+      "measures": [
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "rate"
+        },
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "count"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Income_Category",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "high",
+      "table_columns": [
+        "Income_Category",
+        "attrited_count",
+        "total_customers",
+        "attrition_rate"
+      ]
+    },
+    {
+      "id": "viz_attrition_card",
+      "title": "Attrition Rate by Card Category",
+      "purpose": "Compare attrition across card products to prioritize product- or card-specific interventions.",
+      "type": "bar_chart",
+      "measures": [
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "rate"
+        },
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "count"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "Card_Category",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "medium",
+      "table_columns": [
+        "Card_Category",
+        "attrited_count",
+        "total_customers",
+        "attrition_rate"
+      ]
+    },
+    {
+      "id": "viz_attrition_spend_quintile",
+      "title": "Attrition Rate by Spend Quintile",
+      "purpose": "Surface relationship between spend levels and churn risk.",
+      "type": "bar_chart",
+      "measures": [
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "rate"
+        },
+        {
+          "column_or_kpi": "churn",
+          "aggregation": "count"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "spend_quintile",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [],
+      "priority": "medium",
+      "table_columns": [
+        "spend_quintile",
+        "attrited_count",
+        "total_customers",
+        "attrition_rate"
+      ]
+    },
+    {
+      "id": "viz_top_drivers",
+      "title": "Top Drivers of Attrition (model importances)",
+      "purpose": "Show model-derived importance scores to guide root-cause investigation and feature-focused actions.",
+      "type": "horizontal_bar_chart",
+      "measures": [
+        {
+          "column_or_kpi": "feature_importance",
+          "aggregation": "value"
+        }
+      ],
+      "dimensions": [
+        {
+          "column": "feature_name",
+          "time_granularity": ""
+        }
+      ],
+      "static_filters": [
+        {
+          "column": "source",
+          "operator": "=",
+          "value": "dt_feature_importances"
+        }
+      ],
+      "priority": "high",
+      "table_columns": [
+        "feature_name",
+        "importance_score",
+        "model_source"
+      ]
+    },
+    {
+      "id": "viz_spend_txn_distribution",
+      "title": "Spending & Transaction Distributions",
+      "purpose": "Understand distribution and skew in monthly spend and transaction amounts to detect high-risk patterns and inform segmentation.",
+      "type": "small_multiples_histogram",
+      "measures": [
+        {
+          "column_or_kpi": "monthly_spend",
+          "aggregation": "distribution"
+        },
+        {
+          "column_or_kpi": "Total_Trans_Amt",
+          "aggregation": "distribution"
+        }
+      ],
+      "dimensions": [],
+      "static_filters": [],
+      "priority": "low",
+      "table_columns": []
+    }
+  ],
+  "global_filters": [
+    {
+      "id": "f_income",
+      "title": "Income Bracket",
+      "column": "Income_Category",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_card",
+      "title": "Card Category",
+      "column": "Card_Category",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_spend_quintile",
+      "title": "Spend Quintile",
+      "column": "spend_quintile",
+      "control_type": "multi-select",
+      "multi": true,
+      "default": "All",
+      "applies_to": [
+        "*"
+      ]
+    },
+    {
+      "id": "f_tenure",
+      "title": "Tenure (months)",
+      "column": "tenure_months",
+      "control_type": "range_slider",
+      "multi": false,
+      "default": "",
+      "applies_to": [
+        "*"
+      ]
+    }
+  ],
+  "limitations": [
+    "No date or activity timestamp columns available — churn is based on provided Attrition_Flag and is not time-based.",
+    "CLIENTNUM identified as PII; drilldowns to customer lists must follow data governance (masking or role-based access).",
+    "Some small income/card categories may have low counts — show counts alongside rates and hide or group categories < x customers.",
+    "Feature importances provided in workspace/cleaned must be refreshed alongside dataset to keep top drivers accurate."
+  ]
+}

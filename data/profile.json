@@ -1,0 +1,375 @@
+{
+  "shape": [10127, 23],
+  "columns": [
+    {
+      "name": "CLIENTNUM",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 10127
+    },
+    {
+      "name": "Attrition_Flag",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 2
+    },
+    {
+      "name": "Customer_Age",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 45
+    },
+    {
+      "name": "Gender",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 2
+    },
+    {
+      "name": "Dependent_count",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 6
+    },
+    {
+      "name": "Education_Level",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 7
+    },
+    {
+      "name": "Marital_Status",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 4
+    },
+    {
+      "name": "Income_Category",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 6
+    },
+    {
+      "name": "Card_Category",
+      "dtype": "object",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 4
+    },
+    {
+      "name": "Months_on_book",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 44
+    },
+    {
+      "name": "Total_Relationship_Count",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 6
+    },
+    {
+      "name": "Months_Inactive_12_mon",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 7
+    },
+    {
+      "name": "Contacts_Count_12_mon",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 7
+    },
+    {
+      "name": "Credit_Limit",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 6205
+    },
+    {
+      "name": "Total_Revolving_Bal",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 1974
+    },
+    {
+      "name": "Avg_Open_To_Buy",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 6813
+    },
+    {
+      "name": "Total_Amt_Chng_Q4_Q1",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 1158
+    },
+    {
+      "name": "Total_Trans_Amt",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 5033
+    },
+    {
+      "name": "Total_Trans_Ct",
+      "dtype": "int64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 126
+    },
+    {
+      "name": "Total_Ct_Chng_Q4_Q1",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 830
+    },
+    {
+      "name": "Avg_Utilization_Ratio",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 964
+    },
+    {
+      "name": "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 1704
+    },
+    {
+      "name": "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2",
+      "dtype": "float64",
+      "missing": 0,
+      "missing_pct": 0.0,
+      "unique": 640
+    }
+  ],
+  "numeric_stats": {
+    "CLIENTNUM": {
+      "count": 10127,
+      "mean": 739177606.3336625,
+      "std": 36903783.45023115,
+      "min": 708082083.0,
+      "25%": 713036770.5,
+      "50%": 717926358.0,
+      "75%": 773143533.0,
+      "max": 828343083.0
+    },
+    "Customer_Age": {
+      "count": 10127,
+      "mean": 46.32596030413745,
+      "std": 8.01681403254903,
+      "min": 26.0,
+      "25%": 41.0,
+      "50%": 46.0,
+      "75%": 52.0,
+      "max": 73.0
+    },
+    "Dependent_count": {
+      "count": 10127,
+      "mean": 2.3462032191172115,
+      "std": 1.2989083489037905,
+      "min": 0.0,
+      "25%": 1.0,
+      "50%": 2.0,
+      "75%": 3.0,
+      "max": 5.0
+    },
+    "Months_on_book": {
+      "count": 10127,
+      "mean": 35.928409203120374,
+      "std": 7.9864163308720615,
+      "min": 13.0,
+      "25%": 31.0,
+      "50%": 36.0,
+      "75%": 40.0,
+      "max": 56.0
+    },
+    "Total_Relationship_Count": {
+      "count": 10127,
+      "mean": 3.8125802310654686,
+      "std": 1.5544078653388251,
+      "min": 1.0,
+      "25%": 3.0,
+      "50%": 4.0,
+      "75%": 5.0,
+      "max": 6.0
+    },
+    "Months_Inactive_12_mon": {
+      "count": 10127,
+      "mean": 2.3411671768539546,
+      "std": 1.010622399418281,
+      "min": 0.0,
+      "25%": 2.0,
+      "50%": 2.0,
+      "75%": 3.0,
+      "max": 6.0
+    },
+    "Contacts_Count_12_mon": {
+      "count": 10127,
+      "mean": 2.4553174681544387,
+      "std": 1.106225142635924,
+      "min": 0.0,
+      "25%": 2.0,
+      "50%": 2.0,
+      "75%": 3.0,
+      "max": 6.0
+    },
+    "Credit_Limit": {
+      "count": 10127,
+      "mean": 8631.953698034955,
+      "std": 9088.776650223155,
+      "min": 1438.3,
+      "25%": 2555.0,
+      "50%": 4549.0,
+      "75%": 11067.5,
+      "max": 34516.0
+    },
+    "Total_Revolving_Bal": {
+      "count": 10127,
+      "mean": 1162.8140614199665,
+      "std": 814.9873352357523,
+      "min": 0.0,
+      "25%": 359.0,
+      "50%": 1276.0,
+      "75%": 1784.0,
+      "max": 2517.0
+    },
+    "Avg_Open_To_Buy": {
+      "count": 10127,
+      "mean": 7469.139636614989,
+      "std": 9090.685323679103,
+      "min": 3.0,
+      "25%": 1324.5,
+      "50%": 3474.0,
+      "75%": 9859.0,
+      "max": 34516.0
+    },
+    "Total_Amt_Chng_Q4_Q1": {
+      "count": 10127,
+      "mean": 0.759940653698035,
+      "std": 0.21920676923070273,
+      "min": 0.0,
+      "25%": 0.631,
+      "50%": 0.736,
+      "75%": 0.859,
+      "max": 3.397
+    },
+    "Total_Trans_Amt": {
+      "count": 10127,
+      "mean": 4404.086303939963,
+      "std": 3397.129253557087,
+      "min": 510.0,
+      "25%": 2155.5,
+      "50%": 3899.0,
+      "75%": 4741.0,
+      "max": 18484.0
+    },
+    "Total_Trans_Ct": {
+      "count": 10127,
+      "mean": 64.85869457884863,
+      "std": 23.472570449232997,
+      "min": 10.0,
+      "25%": 45.0,
+      "50%": 67.0,
+      "75%": 81.0,
+      "max": 139.0
+    },
+    "Total_Ct_Chng_Q4_Q1": {
+      "count": 10127,
+      "mean": 0.7122223758269971,
+      "std": 0.2380860913329413,
+      "min": 0.0,
+      "25%": 0.582,
+      "50%": 0.702,
+      "75%": 0.818,
+      "max": 3.714
+    },
+    "Avg_Utilization_Ratio": {
+      "count": 10127,
+      "mean": 0.27489355189098447,
+      "std": 0.27569146925238774,
+      "min": 0.0,
+      "25%": 0.023,
+      "50%": 0.176,
+      "75%": 0.503,
+      "max": 0.999
+    },
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1": {
+      "count": 10127,
+      "mean": 0.15999746397877948,
+      "std": 0.3653010123804694,
+      "min": 7.6642e-6,
+      "25%": 9.8983e-5,
+      "50%": 0.00018146,
+      "75%": 0.0003373,
+      "max": 0.99958
+    },
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2": {
+      "count": 10127,
+      "mean": 0.8400025708403277,
+      "std": 0.3653010371101796,
+      "min": 0.00041998,
+      "25%": 0.99966,
+      "50%": 0.99982,
+      "75%": 0.9999,
+      "max": 0.99999
+    }
+  },
+  "cat_stats": {
+    "Attrition_Flag": [
+      ["Existing Customer", 8500],
+      ["Attrited Customer", 1627]
+    ],
+    "Gender": [
+      ["F", 5358],
+      ["M", 4769]
+    ],
+    "Education_Level": [
+      ["Graduate", 3128],
+      ["High School", 2013],
+      ["Unknown", 1519],
+      ["Uneducated", 1487],
+      ["College", 1013]
+    ],
+    "Marital_Status": [
+      ["Married", 4687],
+      ["Single", 3943],
+      ["Unknown", 749],
+      ["Divorced", 748]
+    ],
+    "Income_Category": [
+      ["Less than $40K", 3561],
+      ["$40K - $60K", 1790],
+      ["$80K - $120K", 1535],
+      ["$60K - $80K", 1402],
+      ["Unknown", 1112]
+    ],
+    "Card_Category": [
+      ["Blue", 9436],
+      ["Silver", 555],
+      ["Gold", 116],
+      ["Platinum", 20]
+    ]
+  },
+  "dup_rows": 0
+}

@@ -1,0 +1,119 @@
+{
+  "overall_attrition_rate": 0.1606596227905599,
+  "attrition_by_income": [
+    {
+      "Income_Category": "$120K +",
+      "attrition_rate": 0.1733149931224209,
+      "n": 727
+    },
+    {
+      "Income_Category": "$40K - $60K",
+      "attrition_rate": 0.15139664804469274,
+      "n": 1790
+    },
+    {
+      "Income_Category": "$60K - $80K",
+      "attrition_rate": 0.13480741797432239,
+      "n": 1402
+    },
+    {
+      "Income_Category": "$80K - $120K",
+      "attrition_rate": 0.15765472312703582,
+      "n": 1535
+    },
+    {
+      "Income_Category": "Less than $40K",
+      "attrition_rate": 0.17186183656276327,
+      "n": 3561
+    },
+    {
+      "Income_Category": "Unknown",
+      "attrition_rate": 0.1681654676258993,
+      "n": 1112
+    }
+  ],
+  "attrition_by_card": [
+    {
+      "Card_Category": "Blue",
+      "attrition_rate": 0.1609792284866469,
+      "n": 9436
+    },
+    { "Card_Category": "Gold", "attrition_rate": 0.1810344827586207, "n": 116 },
+    { "Card_Category": "Platinum", "attrition_rate": 0.25, "n": 20 },
+    {
+      "Card_Category": "Silver",
+      "attrition_rate": 0.14774774774774774,
+      "n": 555
+    }
+  ],
+  "attrition_by_spend_quartile": [
+    {
+      "spend_quartile": "Q1",
+      "attrition_rate": 0.24407582938388625,
+      "n": 2532
+    },
+    {
+      "spend_quartile": "Q2",
+      "attrition_rate": 0.27527646129541866,
+      "n": 2532
+    },
+    {
+      "spend_quartile": "Q3",
+      "attrition_rate": 0.00869221651521138,
+      "n": 2531
+    },
+    { "spend_quartile": "Q4", "attrition_rate": 0.11453396524486571, "n": 2532 }
+  ],
+  "top_numeric_correlations_with_churn": {
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1": 0.9999887963108054,
+    "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2": 0.999988796157187,
+    "Total_Trans_Ct": 0.37140270118892665,
+    "Total_Ct_Chng_Q4_Q1": 0.2900540068808916,
+    "Total_Revolving_Bal": 0.2630528831292026,
+    "Contacts_Count_12_mon": 0.20449050998160492,
+    "Avg_Utilization_Ratio": 0.1784103315617484,
+    "Total_Trans_Amt": 0.16859838141007918,
+    "Months_Inactive_12_mon": 0.15244880632692606,
+    "Total_Relationship_Count": 0.15000522801913765
+  },
+  "feature_importances": [
+    {
+      "feature": "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2",
+      "importance": 0.40171668236198693
+    },
+    {
+      "feature": "Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1",
+      "importance": 0.31633857577928143
+    },
+    { "feature": "Total_Trans_Ct", "importance": 0.07863273701018701 },
+    { "feature": "Total_Revolving_Bal", "importance": 0.05698303870169576 },
+    { "feature": "Total_Trans_Amt", "importance": 0.04811225743813149 },
+    { "feature": "Total_Ct_Chng_Q4_Q1", "importance": 0.028617993394709156 },
+    { "feature": "Avg_Utilization_Ratio", "importance": 0.02180729500107999 },
+    {
+      "feature": "Total_Relationship_Count",
+      "importance": 0.016406236730521034
+    },
+    { "feature": "Total_Amt_Chng_Q4_Q1", "importance": 0.007757124199546683 },
+    { "feature": "Contacts_Count_12_mon", "importance": 0.005551536879867542 },
+    { "feature": "Credit_Limit", "importance": 0.004185926891945558 },
+    {
+      "feature": "Months_Inactive_12_mon",
+      "importance": 0.0037942520412883947
+    },
+    { "feature": "Customer_Age", "importance": 0.0030548137613019936 },
+    { "feature": "Avg_Open_To_Buy", "importance": 0.0025746778598639847 },
+    { "feature": "Gender_F", "importance": 0.0018871591954449688 },
+    { "feature": "Gender_M", "importance": 0.0006468318707722583 },
+    { "feature": "Months_on_book", "importance": 0.0004928237123717485 },
+    {
+      "feature": "Marital_Status_Married",
+      "importance": 0.0003845500881774033
+    },
+    {
+      "feature": "Income_Category_Less than $40K",
+      "importance": 0.00033427923913692504
+    },
+    { "feature": "Dependent_count", "importance": 0.00011909605303484098 }
+  ]
+}

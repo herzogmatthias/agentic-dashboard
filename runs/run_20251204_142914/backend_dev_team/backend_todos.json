@@ -1,0 +1,1793 @@
+{
+  "run_id": "run_20251204_142914",
+  "dataset_id": null,
+  "dashboard_id": null,
+  "dashboard_goal": "Monitor attrition distribution, prioritize high-risk cohorts, and surface behavioral drivers to guide targeted interventions.",
+  "audience": "Retention managers, CRM/retention analysts",
+  "groups": [
+    {
+      "id": "helpers_core",
+      "kind": "helpers",
+      "label": "Core Data Infrastructure",
+      "description": "Essential data loading, filtering, and aggregation utilities for the attrition dashboard.",
+      "artifacts": [
+        {
+          "id": "helper_load_customer_dataset",
+          "kind": "helper",
+          "title": "Customer Dataset Loader",
+          "description": "Load and parse the cleaned churn dataset (e.g., CSV/Parquet/DB) and return typed customer records.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "data-loading",
+            "dataset",
+            "customers"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_apply_global_filters",
+          "kind": "helper",
+          "title": "Global Filter Application Utility",
+          "description": "Apply global filters (income, card, gender, spend quartile, months on book) to an in-memory customer dataset based on query parameters.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "filtering",
+            "utility",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_compute_churn_metrics",
+          "kind": "helper",
+          "title": "Churn Metric Aggregations",
+          "description": "Shared utilities to compute churn rate, retention rate, attrited/retained counts, and grouped churn statistics.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "aggregation",
+            "churn",
+            "metrics"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_pivot_2d",
+          "kind": "helper",
+          "title": "2D Pivot Utility",
+          "description": "Generic helper to compute 2D pivots (e.g., Income x Card) with aggregated metrics like churn rate and counts.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "pivot",
+            "aggregation",
+            "segments"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_boxplot_stats",
+          "kind": "helper",
+          "title": "Boxplot Statistics Helper",
+          "description": "Compute distribution summary statistics (min, Q1, median, Q3, max) for numeric columns grouped by a categorical field (e.g., churn_flag).",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "statistics",
+            "distribution",
+            "boxplot"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_actionable_segment_rules",
+          "kind": "helper",
+          "title": "Actionable Segment Definitions",
+          "description": "Define and evaluate pre-configured segment rules (e.g., low-income low-spend, high-income high-churn risk) and compute metrics for them.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "segments",
+            "business-rules",
+            "retention"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "helper_load_metrics_summary",
+          "kind": "helper",
+          "title": "Metrics Summary Loader",
+          "description": "Load and expose correlations and other precomputed metrics from metrics_summary.json for use in the dashboard.",
+          "http_path": null,
+          "http_method": null,
+          "query_params": null,
+          "metrics_ref": null,
+          "expected_shape": null,
+          "canonical_query": null,
+          "depends_on": [],
+          "priority": 1,
+          "tags": [
+            "metrics-summary",
+            "correlations",
+            "utility"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    },
+    {
+      "id": "filters_global",
+      "kind": "filters",
+      "label": "Global Filter Option Routes",
+      "description": "Endpoints that provide dynamic options and ranges for global dashboard filters.",
+      "artifacts": [
+        {
+          "id": "route_filter_income_options",
+          "kind": "route",
+          "title": "Income Category Filter Options",
+          "description": "Returns distinct Income_Category_grouped values and counts for the Income Category filter, respecting other applied filters.",
+          "http_path": "/api/filters/income-options",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "f_income",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "value",
+                "type": "string",
+                "nullable": false,
+                "description": "Raw Income_Category_grouped value."
+              },
+              {
+                "name": "label",
+                "type": "string",
+                "nullable": false,
+                "description": "Display label for the income category."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this income category after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "income",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_filter_card_options",
+          "kind": "route",
+          "title": "Card Category Filter Options",
+          "description": "Returns distinct Card_Category_clean values and counts for the Card Category filter, respecting other applied filters.",
+          "http_path": "/api/filters/card-options",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "f_card",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "value",
+                "type": "string",
+                "nullable": false,
+                "description": "Raw Card_Category_clean value."
+              },
+              {
+                "name": "label",
+                "type": "string",
+                "nullable": false,
+                "description": "Display label for the card category."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this card category after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "card",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_filter_gender_options",
+          "kind": "route",
+          "title": "Gender Filter Options",
+          "description": "Returns distinct Gender values and counts for the Gender filter, respecting other applied filters.",
+          "http_path": "/api/filters/gender-options",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "f_gender",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "value",
+                "type": "string",
+                "nullable": false,
+                "description": "Raw Gender value."
+              },
+              {
+                "name": "label",
+                "type": "string",
+                "nullable": false,
+                "description": "Display label for the gender value."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers with this gender after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "gender",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_filter_spend_quartile_options",
+          "kind": "route",
+          "title": "Spend Quartile Filter Options",
+          "description": "Returns distinct spend_quartile values and counts for the Spend Quartile filter, respecting other applied filters.",
+          "http_path": "/api/filters/spend-quartile-options",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "f_spend_quartile",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "value",
+                "type": "string",
+                "nullable": false,
+                "description": "Raw spend_quartile value."
+              },
+              {
+                "name": "label",
+                "type": "string",
+                "nullable": false,
+                "description": "Display label for the spend quartile."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this spend quartile after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "spend",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_filter_months_on_book_range",
+          "kind": "route",
+          "title": "Months on Book Filter Range",
+          "description": "Returns min and max values for Months_on_book_parsed to configure the Months on Book range filter, respecting other applied filters.",
+          "http_path": "/api/filters/months-on-book-range",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to include; omit or use 'All' for no income filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to include; omit or use 'All' for no card filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to include; omit or use 'All' for no gender filter.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to include; omit or use 'All' for no spend filter.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "f_months_on_book",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "min",
+                "type": "number",
+                "nullable": false,
+                "description": "Minimum Months_on_book_parsed value after filters."
+              },
+              {
+                "name": "max",
+                "type": "number",
+                "nullable": false,
+                "description": "Maximum Months_on_book_parsed value after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters"
+          ],
+          "priority": 2,
+          "tags": [
+            "filters",
+            "months-on-book",
+            "global-filters"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    },
+    {
+      "id": "kpis_overview",
+      "kind": "kpis",
+      "label": "Attrition Overview KPIs",
+      "description": "Endpoints serving headline KPIs for overall attrition and key summary metrics.",
+      "artifacts": [
+        {
+          "id": "route_kpi_overall_attrition",
+          "kind": "route",
+          "title": "Overall Attrition Rate KPI",
+          "description": "Compute and return the overall attrition rate (churn_flag = 1) as a KPI, with numerator and denominator.",
+          "http_path": "/api/kpis/overall-attrition-rate",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_overall_attrition",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "kpi_id",
+                "type": "string",
+                "nullable": false,
+                "description": "KPI identifier (kpi_overall_attrition)."
+              },
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Overall attrition rate as a decimal (0-1)."
+              },
+              {
+                "name": "formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Formatted percentage string (e.g., '16.1%')."
+              },
+              {
+                "name": "numerator",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of attrited customers (churn_flag = 1)."
+              },
+              {
+                "name": "denominator",
+                "type": "number",
+                "nullable": false,
+                "description": "Total number of customers in the filtered population."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 3,
+          "tags": [
+            "kpi",
+            "churn",
+            "overview"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_kpi_attrited_count",
+          "kind": "route",
+          "title": "Attrited Customers Count KPI",
+          "description": "Compute and return the total number of attrited customers (churn_flag = 1) as a KPI.",
+          "http_path": "/api/kpis/attrited-count",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_attrited_count",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "kpi_id",
+                "type": "string",
+                "nullable": false,
+                "description": "KPI identifier (kpi_attrited_count)."
+              },
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of attrited customers after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 3,
+          "tags": [
+            "kpi",
+            "churn",
+            "count"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_kpi_retention_rate",
+          "kind": "route",
+          "title": "Retention Rate KPI",
+          "description": "Compute and return the retention rate (customers with churn_flag = 0) as a KPI.",
+          "http_path": "/api/kpis/retention-rate",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_retention_rate",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "kpi_id",
+                "type": "string",
+                "nullable": false,
+                "description": "KPI identifier (kpi_retention_rate)."
+              },
+              {
+                "name": "value",
+                "type": "number",
+                "nullable": false,
+                "description": "Retention rate as a decimal (0-1)."
+              },
+              {
+                "name": "formatted",
+                "type": "string",
+                "nullable": false,
+                "description": "Formatted percentage string (e.g., '83.9%')."
+              },
+              {
+                "name": "numerator",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of retained customers (churn_flag = 0)."
+              },
+              {
+                "name": "denominator",
+                "type": "number",
+                "nullable": false,
+                "description": "Total number of customers in the filtered population."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 3,
+          "tags": [
+            "kpi",
+            "retention",
+            "overview"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_kpi_avg_trans_ct_churn_vs_retained",
+          "kind": "route",
+          "title": "Avg Total_Trans_Ct by Churn Status KPI",
+          "description": "Compute and return the average Total_Trans_Ct for churned vs retained customers side-by-side.",
+          "http_path": "/api/kpis/avg-trans-ct-churn-vs-retained",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "kpi_avg_trans_ct_churn_vs_retained",
+          "expected_shape": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "kpi_id",
+                "type": "string",
+                "nullable": false,
+                "description": "KPI identifier (kpi_avg_trans_ct_churn_vs_retained)."
+              },
+              {
+                "name": "values",
+                "type": "object",
+                "nullable": false,
+                "description": "Average transaction count by churn status, with keys for churned and retained."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 3,
+          "tags": [
+            "kpi",
+            "behavior",
+            "transactions"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    },
+    {
+      "id": "visuals_segments_overview",
+      "kind": "visuals",
+      "label": "Attrition Mix & Segment Visuals",
+      "description": "Chart data endpoints for overall attrition mix and key segment breakdowns (income, card, spend).",
+      "artifacts": [
+        {
+          "id": "route_v_overview_pie",
+          "kind": "route",
+          "title": "Attrition Mix Donut Data",
+          "description": "Return counts and rates for churned vs retained customers for the overview donut chart.",
+          "http_path": "/api/visuals/attrition-mix",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_overview_pie",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "churn_flag",
+                "type": "string",
+                "nullable": false,
+                "description": "Churn status label (e.g., 'Attrited', 'Retained')."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers with this churn status after filters."
+              },
+              {
+                "name": "rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Proportion of customers with this churn status (0-1)."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "donut",
+            "churn"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_v_attrition_by_income",
+          "kind": "route",
+          "title": "Attrition Rate by Income Bracket",
+          "description": "Return churn rate and customer count by Income_Category_grouped.",
+          "http_path": "/api/visuals/attrition-by-income",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_attrition_by_income",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "Income_Category_grouped",
+                "type": "string",
+                "nullable": false,
+                "description": "Income bracket."
+              },
+              {
+                "name": "churn_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Churn rate within this income bracket (0-1)."
+              },
+              {
+                "name": "customer_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this income bracket after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "bar",
+            "income",
+            "churn"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_v_attrition_by_card",
+          "kind": "route",
+          "title": "Attrition Rate by Card Category",
+          "description": "Return churn rate and customer count by Card_Category_clean.",
+          "http_path": "/api/visuals/attrition-by-card",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_attrition_by_card",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "Card_Category_clean",
+                "type": "string",
+                "nullable": false,
+                "description": "Card category."
+              },
+              {
+                "name": "churn_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Churn rate within this card category (0-1)."
+              },
+              {
+                "name": "customer_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this card category after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "bar",
+            "card",
+            "churn"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_v_attrition_by_spend_quartile",
+          "kind": "route",
+          "title": "Attrition Rate by Spend Quartile",
+          "description": "Return churn rate and customer count by spend_quartile.",
+          "http_path": "/api/visuals/attrition-by-spend-quartile",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_attrition_by_spend_quartile",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "spend_quartile",
+                "type": "string",
+                "nullable": false,
+                "description": "Spend quartile bucket."
+              },
+              {
+                "name": "churn_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Churn rate within this spend quartile (0-1)."
+              },
+              {
+                "name": "customer_count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this spend quartile after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "bar",
+            "spend",
+            "churn"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    },
+    {
+      "id": "visuals_behavioral",
+      "kind": "visuals",
+      "label": "Behavioral Driver Visuals",
+      "description": "Chart data endpoints for behavioral correlates and distributions linked to churn.",
+      "artifacts": [
+        {
+          "id": "route_v_top_numeric_correlates",
+          "kind": "route",
+          "title": "Top Numeric Correlates with Churn",
+          "description": "Expose precomputed correlation coefficients between numeric features and churn from metrics_summary.json.",
+          "http_path": "/api/visuals/top-numeric-correlates",
+          "http_method": "GET",
+          "query_params": null,
+          "metrics_ref": "v_top_numeric_correlates",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "feature",
+                "type": "string",
+                "nullable": false,
+                "description": "Feature name."
+              },
+              {
+                "name": "correlation_coefficient",
+                "type": "number",
+                "nullable": false,
+                "description": "Correlation coefficient with churn_flag."
+              },
+              {
+                "name": "magnitude_rank",
+                "type": "number",
+                "nullable": false,
+                "description": "Rank of this feature by absolute correlation magnitude."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_metrics_summary"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "correlation",
+            "behavior"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_v_dist_total_trans_ct",
+          "kind": "route",
+          "title": "Distribution of Total_Trans_Ct by Churn",
+          "description": "Return distribution summary statistics for Total_Trans_Ct by churn status for boxplot visualization.",
+          "http_path": "/api/visuals/dist-total-trans-ct",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive).",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_dist_total_trans_ct",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "churn_flag",
+                "type": "string",
+                "nullable": false,
+                "description": "Churn status label (e.g., 'Attrited', 'Retained')."
+              },
+              {
+                "name": "min",
+                "type": "number",
+                "nullable": false,
+                "description": "Minimum Total_Trans_Ct value for this churn status after filters."
+              },
+              {
+                "name": "q1",
+                "type": "number",
+                "nullable": false,
+                "description": "First quartile of Total_Trans_Ct for this churn status."
+              },
+              {
+                "name": "median",
+                "type": "number",
+                "nullable": false,
+                "description": "Median of Total_Trans_Ct for this churn status."
+              },
+              {
+                "name": "q3",
+                "type": "number",
+                "nullable": false,
+                "description": "Third quartile of Total_Trans_Ct for this churn status."
+              },
+              {
+                "name": "max",
+                "type": "number",
+                "nullable": false,
+                "description": "Maximum Total_Trans_Ct value for this churn status after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_boxplot_stats"
+          ],
+          "priority": 4,
+          "tags": [
+            "visual",
+            "boxplot",
+            "transactions",
+            "behavior"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    },
+    {
+      "id": "tables_segments",
+      "kind": "tables",
+      "label": "Cohort & Actionable Segment Tables",
+      "description": "Table endpoints for cohort cross-tabs and prioritized actionable segments.",
+      "artifacts": [
+        {
+          "id": "route_v_cohort_matrix",
+          "kind": "route",
+          "title": "Income x Card Cohort Matrix",
+          "description": "Return a pivot table of churn rate and customer count by Income_Category_grouped and Card_Category_clean.",
+          "http_path": "/api/tables/cohort-matrix-income-card",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to filter by before building the matrix.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to filter by before building the matrix.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive) before building the matrix.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive) before building the matrix.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_cohort_matrix",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "Income_Category_grouped",
+                "type": "string",
+                "nullable": false,
+                "description": "Income bracket."
+              },
+              {
+                "name": "Card_Category_clean",
+                "type": "string",
+                "nullable": false,
+                "description": "Card category."
+              },
+              {
+                "name": "churn_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Churn rate within this income x card cohort (0-1)."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this cohort after filters."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_pivot_2d",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 5,
+          "tags": [
+            "table",
+            "cohort",
+            "pivot",
+            "segments"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        },
+        {
+          "id": "route_v_actionable_segments_table",
+          "kind": "route",
+          "title": "Top Actionable Segments Table",
+          "description": "Return a ranked table of predefined actionable segments (e.g., low-income low-spend) with size, churn rate, and average Total_Trans_Amt.",
+          "http_path": "/api/tables/actionable-segments",
+          "http_method": "GET",
+          "query_params": [
+            {
+              "name": "topN",
+              "type": "number",
+              "required": false,
+              "description": "Optional number of top segments to return, ranked by churn rate or strategic priority.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "income",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Income_Category_grouped values to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "card",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Card_Category_clean values to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "gender",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated Gender values to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "spendQuartile",
+              "type": "string",
+              "required": false,
+              "description": "Optional comma-separated spend_quartile values to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMin",
+              "type": "number",
+              "required": false,
+              "description": "Optional minimum Months_on_book_parsed (inclusive) to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            },
+            {
+              "name": "monthsOnBookMax",
+              "type": "number",
+              "required": false,
+              "description": "Optional maximum Months_on_book_parsed (inclusive) to constrain segment evaluation.",
+              "enum_values": null,
+              "default": null
+            }
+          ],
+          "metrics_ref": "v_actionable_segments_table",
+          "expected_shape": {
+            "kind": "array",
+            "fields": [
+              {
+                "name": "segment_key",
+                "type": "string",
+                "nullable": false,
+                "description": "Stable identifier for the predefined segment."
+              },
+              {
+                "name": "segment_definition",
+                "type": "string",
+                "nullable": false,
+                "description": "Human-readable description of the segment rule (e.g., 'Low income & low spend')."
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "nullable": false,
+                "description": "Number of customers in this segment after filters."
+              },
+              {
+                "name": "churn_rate",
+                "type": "number",
+                "nullable": false,
+                "description": "Churn rate within this segment (0-1)."
+              },
+              {
+                "name": "avg_Total_Trans_Amt",
+                "type": "number",
+                "nullable": false,
+                "description": "Average Total_Trans_Amt for customers in this segment."
+              }
+            ],
+            "notes": null
+          },
+          "canonical_query": null,
+          "depends_on": [
+            "helper_load_customer_dataset",
+            "helper_apply_global_filters",
+            "helper_actionable_segment_rules",
+            "helper_compute_churn_metrics"
+          ],
+          "priority": 5,
+          "tags": [
+            "table",
+            "segments",
+            "retention",
+            "prioritization"
+          ],
+          "status": "pending",
+          "created_at": "2025-12-09T18:29:37.328908",
+          "updated_at": "2025-12-09T18:29:37.328908"
+        }
+      ]
+    }
+  ],
+  "created_at": "2025-12-09T18:29:37.328908",
+  "updated_at": "2025-12-09T18:29:37.328908"
+}
