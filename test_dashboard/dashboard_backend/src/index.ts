@@ -8,7 +8,7 @@ export async function createApp() {
   const app = new OpenAPIHono({
     // optional: central validation error formatting
     defaultHook: (result, c) => {
-      if (!result.success) return c.json({ error: "Validation error" }, 422);
+      if (!result.success) return c.json({ error: result.error.message }, 422);
     },
   });
 

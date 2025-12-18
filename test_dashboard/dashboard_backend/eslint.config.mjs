@@ -1,7 +1,12 @@
 import baseConfig from '@hono/eslint-config'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-export default defineConfig(globalIgnores(['.yarn', '**/coverage', '**/dist']), {
+export default defineConfig(globalIgnores(['.yarn', '**/coverage', '**/dist', "eslint.config.mjs", 'src/spec/**']), {
+  files: [
+      'src/api/**/*.{ts,tsx}',
+      'src/models/**/*.{ts,tsx}',
+      'src/utils/**/*.{ts,tsx}',
+    ],
   extends: baseConfig,
 
   languageOptions: {
@@ -22,6 +27,8 @@ export default defineConfig(globalIgnores(['.yarn', '**/coverage', '**/dist']), 
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/dot-notation': 'off',
     '@typescript-eslint/no-base-to-string': 'off',
+    '@typescript-eslint/sort-imports': 'off',
+    '@typescript-eslint/consistent-type-imports': 'off',
     '@typescript-eslint/no-deprecated': 'off',
     '@typescript-eslint/no-duplicate-type-constituents': 'off',
     '@typescript-eslint/no-dynamic-delete': 'off',

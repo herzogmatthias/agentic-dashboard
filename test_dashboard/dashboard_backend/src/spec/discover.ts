@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 export async function discoverRouteModules() {
-  const files = await fg("src/api/**/route.ts");
+  const files = await fg("src/api/**/*.ts");
   const modules: any[] = [];
 
   for (const f of files) {

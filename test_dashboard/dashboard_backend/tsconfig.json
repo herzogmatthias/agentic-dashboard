@@ -13,9 +13,5 @@
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist"
   },
-  "include": [
-    "src/**/*.ts",
-    "eslint.config.mjs"
-  ],
   "exclude": ["node_modules"]
 }
