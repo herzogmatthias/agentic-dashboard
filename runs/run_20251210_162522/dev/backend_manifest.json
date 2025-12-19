@@ -149,21 +149,11 @@
     {
       "artifact_id": "route_kpis_overview_summary",
       "kind": "route",
-      "code_path": "src/app/api/kpis/overview/route.ts",
-      "dependent_code_paths": [
-        "src/lib/load_cleaned_data.ts",
-        "src/lib/filter_parser.ts",
-        "src/lib/apply_filters.ts",
-        "src/lib/attrition_aggregations.ts"
-      ],
+      "code_path": "",
+      "dependent_code_paths": [],
       "http_path": "/api/kpis/overview",
       "http_method": "GET",
-      "exports": [
-        "GET handler for /api/kpis/overview",
-        "GET handler for /api/kpis/attrition-rate",
-        "GET handler for /api/kpis/attrited-count",
-        "GET handler for /api/kpis/median-monthly-spend"
-      ],
+      "exports": [],
       "query_params": [
         {
           "name": "incomeCategories",
@@ -209,28 +199,18 @@
       "response_shape": "object response - see artifact spec",
       "canonical_query": null,
       "test_paths": [],
-      "last_modified_at": "2025-12-11T16:41:54.528600",
+      "last_modified_at": "2025-12-19T12:25:33.465558",
       "iteration_count": 1,
       "status": "success"
     },
     {
       "artifact_id": "route_kpi_attrition_rate",
       "kind": "route",
-      "code_path": "src/app/api/kpis/overview/route.ts",
-      "dependent_code_paths": [
-        "src/lib/load_cleaned_data.ts",
-        "src/lib/filter_parser.ts",
-        "src/lib/apply_filters.ts",
-        "src/lib/attrition_aggregations.ts"
-      ],
+      "code_path": "",
+      "dependent_code_paths": [],
       "http_path": "/api/kpis/attrition-rate",
       "http_method": "GET",
-      "exports": [
-        "GET handler for /api/kpis/overview",
-        "GET handler for /api/kpis/attrition-rate",
-        "GET handler for /api/kpis/attrited-count",
-        "GET handler for /api/kpis/median-monthly-spend"
-      ],
+      "exports": [],
       "query_params": [
         {
           "name": "incomeCategories",
@@ -276,28 +256,18 @@
       "response_shape": "object response - see artifact spec",
       "canonical_query": null,
       "test_paths": [],
-      "last_modified_at": "2025-12-11T16:41:54.547844",
+      "last_modified_at": "2025-12-19T12:25:33.467563",
       "iteration_count": 1,
       "status": "success"
     },
     {
       "artifact_id": "route_kpi_attrited_count",
       "kind": "route",
-      "code_path": "src/app/api/kpis/overview/route.ts",
-      "dependent_code_paths": [
-        "src/lib/load_cleaned_data.ts",
-        "src/lib/filter_parser.ts",
-        "src/lib/apply_filters.ts",
-        "src/lib/attrition_aggregations.ts"
-      ],
+      "code_path": "",
+      "dependent_code_paths": [],
       "http_path": "/api/kpis/attrited-count",
       "http_method": "GET",
-      "exports": [
-        "GET handler for /api/kpis/overview",
-        "GET handler for /api/kpis/attrition-rate",
-        "GET handler for /api/kpis/attrited-count",
-        "GET handler for /api/kpis/median-monthly-spend"
-      ],
+      "exports": [],
       "query_params": [
         {
           "name": "incomeCategories",
@@ -343,28 +313,18 @@
       "response_shape": "object response - see artifact spec",
       "canonical_query": null,
       "test_paths": [],
-      "last_modified_at": "2025-12-11T16:41:54.565345",
+      "last_modified_at": "2025-12-19T12:25:33.478293",
       "iteration_count": 1,
       "status": "success"
     },
     {
       "artifact_id": "route_kpi_median_monthly_spend",
       "kind": "route",
-      "code_path": "src/app/api/kpis/overview/route.ts",
-      "dependent_code_paths": [
-        "src/lib/load_cleaned_data.ts",
-        "src/lib/filter_parser.ts",
-        "src/lib/apply_filters.ts",
-        "src/lib/attrition_aggregations.ts"
-      ],
+      "code_path": "",
+      "dependent_code_paths": [],
       "http_path": "/api/kpis/median-monthly-spend",
       "http_method": "GET",
-      "exports": [
-        "GET handler for /api/kpis/overview",
-        "GET handler for /api/kpis/attrition-rate",
-        "GET handler for /api/kpis/attrited-count",
-        "GET handler for /api/kpis/median-monthly-spend"
-      ],
+      "exports": [],
       "query_params": [
         {
           "name": "incomeCategories",
@@ -410,7 +370,7 @@
       "response_shape": "object response - see artifact spec",
       "canonical_query": null,
       "test_paths": [],
-      "last_modified_at": "2025-12-11T16:41:54.584544",
+      "last_modified_at": "2025-12-19T12:25:33.489655",
       "iteration_count": 1,
       "status": "success"
     },

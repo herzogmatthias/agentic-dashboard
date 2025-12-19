@@ -1,40 +1,68 @@
-import type { CleanedRow, HistogramBin } from '../models/data_types.js';
+import type { CleanedDataRow } from "./cleaned_data_loader.js";
 
-export interface HistogramOptions {
-  bins?: number;
-  binWidth?: number;
-  valueAccessor?: (r: CleanedRow) => number;
+export interface HistogramBin {
+  min: number;
+  max: number;
+  count: number;
 }
 
-export function histogram(rows: CleanedRow[], measure: string, options?: HistogramOptions): HistogramBin[] {
-  const accessor = options?.valueAccessor ?? ((r: CleanedRow) => Number((r as any)[measure] ?? 0));
-  const values = rows.map(accessor).filter((v) => Number.isFinite(v));
-  if (values.length === 0) return [];
+type NumericAccessor = (row: CleanedDataRow) => number;
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const bins = options?.bins ?? 20;
-
-  let binWidth = options?.binWidth;
-  if (binWidth === undefined) {
-    binWidth = (max - min) / bins || 1;
+function deriveBounds(data: number[]): { min: number; max: number } {
+  if (data.length === 0) {
+    return { min: 0, max: 0 };
   }
 
-  const edges: number[] = [];
-  for (let i = 0; i <= bins; i++) edges.push(min + i * binWidth);
+  return {
+    min: Math.min(...data),
+    max: Math.max(...data),
+  };
+}
 
-  const counts = new Array(edges.length - 1).fill(0);
-  for (const v of values) {
-    let idx = Math.floor((v - min) / binWidth);
-    if (idx < 0) idx = 0;
-    if (idx >= counts.length) idx = counts.length - 1;
-    counts[idx] += 1;
+export function buildHistogram(
+  data: CleanedDataRow[],
+  accessor: NumericAccessor,
+  options: { binCount?: number; binWidth?: number } = {}
+): HistogramBin[] {
+  const numericValues = data.map(accessor);
+  if (numericValues.length === 0) {
+    return [];
   }
 
-  const result: HistogramBin[] = [];
-  for (let i = 0; i < counts.length; i++) {
-    result.push({ x0: edges[i], x1: edges[i + 1], count: counts[i] });
+  const { min, max } = deriveBounds(numericValues);
+  const defaultBinCount = 10;
+  const binCount = options.binCount ?? defaultBinCount;
+  const binWidth = options.binWidth ?? (max - min) / binCount;
+
+  if (binWidth <= 0) {
+    return [
+      {
+        min,
+        max,
+        count: numericValues.length,
+      },
+    ];
   }
 
-  return result;
+  const bins: HistogramBin[] = [];
+  for (let i = 0; i < binCount; i += 1) {
+    const binMin = min + i * binWidth;
+    const binMax = i === binCount - 1 ? max : binMin + binWidth;
+    bins.push({
+      min: binMin,
+      max: binMax,
+      count: 0,
+    });
+  }
+
+  numericValues.forEach((value) => {
+    const index = Math.min(
+      binCount - 1,
+      Math.floor((value - min) / binWidth)
+    );
+
+    bins[index].count += 1;
+  });
+
+  return bins;
 }

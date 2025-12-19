@@ -17,8 +17,6 @@ from google.adk.tools.tool_context import ToolContext
 from src.core.logging import get_logger
 from src.tools.utils import (
     SAMPLE_DASHBOARD_ROOT,
-    BACKEND_DEV_ALLOWED_PATHS,
-    TESTER_ALLOWED_PATHS,
     validate_path,
 )
 

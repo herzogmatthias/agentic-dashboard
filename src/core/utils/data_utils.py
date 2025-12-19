@@ -10,11 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.core.logging import get_logger
+from src.tools.utils.paths import SAMPLE_DASHBOARD_ROOT
 
 logger = get_logger(__name__)
 
-# Base path to the sample-dashboard project
-SAMPLE_DASHBOARD_ROOT = Path("C:/Users/darks/Documents/agentic-dashboard/sample-dashboard")
 
 
 def copy_data_to_project(

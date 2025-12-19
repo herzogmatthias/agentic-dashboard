@@ -3,9 +3,9 @@
 This module consolidates all tools needed by the Backend Dev Agent:
 - Filesystem: Content search (local), MCP filesystem toolset (shared)
 - Creation: create_api, create_model, create_helper
-- Validation: run_lint, run_type_check, run_build
+- Validation: run_lint, run_type_check, run_build, run_check_openapi
 - Data access: load_data_profile, read_backend_manifest, inspect_json_preview
-- Next.js docs: MCP integration with Next.js DevTools
+- Hono backend: OpenAPI registration via @hono/zod-openapi
 
 Note: Read/write/edit operations are handled by the shared MCP filesystem server.
 Note: Testing Agent tools are in a separate module: src.tools.tester
@@ -15,8 +15,6 @@ Note: copy_data_to_project is now in src.core.utils
 from src.tools.backend_dev.filesystem import (
     search_content,
     search_content_tool,
-    ALLOWED_PATHS,
-    _validate_path,
     _get_relative_display_path,
 )
 
@@ -61,19 +59,14 @@ from src.tools.backend_dev.validation import (
     run_type_check_tool,
     run_build,
     run_build_tool,
+    run_check_openapi,
+    run_check_openapi_tool,
     LINT_TIMEOUT,
     TYPE_CHECK_TIMEOUT,
     BUILD_TIMEOUT,
     _check_typescript_syntax,
 )
 
-from src.tools.backend_dev.nextjs_docs import (
-    create_nextjs_docs_toolset,
-    call_init as call_nextjs_init,
-    NEXTJS_DEVTOOLS_PACKAGE,
-    EXPOSED_TOOLS as NEXTJS_EXPOSED_TOOLS,
-    CONNECTION_TIMEOUT as NEXTJS_CONNECTION_TIMEOUT,
-)
 
 from typing import Any
 
@@ -90,7 +83,7 @@ def get_backend_dev_tools(run_dir: str | None = None) -> list:
     - Data exploration: get_sample_rows, inspect_json_preview, load_data_profile, read_backend_manifest
     - File creation: create_api, create_model, create_helper
     - Content search: search_content
-    - Validation: run_lint, run_type_check
+    - Validation: run_lint, run_type_check, run_check_openapi
     
     Note: For MCP filesystem tools (read_file, write_file, etc.), use
     `get_backend_dev_mcp_toolset(run_dir)` separately. The MCP toolset is
@@ -117,6 +110,7 @@ def get_backend_dev_tools(run_dir: str | None = None) -> list:
         # Validation
         run_lint_tool,
         run_type_check_tool,
+        run_check_openapi_tool,
     ]
 
 
@@ -124,11 +118,11 @@ def get_backend_dev_mcp_toolset(run_dir: str | None = None) -> Any:
     """
     Get the MCP filesystem toolset for the Backend Dev Agent.
     
-    This provides MCP-based file operations (read_file, write_file, 
+    This provides MCP-based file operations (read_file, write_file,
     list_directory, etc.) with access restricted to:
-    - src/app/api/** (API routes)
+    - src/api/** (Hono API routes)
     - src/models/** (TypeScript types/interfaces)
-    - src/lib/** (Helper utilities)
+    - src/utils/** (Helper utilities)
 
     Note: The data folder is intentionally excluded; use get_sample_rows or
     inspect_json_preview for controlled data access.
@@ -183,15 +177,12 @@ __all__ = [
     "run_lint_tool",
     "run_type_check_tool",
     "run_build_tool",
-    # Next.js docs toolset factory
-    "create_nextjs_docs_toolset",
-    # Next.js docs manual init helper
-    "call_nextjs_init",
+    "run_check_openapi",
+    "run_check_openapi_tool",
     # Tool aggregation
     "get_backend_dev_tools",
     "get_dev_tools",  # Legacy alias
     # Constants - filesystem
-    "ALLOWED_PATHS",
     "FILESYSTEM_MCP_PACKAGE",
     "SAMPLE_DASHBOARD_ROOT",
     "ALLOWED_DIRECTORIES",
@@ -203,12 +194,7 @@ __all__ = [
     "LINT_TIMEOUT",
     "TYPE_CHECK_TIMEOUT",
     "BUILD_TIMEOUT",
-    # Constants - nextjs docs
-    "NEXTJS_DEVTOOLS_PACKAGE",
-    "NEXTJS_EXPOSED_TOOLS",
-    "NEXTJS_CONNECTION_TIMEOUT",
     # Internal helpers (for submodules)
-    "_validate_path",
     "_get_relative_display_path",
     "_check_typescript_syntax",
 ]

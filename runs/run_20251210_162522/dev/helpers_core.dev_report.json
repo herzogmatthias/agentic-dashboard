@@ -2,22 +2,45 @@
   "artifact_id": "helpers_core",
   "artifact_type": "helper",
   "status": "success",
-  "summary": "Fixed the TypeScript lint error in load_cleaned_data.ts by replacing the explicit 'any' type with 'unknown' in the Papa.parse error callback.",
+  "summary": "All helpers implemented and validated",
   "current_state": {
-    "code_path": "src/lib/load_cleaned_data.ts",
-    "dependent_code_paths": [],
+    "code_path": "src/utils/*.ts and src/models/data_types.ts",
+    "dependent_code_paths": [
+      "src/api/* (none added)"
+    ],
     "exports": [
-      "loadCleanedData"
+      "loadCleanedData",
+      "loadSegmentAttritionByIncome",
+      "loadSegmentAttritionByCard",
+      "loadSegmentAttritionBySpendQuintile",
+      "loadKeyMetrics",
+      "loadSummaryMetrics",
+      "parseFilters",
+      "applyFilters",
+      "aggregateAttrition",
+      "histogram",
+      "loadFeatureImportances"
     ]
   },
   "changes": {
-    "files_created": [],
-    "files_modified": [
-      "src/lib/load_cleaned_data.ts"
+    "files_created": [
+      "src/models/data_types.ts",
+      "src/utils/load_cleaned_data.ts",
+      "src/utils/load_segment_data.ts",
+      "src/utils/load_metrics_files.ts",
+      "src/utils/filter_parser.ts",
+      "src/utils/apply_filters.ts",
+      "src/utils/attrition_aggregations.ts",
+      "src/utils/histogram_utils.ts",
+      "src/utils/feature_importance_loader.ts"
     ],
+    "files_modified": [],
     "files_deleted": []
   },
-  "action_summary": "Modified the error callback type from 'any' to 'unknown' to satisfy lint rules.",
-  "implementation_notes": "The 'unknown' type is safer than 'any' and allows for proper type checking while accepting any error object.",
-  "next_steps": []
+  "action_summary": "Created typed model and nine helper utility files to load CSV/JSON artifacts, parse and apply filters, and compute aggregations and histograms. Fixed import styles and lint issues, ensured type-only imports where appropriate, and ran lint/type-check/openapi checks.",
+  "implementation_notes": "- Used papaparse for CSV parsing with proper generics. - Avoided any/ts-ignore and used explicit types. - Implemented caching for file loads. - Adjusted imports to include .js extensions and type-only imports to satisfy tsconfig.\n- Reworked filter parser to avoid unnecessary external zod dependency for runtime; used simple helpers to normalize inputs.\n",
+  "next_steps": [
+    "If API routes are needed, implement routes that use these helpers (e.g., /api/cleaned, /api/attrition/aggregate).",
+    "Add unit tests for each helper to validate edge cases (empty files, missing columns)."
+  ]
 }

@@ -15,7 +15,6 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.shared import inspect_json_preview_tool  # Re-export from shared
 
 logger = get_logger(__name__)
 

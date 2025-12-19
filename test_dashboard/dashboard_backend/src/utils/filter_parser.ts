@@ -1,48 +1,131 @@
-import type { Filter } from '../models/data_types.js';
+export const IncomeCategories = [
+  "Less than $40K",
+  "$40K - $60K",
+  "$60K - $80K",
+  "$80K - $120K",
+  "$120K +",
+];
 
-function toStringArray(val: unknown): string[] | undefined {
-  if (val === undefined || val === null) return undefined;
-  if (Array.isArray(val)) return val.map((v) => (typeof v === 'string' ? v : String(v)));
-  return [typeof val === 'string' ? val : String(val)];
+export const CardCategories = ["Blue", "Silver", "Gold", "Platinum"];
+
+export interface GlobalFilters {
+  incomeCategories?: string[];
+  cardCategories?: string[];
+  spendQuintiles?: number[];
+  tenureRange?: { min: number; max: number };
 }
 
-function toNumberArray(val: unknown): number[] | undefined {
-  if (val === undefined || val === null) return undefined;
-  const arr = Array.isArray(val) ? val : [val];
-  const nums = arr
-    .map((v) => {
-      if (typeof v === 'number') return v;
-      if (typeof v === 'string') {
-        const n = Number(v);
-        return Number.isNaN(n) ? null : n;
-      }
-      return null;
-    })
-    .filter((n): n is number => n !== null);
-  return nums.length > 0 ? nums : undefined;
+export interface ParsedFilters {
+  incomeCategories?: string[];
+  cardCategories?: string[];
+  spendQuintiles?: number[];
+  tenureRange?: { min: number; max: number };
 }
 
-export function parseFilters(query: Record<string, unknown>): Filter {
-  const incomeCategories = toStringArray(query.Income_Category);
-  const cardCategories = toStringArray(query.Card_Category);
-  const spendQuintiles = toNumberArray(query.spend_quintile);
-
-  const tenureMonths: Filter['tenureMonths'] = {};
-  if (query.tenure_months_min !== undefined && query.tenure_months_min !== null) {
-    const min = typeof query.tenure_months_min === 'number' ? query.tenure_months_min : Number(String(query.tenure_months_min));
-    if (!Number.isNaN(min)) tenureMonths.min = min;
-  }
-  if (query.tenure_months_max !== undefined && query.tenure_months_max !== null) {
-    const max = typeof query.tenure_months_max === 'number' ? query.tenure_months_max : Number(String(query.tenure_months_max));
-    if (!Number.isNaN(max)) tenureMonths.max = max;
+const parseCommaSeparatedValues = (value?: string): string[] | undefined => {
+  if (!value) {
+    return undefined;
   }
 
-  const filter: Filter = {
-    incomeCategories: incomeCategories ?? undefined,
-    cardCategories: cardCategories ?? undefined,
-    spendQuintiles: spendQuintiles ?? undefined,
-    tenureMonths: Object.keys(tenureMonths).length > 0 ? tenureMonths : undefined,
-  };
+  return value
+    .split(",")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+};
 
-  return filter;
+const parseSpendQuintiles = (value?: string): number[] | undefined => {
+  const segments = parseCommaSeparatedValues(value);
+  if (!segments || segments.length === 0) {
+    return undefined;
+  }
+
+  return segments
+    .map((segment) => Number(segment))
+    .filter((numberValue) => Number.isFinite(numberValue) && numberValue >= 0 && numberValue <= 4)
+    .map((numberValue) => Math.round(numberValue));
+};
+
+const parseTenureRange = (value?: string): { min: number; max: number } | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const segments = value
+    .split(",")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+  if (segments.length !== 2) {
+    throw new Error("tenure_months must be defined as min,max");
+  }
+
+  const min = Number(segments[0]);
+  const max = Number(segments[1]);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    throw new Error("tenure_months range must contain valid numbers");
+  }
+
+  if (min < 0 || max < 0) {
+    throw new Error("tenure_months values must be >= 0");
+  }
+
+  if (min > max) {
+    throw new Error("tenure_months min must be <= max");
+  }
+
+  return { min, max };
+};
+
+export function parseGlobalFilters(query: Record<string, string | undefined>): ParsedFilters {
+  const filters: ParsedFilters = {};
+
+  const incomeValues = parseCommaSeparatedValues(query.Income_Category);
+  if (incomeValues && incomeValues.length) {
+    filters.incomeCategories = incomeValues.filter((value) => IncomeCategories.includes(value));
+  }
+
+  const cardValues = parseCommaSeparatedValues(query.Card_Category);
+  if (cardValues && cardValues.length) {
+    filters.cardCategories = cardValues.filter((value) => CardCategories.includes(value));
+  }
+
+  const spendQuintileValues = parseSpendQuintiles(query.spend_quintile);
+  if (spendQuintileValues && spendQuintileValues.length) {
+    filters.spendQuintiles = spendQuintileValues;
+  }
+
+  const tenureRange = parseTenureRange(query.tenure_months);
+  if (tenureRange) {
+    filters.tenureRange = tenureRange;
+  }
+
+  return filters;
+}
+
+export function parseKpiFilters(query: Record<string, string | undefined>): ParsedFilters {
+  const filters: ParsedFilters = {};
+
+  const incomeValues = parseCommaSeparatedValues(query.incomeCategories);
+  if (incomeValues && incomeValues.length) {
+    filters.incomeCategories = incomeValues.filter((value) => IncomeCategories.includes(value));
+  }
+
+  const cardValues = parseCommaSeparatedValues(query.cardCategories);
+  if (cardValues && cardValues.length) {
+    filters.cardCategories = cardValues.filter((value) => CardCategories.includes(value));
+  }
+
+  const spendQuintileValues = parseSpendQuintiles(query.spendQuintiles);
+  if (spendQuintileValues && spendQuintileValues.length) {
+    filters.spendQuintiles = spendQuintileValues;
+  }
+
+  const tenureMin = query.tenureMin ? Number(query.tenureMin) : undefined;
+  const tenureMax = query.tenureMax ? Number(query.tenureMax) : undefined;
+  if (tenureMin !== undefined && tenureMax !== undefined && Number.isFinite(tenureMin) && Number.isFinite(tenureMax) && tenureMin <= tenureMax && tenureMin >= 0 && tenureMax >= 0) {
+    filters.tenureRange = { min: tenureMin, max: tenureMax };
+  }
+
+  return filters;
 }

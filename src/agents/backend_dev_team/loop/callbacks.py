@@ -20,18 +20,14 @@ from typing import Any, Optional
 from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 
-from src.agents.backend_dev_team.tester.state import STATE_KEY_TESTER_RESULT
 from src.core.logging import get_logger
 from src.agents.backend_dev_team.loop.tools import (
     STATE_KEY_RUN_DIR,
     STATE_KEY_BACKEND_TODO_LIST,
-    STATE_KEY_CURRENT_ARTIFACT,
     STATE_KEY_LOOP_RESULT,
-    STATE_KEY_LOOP_ITERATION,
-    inject_artifact_to_state,
 )
 
-from src.agents.backend_dev_team.dev.state import STATE_KEY_DEV_RESULT
+from src.tools.utils.paths import SAMPLE_DASHBOARD_ROOT
 
 logger = get_logger(__name__)
 
@@ -45,9 +41,6 @@ STATE_KEY_PREVIOUS_SUMMARIES = "previous_summaries"
 STATE_KEY_CLEANED_DATA_FILES = "cleaned_data_files"
 STATE_KEY_METRICS_REF_CONTEXT = "metrics_ref_context"
 
-# Default sample-dashboard root (relative to project structure)
-# From loop/callbacks.py: go up 6 levels to reach Documents/agentic-dashboard/, then into sample-dashboard/
-SAMPLE_DASHBOARD_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent / "sample-dashboard"
 
 # Default run directory for standalone testing (same pattern as planner)
 DEFAULT_TEST_RUN_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "agentic-dashboard" / "runs" / "run_20251210_162522"

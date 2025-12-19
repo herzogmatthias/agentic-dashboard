@@ -13,24 +13,25 @@ from pathlib import Path
 # Path Constants
 # ============================================================================
 
-# Base path to the sample-dashboard Next.js project
-SAMPLE_DASHBOARD_ROOT = Path("C:/Users/darks/Documents/agentic-dashboard/sample-dashboard")
+# Base path to the Hono backend project (OpenAPIHono + zod-openapi)
+SAMPLE_DASHBOARD_ROOT = Path("./test_dashboard/dashboard_backend").resolve()
 
 # Allowed paths for Backend Dev Agent
+# Hono backend uses src/api (routes), src/models (types), src/utils (helpers)
 BACKEND_DEV_ALLOWED_PATHS: list[Path] = [
-    SAMPLE_DASHBOARD_ROOT / "src" / "app" / "api",  # API routes
-    SAMPLE_DASHBOARD_ROOT / "src" / "models",        # TypeScript models
-    SAMPLE_DASHBOARD_ROOT / "src" / "lib",           # Utility functions
+    SAMPLE_DASHBOARD_ROOT / "src" / "api",    # Hono API routes
+    SAMPLE_DASHBOARD_ROOT / "src" / "models", # TypeScript models
+    SAMPLE_DASHBOARD_ROOT / "src" / "utils",  # Helper utilities
 ]
 
 # Allowed paths for Testing Agent
 TESTER_ALLOWED_PATHS: list[Path] = [
-    SAMPLE_DASHBOARD_ROOT / "tests" / "api",         # API route tests
-    SAMPLE_DASHBOARD_ROOT / "tests" / "lib",         # Helper tests
-    SAMPLE_DASHBOARD_ROOT / "tests" / "models",      # Model tests
-    SAMPLE_DASHBOARD_ROOT / "tests",                 # Root tests folder
-    SAMPLE_DASHBOARD_ROOT / "src" / "app" / "api",   # Can read API routes (for reference)
-    SAMPLE_DASHBOARD_ROOT / "src" / "lib",           # Can read helpers (for reference)
+    SAMPLE_DASHBOARD_ROOT / "tests" / "api",      # API route tests
+    SAMPLE_DASHBOARD_ROOT / "tests" / "utils",    # Helper tests
+    SAMPLE_DASHBOARD_ROOT / "tests" / "models",   # Model tests
+    SAMPLE_DASHBOARD_ROOT / "tests",               # Root tests folder
+    SAMPLE_DASHBOARD_ROOT / "src" / "api",        # Can read API routes (for reference)
+    SAMPLE_DASHBOARD_ROOT / "src" / "utils",      # Can read helpers (for reference)
 ]
 
 # Tests root directory

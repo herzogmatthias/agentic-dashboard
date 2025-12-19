@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import AsyncGenerator, Optional, Any
 from datetime import datetime
 
-from google.adk.agents import BaseAgent, LlmAgent
+from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 from google.genai import types as gt
@@ -47,7 +47,6 @@ from src.agents.backend_dev_team.loop.callbacks import (
     before_loop_callback,
     after_loop_callback,
     persist_artifact_manifest_entry,
-    STATE_KEY_PREVIOUS_SUMMARIES,
     STATE_KEY_WORKSPACE_ROOT,
     STATE_KEY_METRICS_REF_CONTEXT,
     STATE_KEY_CLEANED_DATA_FILES,
@@ -56,7 +55,7 @@ from src.agents.backend_dev_team.loop.callbacks import (
     _get_cleaned_data_files,
 )
 from src.agents.backend_dev_team.dev import create_backend_dev_agent
-from src.agents.backend_dev_team.dev.state import STATE_KEY_DEV_RESULT
+from src.agents.backend_dev_team.dev.state import STATE_KEY_DEV_RESULT, STATE_KEY_DEV_STRUCTURED_OUTPUT
 from src.agents.backend_dev_team.dev.agent import STATE_KEY_ERROR_RUN, STATE_KEY_VALIDATION_ERRORS
 from src.models.backend_dev import BackendDevResult
 
@@ -113,58 +112,28 @@ def _run_validation(workspace_root: str) -> tuple[bool, str]:
         errors.append("TYPE-CHECK TIMEOUT (120s)")
     except Exception as e:
         errors.append(f"TYPE-CHECK ERROR: {e}")
+        
+    
+    try:
+        result = subprocess.run(
+            "npm run check-openapi",
+            cwd=workspace_root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            shell=True,
+        )
+        if result.returncode != 0:
+            errors.append(f"OPENAPI CHECK ERRORS:\n{result.stdout}\n{result.stderr}")
+    except subprocess.TimeoutExpired:
+        errors.append("OPENAPI CHECK TIMEOUT (120s)")
+    except Exception as e:
+        errors.append(f"OPENAPI CHECK ERROR: {e}")
     
     if errors:
         return False, "\n---\n".join(errors)
     return True, ""
 
-
-
-
-def _persist_dev_report(
-    state: dict,
-    dev_result: dict | BackendDevResult | None,
-    artifact_id: str,
-) -> str | None:
-    """
-    Persist DevReport to disk after Dev Agent completes.
-    
-    Creates: {run_dir}/dev/{artifact_id}.dev_report.json
-    
-    Returns the file path if successful, None otherwise.
-    """
-    if dev_result is None:
-        return None
-    
-    run_dir = state.get(STATE_KEY_RUN_DIR)
-    if not run_dir:
-        logger.warning("Cannot persist DevReport: run_dir not in state")
-        return None
-    
-    # Extract report data
-    if isinstance(dev_result, dict):
-        report_data = dev_result.get("report", dev_result)
-    elif hasattr(dev_result, "report") and dev_result.report:
-        report_data = dev_result.report.model_dump(mode="json")
-    elif hasattr(dev_result, "model_dump"):
-        report_data = dev_result.model_dump(mode="json")
-    else:
-        report_data = {"raw": str(dev_result)}
-    
-    # Ensure dev reports directory exists
-    dev_dir = Path(run_dir) / "dev"
-    dev_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Write report
-    report_path = dev_dir / f"{artifact_id}.dev_report.json"
-    try:
-        with open(report_path, "w", encoding="utf-8") as f:
-            json.dump(report_data, f, indent=2, default=str)
-        logger.info(f"Persisted DevReport to {report_path}")
-        return str(report_path)
-    except Exception as e:
-        logger.error(f"Failed to persist DevReport: {e}")
-        return None
 
 
 # =============================================================================
@@ -197,12 +166,12 @@ class BackendDevLoopAgent(BaseAgent):
         - backend_todo_list: Updated with status for each processed artifact
     """
     
-    dev_agent: LlmAgent
+    dev_agent: BaseAgent
     max_iterations: int = MAX_ITERATIONS
     
     def __init__(
         self,
-        dev_agent: LlmAgent,
+        dev_agent: BaseAgent,
         name: str = "backend_loop",
         max_iterations: int = MAX_ITERATIONS,
         before_agent_callback=None,
@@ -253,7 +222,7 @@ class BackendDevLoopAgent(BaseAgent):
         
         groups_processed = 0
         artifacts_processed = 0
-        groups = groups[5:]
+        groups = groups[1:2]
         # Iterate through groups - Dev Agent processes one group at a time
         for group_idx, group in enumerate(groups, 1):
             group_id = group.get("id", "unknown")
@@ -336,10 +305,7 @@ class BackendDevLoopAgent(BaseAgent):
                     return
                 
                 # Get Dev Result
-                dev_result = state.get(STATE_KEY_DEV_RESULT)
-                dev_report_path = _persist_dev_report(state, dev_result, group_id)
-                if dev_report_path:
-                    state[STATE_KEY_DEV_REPORT_PATH] = dev_report_path
+                dev_result = state.get(STATE_KEY_DEV_STRUCTURED_OUTPUT)
                 
                 # Check if Dev succeeded (status='success')
                 if not self._check_dev_success(dev_result):

@@ -19,7 +19,6 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
-from src.tools.utils import SAMPLE_DASHBOARD_ROOT, validate_path
 
 logger = get_logger(__name__)
 

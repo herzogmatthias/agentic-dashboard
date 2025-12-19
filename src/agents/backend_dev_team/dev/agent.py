@@ -14,7 +14,7 @@ The Dev Agent only runs within the Loop Agent's custom control flow.
 
 import json
 
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.models.lite_llm import LiteLlm
 from phoenix.otel import register as register_phoenix
@@ -29,9 +29,13 @@ from src.tools.backend_dev import (
 from src.agents.backend_dev_team.dev.prompts import (
     build_backend_dev_prompt,
     build_backend_dev_repair_prompt,
+    build_backend_dev_parse_prompt,
 )
 
-from src.agents.backend_dev_team.dev.state import (STATE_KEY_DEV_RESULT)
+from src.agents.backend_dev_team.dev.state import (
+    STATE_KEY_DEV_RESULT,
+    STATE_KEY_DEV_STRUCTURED_OUTPUT,
+)
 
 # Register Phoenix tracing
 tracer_provider = register_phoenix(
@@ -42,7 +46,8 @@ tracer_provider = register_phoenix(
 logger = get_logger(__name__)
 
 # Model configuration
-BACKEND_DEV_MODEL = "xai/grok-code-fast-1"
+BACKEND_DEV_MODEL = "xai/grok-4-1-fast-reasoning"
+BACKEND_PARSER_MODEL = "xai/grok-4-1-fast-non-reasoning"
 
 
 # =============================================================================
@@ -174,15 +179,16 @@ async def backend_dev_instruction_provider(context: ReadonlyContext) -> str:
         )
 
 
+
 # =============================================================================
 # Agent Factory
 # =============================================================================
 
 def create_backend_dev_agent(
     workspace_root: str | None = None,
-) -> LlmAgent:
+) -> SequentialAgent:
     """
-    Create and configure the Backend Dev Agent.
+    Create and configure the Backend Dev Agent sequence.
     
     The Backend Dev Agent uses:
     - PlanReActPlanner for structured multi-step reasoning
@@ -190,15 +196,16 @@ def create_backend_dev_agent(
     - MCP filesystem tools for read/write/edit
     - Data access tools (get_sample_rows, load_data_profile)
     - Validation tools (run_lint, run_type_check)
-    - output_schema=BackendDevResult for structured output
+    - Parser agent with output_schema=BackendDevResult for structured output
     
     Args:
         workspace_root: Optional workspace root override (default: SAMPLE_DASHBOARD_ROOT)
         
     Returns:
-        Configured LlmAgent instance
+        Configured SequentialAgent instance
     """
-    model = LiteLlm(model=BACKEND_DEV_MODEL)
+    dev_model = LiteLlm(model=BACKEND_DEV_MODEL)
+    parser_model = LiteLlm(model=BACKEND_PARSER_MODEL)
     
     # Get tools - separate regular tools and MCP toolset
     regular_tools = get_backend_dev_tools()
@@ -214,15 +221,29 @@ def create_backend_dev_agent(
     # State initialization (run_dir, metrics_ref lookup, etc.) happens at the
     # Loop Agent level in inject_artifact_context_for_dev callback.
     # The Dev Agent only runs within the Loop Agent's custom control flow.
-    agent = LlmAgent(
-        name="backend_dev",
-        model=model,
+    executor_agent = LlmAgent(
+        name="backend_dev_executor",
+        model=dev_model,
         #planner=PlanReActPlanner(),
-        include_contents='none',
+        include_contents="none",
         instruction=backend_dev_instruction_provider,
         tools=tools,
         output_key=STATE_KEY_DEV_RESULT,
+    )
+
+    parser_agent = LlmAgent(
+        name="backend_dev_parser",
+        model=parser_model,
+        include_contents="none",
+        instruction=build_backend_dev_parse_prompt(),
+        output_key=STATE_KEY_DEV_STRUCTURED_OUTPUT,
         output_schema=BackendDevResult,
+    )
+
+    agent = SequentialAgent(
+        name="backend_dev",
+        description="Runs backend dev executor then parses structured output",
+        sub_agents=[executor_agent, parser_agent],
     )
     
     logger.info(
@@ -238,7 +259,7 @@ def create_backend_dev_agent(
     return agent
 
 
-def get_backend_dev_agent() -> LlmAgent:
+def get_backend_dev_agent() -> SequentialAgent:
     """Get a configured Backend Dev Agent instance."""
     return create_backend_dev_agent()
 

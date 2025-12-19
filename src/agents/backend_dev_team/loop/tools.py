@@ -13,6 +13,7 @@ from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 from src.core.logging import get_logger
+from src.tools.utils.paths import SAMPLE_DASHBOARD_ROOT
 
 logger = get_logger(__name__)
 
@@ -214,11 +215,10 @@ def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -
     
     # Get sample-dashboard root
     # From tools.py: go up 5 levels to reach Documents/agentic-dashboard/, then into sample-dashboard/
-    sample_dashboard_root = Path("C:/Users/darks/Documents/agentic-dashboard/sample-dashboard")
-    
+    sample_dashboard_root = SAMPLE_DASHBOARD_ROOT
     try:
         # Scan src/app/api for existing routes
-        api_dir = sample_dashboard_root / "src" / "app" / "api"
+        api_dir = sample_dashboard_root / "src" / "api"
         if api_dir.exists():
             for route_file in api_dir.rglob("route.ts"):
                 paths.append(str(route_file.relative_to(sample_dashboard_root)))
@@ -238,13 +238,13 @@ def build_accessible_files_list(artifact: dict[str, Any], run_dir: str | None) -
     
     try:
         # Scan src/lib for existing utilities
-        lib_dir = sample_dashboard_root / "src" / "lib"
+        lib_dir = sample_dashboard_root / "src" / "utils"
         if lib_dir.exists():
             for util_file in lib_dir.rglob("*.ts"):
                 paths.append(str(util_file.relative_to(sample_dashboard_root)))
-            logger.debug(f"Found {len([p for p in paths if 'lib' in p])} utility files")
+            logger.debug(f"Found {len([p for p in paths if 'utils' in p])} utility files")
     except Exception as e:
-        logger.debug(f"Error scanning lib directory: {e}")
+        logger.debug(f"Error scanning utils directory: {e}")
     
     # NOTE: Do not include data/ directory in accessible files list to avoid confusion
 

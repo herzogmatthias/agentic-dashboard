@@ -1,5 +1,5 @@
-google-adk>=1.19.*
-openinference-instrumentation-google-adk>= 0.1.*
+google-adk>=1.21.0
+openinference-instrumentation-google-adk>= 0.1.8
 openinference-instrumentation-openai>=0.1.40
 arize-phoenix-otel>=0.13.1
 daytona>=0.115.2

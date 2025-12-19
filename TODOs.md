@@ -1,0 +1,3 @@
+ - Todo fix root path.
+ - Make sure gpt 5 does not call pointless tool calls
+ - lint is too restrictive

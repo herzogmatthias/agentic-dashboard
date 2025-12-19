@@ -33,11 +33,13 @@ LINT_TIMEOUT = 120  # 2 minutes for lint
 TYPE_CHECK_TIMEOUT = 120  # 2 minutes for type-check
 BUILD_TIMEOUT = 180  # 3 minutes for full build (internal use)
 SYNTAX_CHECK_TIMEOUT = 10
+OPENAPI_CHECK_TIMEOUT = 120
 
 # Output truncation limits (characters)
 LINT_OUTPUT_LIMIT = 5000
 TYPE_CHECK_OUTPUT_LIMIT = 8000
 BUILD_OUTPUT_LIMIT = 10000
+OPENAPI_OUTPUT_LIMIT = 8000
 
 
 # ============================================================================
@@ -292,6 +294,23 @@ def run_build(tool_context: ToolContext | None = None) -> dict[str, Any]:
     return result
 
 
+def run_check_openapi(tool_context: ToolContext | None = None) -> dict[str, Any]:
+    """
+    Run the OpenAPI consistency check for Hono routes.
+    
+    Executes `npm run check-openapi` in the backend project. Ensures all routes
+    are registered via `register(app)` and included in the OpenAPI registry.
+    """
+    logger.info("Running check-openapi", extra={"project": str(SAMPLE_DASHBOARD_ROOT)})
+    result = _run_npm_command("check-openapi", OPENAPI_CHECK_TIMEOUT, OPENAPI_OUTPUT_LIMIT)
+    result["project_path"] = str(SAMPLE_DASHBOARD_ROOT)
+    if result["passed"]:
+        logger.info("OpenAPI check passed")
+    else:
+        logger.warning("OpenAPI check failed", extra={"exit_code": result["exit_code"]})
+    return result
+
+
 # ============================================================================
 # Tool Exports
 # ============================================================================
@@ -302,3 +321,4 @@ run_type_check_tool = FunctionTool(func=run_type_check)
 # run_build is kept for internal/manual use but not exposed as a tool
 # Use run_type_check_tool for faster type verification
 run_build_tool = FunctionTool(func=run_build)  # Internal use only
+run_check_openapi_tool = FunctionTool(func=run_check_openapi)

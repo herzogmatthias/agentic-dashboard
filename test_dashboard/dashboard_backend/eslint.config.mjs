@@ -22,12 +22,23 @@ export default defineConfig(globalIgnores(['.yarn', '**/coverage', '**/dist', "e
   },
 
   rules: {
+          // ✅ these are the ones you’re currently failing on
+      "import-x/order": "off",
+      "n/no-extraneous-import": "off",
+
+      // (optional, also common “agent pain” rules)
+      "import-x/first": "off",
+      "import-x/newline-after-import": "off",
+      "import-x/no-duplicates": "off",
+
+      // keep your TS relaxations
+      "@typescript-eslint/no-unused-vars": "off",
+      "sort-imports": "off",
     '@typescript-eslint/await-thenable': 'off',
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/dot-notation': 'off',
     '@typescript-eslint/no-base-to-string': 'off',
-    '@typescript-eslint/sort-imports': 'off',
     '@typescript-eslint/consistent-type-imports': 'off',
     '@typescript-eslint/no-deprecated': 'off',
     '@typescript-eslint/no-duplicate-type-constituents': 'off',

@@ -1,27 +1,56 @@
-import type { CleanedRow, AttritionAggResult } from '../models/data_types.js';
+import type { CleanedDataRow } from "./cleaned_data_loader.js";
 
-export function aggregateAttrition(rows: CleanedRow[], groupBy?: keyof CleanedRow): AttritionAggResult[] {
-  if (!groupBy) {
-    const total_customers = rows.length;
-    const attrited_count = rows.reduce((acc, r) => acc + (r.churn ? r.churn : 0), 0);
-    const attrition_rate = total_customers === 0 ? 0 : attrited_count / total_customers;
-    return [{ attrited_count, total_customers, attrition_rate }];
-  }
+type AggregationBucket<T extends string> = Record<T, {
+  totalCustomers: number;
+  attritedCount: number;
+  attritionRate: number;
+}>;
 
-  const groups = new Map<string, { attrited_count: number; total_customers: number }>();
+export interface AttritionMetrics {
+  totalCustomers: number;
+  attritedCount: number;
+  attritionRate: number;
+}
 
-  for (const r of rows) {
-    const keyRaw = r[groupBy];
-    const key = keyRaw === undefined || keyRaw === null ? 'UNKNOWN' : String(keyRaw);
-    const cur = groups.get(key) ?? { attrited_count: 0, total_customers: 0 };
-    cur.total_customers += 1;
-    cur.attrited_count += r.churn ? r.churn : 0;
-    groups.set(key, cur);
-  }
+export function aggregateAttrition(data: CleanedDataRow[]): AttritionMetrics {
+  const totalCustomers = data.length;
+  const attritedCount = data.filter((row) => row.churn === 1).length;
+  const attritionRate = totalCustomers === 0 ? 0 : attritedCount / totalCustomers;
 
-  const results: AttritionAggResult[] = [];
-  for (const [group, v] of groups.entries()) {
-    results.push({ group, attrited_count: v.attrited_count, total_customers: v.total_customers, attrition_rate: v.total_customers === 0 ? 0 : v.attrited_count / v.total_customers });
-  }
-  return results;
+  return {
+    totalCustomers,
+    attritedCount,
+    attritionRate,
+  };
+}
+
+export function aggregateAttritionByDimension<Dimension extends string>(
+  data: CleanedDataRow[],
+  dimensionAccessor: (row: CleanedDataRow) => Dimension
+): AggregationBucket<Dimension> {
+  const bucket: AggregationBucket<Dimension> = {} as AggregationBucket<Dimension>;
+
+  data.forEach((row) => {
+    const dimensionValue = dimensionAccessor(row);
+
+    if (!bucket[dimensionValue]) {
+      bucket[dimensionValue] = {
+        totalCustomers: 0,
+        attritedCount: 0,
+        attritionRate: 0,
+      };
+    }
+
+    bucket[dimensionValue].totalCustomers += 1;
+    if (row.churn === 1) {
+      bucket[dimensionValue].attritedCount += 1;
+    }
+  });
+
+  (Object.keys(bucket) as Dimension[]).forEach((key) => {
+    const entry = bucket[key];
+    entry.attritionRate = entry.totalCustomers === 0 ? 0 : entry.attritedCount / entry.totalCustomers;
+  });
+
+  return bucket;
 }
